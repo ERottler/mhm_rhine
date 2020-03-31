@@ -272,9 +272,9 @@ dis_image <- function(data_plot, cols, breaks, header, lab_unit, do_cont = T){
         z = data_plot, col = cols, breaks = breaks,
         ylab = "", xlab = "", axes = F)
   axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
-       col = "black", col.axis = "black", tck = -0.04)#plot ticks
-  axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
-       col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.6)#plot labels
+       col = "black", col.axis = "black", tck = -0.06)#plot ticks
+  axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+       col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
   axis(2, at = ytiks, labels = ylabs/100, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
   mtext(header, side = 3, line = 0.3, cex = 1.5, adj = 0.0)
   mtext(lab_unit, side = 3, line = 0.2, cex = 1.2, adj = 1.0)
@@ -314,15 +314,87 @@ vis_run <- function(sta_day, end_day, do_legend = F){
   col_obs <- alpha("black", alpha = 0.6)
   col_sim <- alpha("red3", alpha = 0.6)
   
-  ylims <- range(c(dis_mhm$Qobs_0006935053[ind_sta:ind_end], dis_mhm$Qsim_0006935053[ind_sta:ind_end]))
-  plot(dis_mhm$Qobs_0006935053[ind_sta:ind_end], type = "n", ylim = ylims, axes = F)
-  lines(dis_mhm$Qobs_0006935053[ind_sta:ind_end], col = col_obs, lwd = 1.5)
-  lines(dis_mhm$Qsim_0006935053[ind_sta:ind_end], col = col_sim, lwd = 1.5)
+  ylims <- range(c(dis_mhm$Qobs_0006435060[ind_sta:ind_end], dis_mhm$Qsim_0006435060[ind_sta:ind_end]))
+  plot(dis_mhm$Qobs_0006435060[ind_sta:ind_end], type = "n", ylim = ylims, axes = F)
+  lines(dis_mhm$Qobs_0006435060[ind_sta:ind_end], col = col_obs, lwd = 1.5)
+  lines(dis_mhm$Qsim_0006435060[ind_sta:ind_end], col = col_sim, lwd = 1.5)
   axis(1, at = c(1, length(ind_sta:ind_end)), labels = c(sta_day, end_day), mgp = c(3, 0.15, 0), tck = -0.02)
   axis(2, mgp = c(3, 0.15, 0), tck = -0.02)
+  mtext("Discharge [m³/s]", side = 2, line = 1.7, cex = 0.7)
   if(do_legend){
-    legend("topright", c("obs", "sim"), pch = 19, col = c("black", "red3"))
+    legend("topleft", c("obs", "sim"), pch = 19, col = c("black", "red3"))
   }
   box()
+  
+}
+
+#Values to colors for image plot
+val2col <- function(val_in, dat_ref, do_log = F, do_bicol = T, col_na = "white", virid_dir = -1){
+  
+  if(do_log){
+    
+    val_in <- log(val_in)
+    dat_ref <- log(dat_ref)
+    
+  }
+  
+  if(is.na(val_in)){#set NAs to mean to keep script running; later back to NA
+    val_in <- mea_na(dat_ref)
+    set2NA_1 <- T
+  }else{
+    set2NA_1 <- F
+  }
+  
+  if(do_bicol){
+    
+    col_ind <- round((abs(val_in) / max_na(abs(dat_ref))) * 100)
+    
+    if(val_in < 0){
+      my_col  <- colorRampPalette(c("grey80", "lemonchiffon2", "lightgoldenrod2", "gold3", "goldenrod3", "orangered4", "darkred"))(100)
+    }else{
+      my_col  <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+    }
+    
+  }else{
+    col_ind <- round((val_in-min_na(dat_ref)) / (max_na(dat_ref)-min_na(dat_ref)) * 200)  
+    if(virid_dir == -1){
+      my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+    }
+    
+    if(virid_dir == 1){
+      my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = 1)))(200))
+    }
+    
+  }
+  
+  
+  if(is.na(col_ind)){
+    set2NA_2 <- T
+    col_ind <- 1 #set to one to keep script running; later set to NA color
+  }else{
+    set2NA_2 = F
+  }
+  
+  if(col_ind == 0){#for minimum and very small values
+    
+    col_ind <- 1
+    
+  }
+  
+  col_out <- my_col[col_ind]
+  
+  if(length(col_out) < 1){
+    
+    col_out <- col_na
+    
+  }
+  
+  if(set2NA_1 | set2NA_2){
+    
+    col_out <- col_na
+    
+  }
+  
+  return(col_out)
   
 }
