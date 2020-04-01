@@ -8,7 +8,7 @@
 
 # devtools::install_github('ERottler/meltimr')
 pacman::p_load(parallel, doParallel, zoo, zyp, alptempr, emdbook, scales, ncdf4,
-               ncdf4.helpers, sp, raster, viridis)
+               ncdf4.helpers, sp, raster, viridis, meltimr, POT)
 
 # run_dir <- "D:/nrc_user/rottler/mhm_run/6935053/"
 run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
@@ -492,7 +492,7 @@ qba_mea <- apply(qba_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 qif_mea <- apply(qif_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 qis_mea <- apply(qis_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 
-snow_max_c <- c(snow_mea)
+snow_max_c <- c(snow_max)
 pet_mea_c <- c(pet_mea)
 aet_mea_c <- c(aet_mea)
 qto_mea_c <- c(qto_mea)
@@ -830,3 +830,317 @@ mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[2]], 3), "  Lon: ", round(c(lon)[s
       side = 3, line = 0.2, cex = 1.2)
 
 dev.off()
+
+#seas_flod----
+
+#get output fluxes from nc-file
+nc_flux_file <- paste0(run_dir, "output/mHM_Fluxes_States.nc")
+
+nc_flux <- nc_open(nc_flux_file)
+
+lon <- ncdf4::ncvar_get(nc_flux, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_flux, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")))
+
+sta_date_ind <- which(format(date) == "1954-01-02")
+count_date <- length(date) - sta_date_ind
+
+snow_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+pef_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "preEffect")
+qto_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "Q")
+
+
+snow_max <- apply(snow_cube, c(1, 2), max_na) #[mm]
+pef_mea <- apply(pef_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
+snow_max_c <- c(snow_max)
+pef_mea_c <- c(pef_mea)
+
+sn_tow_1 <- which(snow_max_c > 2500)
+snow_max_c[sn_tow_1] <- NA
+
+cols_spat_sno <- foreach(i = 1:length(snow_max_c), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = snow_max_c[i],
+          dat_ref = snow_max_c,
+          do_bicol = F,
+          virid_dir = -1,
+          do_log = F,
+          col_na = "white")
+  
+}
+
+cols_spat_sno[sn_tow_1] <- "firebrick1"
+
+cols_spat_pef <- foreach(i = 1:length(pef_mea_c), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = pef_mea_c[i],
+          dat_ref = pef_mea_c,
+          do_bicol = F,
+          virid_dir = -1,
+          do_log = F,
+          col_na = "white")
+  
+}
+
+par(family = "serif")
+cex_pch <- 1.20
+mar_1 <- c(1.5, 0.5, 1.5, 0.5)
+
+#Plot: Snowpack
+par(mar = mar_1)
+plot(c(lon), c(lat), pch = 15, col = cols_spat_sno, cex = 1.0, axes = F, ylab = "", xlab = "")
+mtext("a) Snow depth", side = 3, line = -1.0, cex = 1.5)
+
+rect(xleft = 7.1, xright = 10.3, ybottom = 46.2, ytop = 47.5)
+rect(xleft = 5.3, xright = 12.0, ybottom = 48.1, ytop = 50.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+# my_bre <- seq(range(log(snow_max_c), na.rm = T)[1], range(log(snow_max_c), na.rm = T)[2], length.out = length(my_col)+1)
+my_bre <- seq(range(snow_max_c, na.rm = T)[1], range(snow_max_c, na.rm = T)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(snow_max_c), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+# axis(4, mgp=c(3, 0.50, 0), at = log(c(1, 10, 100, 1000, 2000)), labels = c(1, 10, 100, 1000, 2000), tck = -0.1, cex.axis = 1.6)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
+box()
+
+#Plot: Effective precipitation
+par(mar = mar_1)
+plot(c(lon), c(lat), pch = 15, col = cols_spat_pef, cex = 1.0, axes = F, ylab = "", xlab = "")
+mtext("e) effective Precipitation", side = 3, line = -1.0, cex = 1.5)
+
+rect(xleft = 7.1, xright = 10.3, ybottom = 46.2, ytop = 47.5)
+rect(xleft = 5.3, xright = 12.0, ybottom = 48.1, ytop = 50.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(range(pef_mea_c, na.rm = T)[1], range(pef_mea_c, na.rm = T)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(pef_mea_c), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
+box()
+
+#Selcet cells
+lat_in_1 <- c(lat)[which(c(lat) < 47.5 & c(lon) > 7.1)]
+lat_in_2 <- c(lat)[which(c(lat) < 50.7 & c(lat) > 48.1)]
+
+my_get_cube_col <- function(val_in, lats_in = lat, col_or_row = "col"){
+  
+  get_cube_index_col(val_in = val_in, lons_in = lats_in, col_or_row = col_or_row)
+  
+  }
+
+my_get_cube_row <- function(val_in, lats_in = lat, col_or_row = "row"){
+  
+  get_cube_index_col(val_in = val_in, lons_in = lats_in, col_or_row = col_or_row)
+  
+}
+
+#get index in cube from points inside sub-basin
+cube_index_col_1 <- sapply(lat_in_1, my_get_cube_col)
+cube_index_row_1 <- sapply(lat_in_1, my_get_cube_row)
+cube_index_col_2 <- sapply(lat_in_2, my_get_cube_col)
+cube_index_row_2 <- sapply(lat_in_2, my_get_cube_row)
+
+#get effective precipitation + snow + runoff generated for nival part
+for (i in 1:length(cube_index_col_1)) {
+  
+  print(paste(i, "of", length(cube_index_col_1)))
+  
+  epn_sing <- pef_cube [cube_index_col_1[i], cube_index_row_1[i], ]
+  sno_sing <- snow_cube[cube_index_col_1[i], cube_index_row_1[i], ]
+  qto_sing <- qto_cube [cube_index_col_1[i], cube_index_row_1[i], ]
+  
+  if(i == 1){
+    epns <- epn_sing
+    snos <- sno_sing
+    qtos <- qto_sing
+  }else{
+    epns <- cbind(epns, epn_sing)
+    snos <- cbind(snos, sno_sing)
+    qtos <- cbind(qtos, qto_sing)
+  }
+  
+}
+
+niv_ep_sum <- apply(epns, 1, sum_na)
+niv_qt_sum <- apply(qtos, 1, sum_na)
+niv_sd_sum <- apply(snos, 1, sum_na)
+niv_sd_sum_dif <- c(NA, diff(niv_sd_sum))
+niv_sd_sum_dif[which(niv_sd_sum_dif > 0)] <- NA
+niv_sn_sum <- niv_sd_sum_dif * -1 #melt positive values
+
+#get effective precipitation + runoff generated for pluvial part
+for (i in 1:length(cube_index_col_2)) {
+  
+  print(paste(i, "of", length(cube_index_col_2)))
+  
+  epn_sing <- pef_cube [cube_index_col_2[i], cube_index_row_2[i], ]
+  qto_sing <- qto_cube [cube_index_col_2[i], cube_index_row_2[i], ]
+  
+  if(i == 1){
+    epns_plu <- epn_sing
+    qtos_plu <- qto_sing
+  }else{
+    epns_plu <- cbind(epns_plu, epn_sing)
+    qtos_plu <- cbind(qtos_plu, qto_sing)
+  }
+}
+
+plu_ep_sum <- apply(epns_plu, 1, sum_na)
+plu_qt_sum <- apply(qtos_plu, 1, sum_na)
+
+
+#Moving average sum
+window_niv_sn <- 14
+niv_ep_sum_ma <- rollapply(data = niv_ep_sum, width = window_niv_sn,
+                           FUN = sum_na, align = "center", fill = NA)
+window_niv_ep <- 14
+niv_sn_sum_ma <- rollapply(data = niv_sn_sum, width = window_niv_ep,
+                           FUN = sum_na, align = "center", fill = NA)
+window_niv_qt <- 14
+niv_qt_sum_ma <- rollapply(data = niv_qt_sum, width = window_niv_qt,
+                           FUN = sum_na, align = "center", fill = NA)
+
+plot(niv_ep_sum_ma, type = "l")
+plot(niv_sn_sum_ma, type = "l")
+plot(niv_qt_sum_ma, type = "l")
+
+window_plu_ep <- 5
+plu_ep_sum_ma <- rollapply(data = plu_ep_sum, width = window_plu_ep,
+                        FUN = sum_na, align = "center", fill = NA)
+window_plu_qt <- 5
+plu_qt_sum_ma <- rollapply(data = plu_qt_sum, width = window_plu_qt,
+                           FUN = sum_na, align = "center", fill = NA)
+
+plot(plu_ep_sum_ma, type = "l")
+plot(plu_qt_sum_ma, type = "l")
+
+#Peak over threshold
+pot_thre_niv_sn <- quantile(niv_sn_sum_ma, 0.95, na.rm = T)
+pot_thre_niv_ep <- quantile(niv_ep_sum_ma, 0.95, na.rm = T)
+pot_thre_niv_qt <- quantile(niv_qt_sum_ma, 0.95, na.rm = T)
+pot_thre_plu_ep <- quantile(plu_ep_sum_ma, 0.95, na.rm = T)
+pot_thre_plu_qt <- quantile(plu_qt_sum_ma, 0.95, na.rm = T)
+# pot_thre_niv_ep <- pot_thre_niv_sn
+# pot_thre_plu_ep <- pot_thre_niv_sn
+
+pot_data_niv_sn <- data.frame(obs = niv_sn_sum_ma,
+                              time = date[-1])
+pot_data_niv_ep <- data.frame(obs = niv_ep_sum_ma,
+                              time = date[-1])
+pot_data_niv_qt <- data.frame(obs = niv_qt_sum_ma,
+                              time = date[-1])
+pot_data_plu_ep <- data.frame(obs = plu_ep_sum_ma,
+                              time = date[-1])
+pot_data_plu_qt <- data.frame(obs = plu_qt_sum_ma,
+                              time = date[-1])
+
+pot_data_niv_sn$obs[is.na(pot_data_niv_sn$obs)] <- 0
+pot_data_niv_ep$obs[is.na(pot_data_niv_ep$obs)] <- 0
+pot_data_niv_qt$obs[is.na(pot_data_niv_qt$obs)] <- 0
+pot_data_plu_ep$obs[is.na(pot_data_plu_ep$obs)] <- 0
+pot_data_plu_qt$obs[is.na(pot_data_plu_qt$obs)] <- 0
+
+pot_peaks_niv_sn <- clust(data = pot_data_niv_sn, u = pot_thre_niv_sn, tim.cond = 14, clust.max = T, plot = F)
+pot_peaks_niv_ep <- clust(data = pot_data_niv_ep, u = pot_thre_niv_ep, tim.cond = 14, clust.max = T, plot = F)
+pot_peaks_niv_qt <- clust(data = pot_data_niv_qt, u = pot_thre_niv_qt, tim.cond = 14, clust.max = T, plot = F)
+pot_peaks_plu_ep <- clust(data = pot_data_plu_ep, u = pot_thre_plu_ep, tim.cond = 14, clust.max = T, plot = F)
+pot_peaks_plu_qt <- clust(data = pot_data_plu_qt, u = pot_thre_plu_qt, tim.cond = 14, clust.max = T, plot = F)
+
+plot(niv_sn_sum_ma, type = "l")
+points(pot_peaks_niv_sn[, 3], pot_peaks_niv_sn[, 2], col = "red3")
+
+plot(niv_ep_sum_ma, type = "l")
+points(pot_peaks_niv_ep[, 3], pot_peaks_niv_ep[, 2], col = "orange3")
+
+plot(niv_qt_sum_ma, type = "l")
+points(pot_peaks_niv_qt[, 3], pot_peaks_niv_qt[, 2], col = "gold3")
+
+plot(plu_ep_sum_ma, type = "l")
+points(pot_peaks_plu_ep[, 3], pot_peaks_plu_ep[, 2], col = "blue3")
+
+plot(plu_qt_sum_ma, type = "l")
+points(pot_peaks_plu_qt[, 3], pot_peaks_plu_qt[, 2], col = "steelblue3")
+
+peaks_doy_niv_sn <- as.numeric(format(pot_data_niv_sn$time[pot_peaks_niv_sn[, 3]], '%j'))
+peaks_doy_niv_ep <- as.numeric(format(pot_data_niv_ep$time[pot_peaks_niv_ep[, 3]], '%j'))
+peaks_doy_niv_qt <- as.numeric(format(pot_data_niv_qt$time[pot_peaks_niv_qt[, 3]], '%j'))
+peaks_doy_plu_ep <- as.numeric(format(pot_data_plu_ep$time[pot_peaks_plu_ep[, 3]], '%j'))
+peaks_doy_plu_qt <- as.numeric(format(pot_data_plu_qt$time[pot_peaks_plu_qt[, 3]], '%j'))
+
+x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
+x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
+
+ylims <- range(c(pot_peaks_niv_sn[ ,2], pot_peaks_niv_ep[ ,2], pot_peaks_niv_qt[ ,2], 
+                 pot_peaks_plu_ep[, 2], pot_peaks_plu_qt[, 2]))
+plot(peaks_doy_niv_sn, pot_peaks_niv_sn[, 2], xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims, type = "n")
+points(peaks_doy_niv_sn, pot_peaks_niv_sn[, 2], col = alpha("darkred", alpha = 0.3), pch = 19, cex = 2)
+points(peaks_doy_niv_ep, pot_peaks_niv_ep[, 2], col = alpha("orange3", alpha = 0.3), pch = 19, cex = 2)
+points(peaks_doy_niv_qt, pot_peaks_niv_qt[, 2], col = alpha("gold3", alpha = 0.3), pch = 19, cex = 2)
+points(peaks_doy_plu_ep, pot_peaks_plu_ep[, 2], col = alpha("darkblue", alpha = 0.3), pch = 19, cex = 2)
+points(peaks_doy_plu_qt, pot_peaks_plu_qt[, 2], col = alpha("steelblue4", alpha = 0.3), pch = 19, cex = 2)
+
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+box()
+
+d_1 <- density(peaks_doy_niv_sn)
+d_2 <- density(peaks_doy_plu_qt)
+
+plot(d_1, xlim = c(0, 1000), ylim = c(0,0.01))
+lines(d_2)
+d <- density(peaks_doy_plu_qt)
+plot(d, xlim = c(0, 365))
+
+# #Annual maxima
+# data_day_niv_ep <- ord_day(data_in = niv_ep_sum_ma,
+#                            date = date[-1],
+#                            start_y = 1954,
+#                            end_y = 2013,
+#                            break_day = 0,
+#                            do_ma = F,
+#                            window_width = 30)
+# 
+# data_day_niv_sn <- ord_day(data_in = niv_sn_sum_ma,
+#                            date = date[-1],
+#                            start_y = 1954,
+#                            end_y = 2013,
+#                            break_day = 0,
+#                            do_ma = F,
+#                            window_width = 30)
+# 
+# data_day_plu_ep <- ord_day(data_in = plu_ep_sum_ma,
+#                            date = date[-1],
+#                            start_y = 1954,
+#                            end_y = 2013,
+#                            break_day = 0,
+#                            do_ma = F,
+#                            window_width = 30)
+# 
+# yea_mag_niv_ep <- apply(data_day_niv_ep, 1, max_na)
+# yea_mag_niv_sn <- apply(data_day_niv_sn, 1, max_na)
+# yea_mag_plu_ep <- apply(data_day_plu_ep, 1, max_na)
+# 
+# max_doy <- function(data_in){
+#   
+#   doy_max <- which(data_in == max_na(data_in))[1]
+#   
+#   return(doy_max)
+# }
+# 
+# yea_doy_niv_ep <- apply(data_day_niv_ep, 1, max_doy)
+# yea_doy_niv_sn <- apply(data_day_niv_sn, 1, max_doy)
+# yea_doy_plu_ep <- apply(data_day_plu_ep, 1, max_doy)
+# 
+# plot(yea_doy_niv_sn, yea_mag_niv_sn, xlim = c(0, 365), col = "red3", pch = 19)
+# 
+# plot(yea_doy_niv_ep, yea_mag_niv_ep, xlim = c(0, 365), col = "orange3", pch = 19)
+# 
+# plot(yea_doy_plu_ep, yea_mag_plu_ep, xlim = c(0, 365), col = "blue3", pch = 19)
