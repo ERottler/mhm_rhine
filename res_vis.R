@@ -8,7 +8,8 @@
 
 # devtools::install_github('ERottler/meltimr')
 pacman::p_load(parallel, doParallel, zoo, zyp, alptempr, emdbook, scales, ncdf4,
-               ncdf4.helpers, sp, raster, viridis, meltimr, POT)
+               ncdf4.helpers, sp, raster, viridis, meltimr, POT, readr, hydroGOF,
+               CoinCalc)
 
 # run_dir <- "D:/nrc_user/rottler/mhm_run/6935053/"
 run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
@@ -30,12 +31,12 @@ my_clust <- makeCluster(n_cores)
 clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr))
 registerDoParallel(my_clust)
 
-#inp_vis----
-
 #Projections
 crswgs84 <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 epsg3035 <- sp::CRS("+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 
                     +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+
+#inp_vis----
 
 dem <- raster(paste0(run_dir, "input/morph/dem.asc"))
 plot(dem, col = viridis(100))
@@ -77,7 +78,7 @@ evapo_mea <- apply(evapo_cube, c(1,2), sum_na) / length(sta_yea:end_yea)
 
 cols_spat_tem <- foreach(i = 1:length(c(temps_mea)), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = c(temps_mea),
+  val2col(val_in = c(temps_mea)[i],
           dat_ref = c(temps_mea),
           do_bicol = F,
           virid_dir = 1)
@@ -85,20 +86,18 @@ cols_spat_tem <- foreach(i = 1:length(c(temps_mea)), .combine = 'cbind') %dopar%
 }
 cols_spat_pre <- foreach(i = 1:length(c(precs_mea)), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = c(precs_mea),
+  val2col(val_in = c(precs_mea)[i],
           dat_ref = c(precs_mea),
           do_bicol = F)
   
 }
 cols_spat_eva <- foreach(i = 1:length(c(evapo_mea)), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = c(evapo_mea),
+  val2col(val_in = c(evapo_mea)[i],
           dat_ref = c(evapo_mea),
           do_bicol = F)
   
 }
-
-
 
 pdf(paste0(bas_dir,"res_figs/met_map.pdf"), width = 16, height = 6)
 
@@ -314,7 +313,7 @@ mtext("Geology", side = 3, line = 0.0)
 plot(fdir_bas, col = viridis(100, direction = -1), axes=F, legend = T, ylab = "", xlab = "", box = F)
 mtext("Flow direction", side = 3, line = 0.0)
 
-plot(facc_bas, col = c("grey92", "blue2", "darkblue"), breaks = c(0, 10000, 1000000, 10000000), axes=F, legend = T, ylab = "", xlab = "", box = F)
+plot(facc_bas, col = c("grey92", "blue2", "darkblue"), breaks = c(0, 5000, 1000000, 10000000), axes=F, legend = T, ylab = "", xlab = "", box = F)
 mtext("Flow accumulation", side = 3, line = 0.0)
 
 dev.off()
@@ -322,89 +321,6 @@ dev.off()
 
 
 #dis_vis----
-
-dis_mhm <- read.table(paste0(run_dir, "output/daily_discharge.out"), header = T)
-dis_mhm$date <- as.Date(strptime(paste0(dis_mhm$Day, "-", dis_mhm$Mon, "-", dis_mhm$Year), "%d-%m-%Y", tz="UTC"))
-
-#Runoff seasonality
-
-quants <- seq(0.01, 0.99, by = 0.01)
-
-f_qvalu_obs <- function(quant_sel){dis_ana(disc = dis_mhm$Qobs_0006435060,
-                                           date = dis_mhm$date,
-                                           start_year = sta_yea,
-                                           end_year = end_yea,
-                                           break_day = 0,
-                                           quant_in = quant_sel,
-                                           do_moving_average = F,
-                                           window_width = 30,
-                                           method_analys = "quantile",
-                                           method_quant = "empirical"
-)}
-
-qvalu_obs <- foreach(k = quants, .combine = 'cbind') %dopar%{
-  f_qvalu_obs(k)
-}
-
-f_qvalu_sim <- function(quant_sel){dis_ana(disc = dis_mhm$Qsim_0006435060,
-                                           date = dis_mhm$date,
-                                           start_year = sta_yea,
-                                           end_year = end_yea,
-                                           break_day = 0,
-                                           quant_in = quant_sel,
-                                           do_moving_average = F,
-                                           window_width = 30,
-                                           method_analys = "quantile",
-                                           method_quant = "empirical"
-)}
-
-qvalu_sim <- foreach(k = quants, .combine = 'cbind') %dopar%{
-  f_qvalu_sim(k)
-}
-
-qvalu_dif <- qvalu_obs - qvalu_sim
-
-
-#Plot: Seasonality of runoff
-pdf(paste0(bas_dir, "res_figs/runoff_qu.pdf"), width = 8, height = 6)
-
-par(family = "serif")
-
-layout(matrix(c(rep(1, 8), 2,
-                rep(5, 8), 6,
-                rep(3, 8), 4),
-              3, 9, byrow = T), widths=c(), heights=c())
-
-cols_max <- grDevices::colorRampPalette(c("white", "cadetblue3", viridis::viridis(9, direction = 1)[c(4:1, 1)]))(100)
-cols_min <- grDevices::colorRampPalette(c("red4","orangered4", "orange2","gold2", "yellow2", "white"))(100)
-my_col <- c(cols_min, cols_max)
-my_bre <- lseq(alptempr::min_na(c(qvalu_obs, qvalu_sim)), alptempr::max_na(c(qvalu_obs, qvalu_sim)), length.out = length(my_col)+1)
-
-dis_image(data_plot = qvalu_obs, cols = my_col, breaks = my_bre, header = "a) Qobs", lab_unit = "[m³/s]")
-
-
-cols_max <- grDevices::colorRampPalette(c("white", "cadetblue3", viridis::viridis(9, direction = 1)[c(4:1, 1)]))(100)
-cols_min <- grDevices::colorRampPalette(c("red4","orangered4", "orange2","gold2", "yellow2", "white"))(100)
-my_col <- c(cols_min, cols_max)
-my_bre <- lseq(alptempr::min_na(c(qvalu_sim, qvalu_obs)), alptempr::max_na(c(qvalu_sim, qvalu_obs)), length.out = length(my_col)+1)
-
-dis_image(data_plot = qvalu_sim, cols = my_col, breaks = my_bre, header = "c) Qsim", lab_unit = "[m³/s]")
-
-
-cols_max <- colorRampPalette(c(rep("grey98", 10), "lightgoldenrod2", "gold3", "goldenrod3", "orangered4", "darkred"))(100)
-cols_min <- colorRampPalette(c(viridis::viridis(9, direction = 1)[c(1, 1,2,3,4)], rep("lightcyan3", 1), rep("grey98", 10)))(100)
-my_col <- c(cols_min, cols_max)
-# my_bre <- seq(-max_na(abs(qvalu_dif)), max_na(abs(qvalu_dif)), length.out = length(my_col)+1)
-
-my_bre <- c(-(lseq(0.01, max_na(abs(qvalu_dif)), length.out = length(my_col)/2)[(length(my_col)/2):1]),
-            lseq(0.01, max_na(abs(qvalu_dif)), length.out = length(my_col)/2+1))
-
-dis_image(data_plot = qvalu_dif, cols = my_col, breaks = my_bre, header = "b) Qobs - Qsim", 
-          lab_unit = "[m³/s]", do_cont = F)
-
-dev.off()
-
-
 
 #Plot: Runoff time series
 pdf(paste0(bas_dir, "res_figs/runoff_ts.pdf"), width = 8, height = 4)
@@ -429,9 +345,7 @@ dev.off()
 #flux_stat----
 
 #General
-
 nc_flux_file <- paste0(run_dir, "output/mHM_Fluxes_States.nc")
-
 nc_flux <- nc_open(nc_flux_file)
 
 #get lat/lon/time of .nc meteo data
@@ -442,9 +356,7 @@ date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")
 sta_date_ind <- which(format(date) == "1954-01-02")
 count_date <- length(date) - sta_date_ind
 
-
 #Fluxes and states
-
 snow_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
                        count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
 pet_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
@@ -763,8 +675,8 @@ dev.off()
 
 
 #Plot snow towers
-
-st_sel_ind <- c(11502, 11505, 11508)
+# sn_tow_1
+st_sel_ind <- c(11502, 11505, 11506)
 
 sel_x_1 <- NULL
 sel_x_2 <- NULL
@@ -819,14 +731,14 @@ mtext("SWE [mm]", side = 2, line = 2.8)
 mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[1]], 3), "  Lon: ", round(c(lon)[st_sel_ind[1]], 3)),
       side = 3, line = 0.2, cex = 1.2)
 
-plot(date[-1], stow_ts_3, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
-mtext("SWE [mm]", side = 2, line = 2.8)
-mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[3]], 3), "  Lon: ", round(c(lon)[st_sel_ind[3]], 3)),
-      side = 3, line = 0.2, cex = 1.2)
-
 plot(date[-1], stow_ts_2, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
 mtext("SWE [mm]", side = 2, line = 2.8)
 mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[2]], 3), "  Lon: ", round(c(lon)[st_sel_ind[2]], 3)),
+      side = 3, line = 0.2, cex = 1.2)
+
+plot(date[-1], stow_ts_3, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
+mtext("SWE [mm]", side = 2, line = 2.8)
+mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[3]], 3), "  Lon: ", round(c(lon)[st_sel_ind[3]], 3)),
       side = 3, line = 0.2, cex = 1.2)
 
 dev.off()
@@ -855,8 +767,11 @@ qto_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind),
 
 snow_max <- apply(snow_cube, c(1, 2), max_na) #[mm]
 pef_mea <- apply(pef_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
+qto_mea <- apply(qto_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
+
 snow_max_c <- c(snow_max)
 pef_mea_c <- c(pef_mea)
+qto_mea_c <- c(qto_mea)
 
 sn_tow_1 <- which(snow_max_c > 2500)
 snow_max_c[sn_tow_1] <- NA
@@ -885,6 +800,24 @@ cols_spat_pef <- foreach(i = 1:length(pef_mea_c), .combine = 'cbind') %dopar% {
   
 }
 
+cols_spat_qto <- foreach(i = 1:length(qto_mea_c), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = qto_mea_c[i],
+          dat_ref = qto_mea_c,
+          do_bicol = F,
+          virid_dir = -1,
+          do_log = F,
+          col_na = "white")
+  
+}
+
+#Plot times series with POT
+pdf(paste0(bas_dir,"res_figs/map_flood.pdf"), width = 16, height = 6)
+
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4,  rep(5, 7), 6),
+              1, 24, byrow = T), widths=c(), heights=c())
+# layout.show(n=6)
+
 par(family = "serif")
 cex_pch <- 1.20
 mar_1 <- c(1.5, 0.5, 1.5, 0.5)
@@ -896,6 +829,8 @@ mtext("a) Snow depth", side = 3, line = -1.0, cex = 1.5)
 
 rect(xleft = 7.1, xright = 10.3, ybottom = 46.2, ytop = 47.5)
 rect(xleft = 5.3, xright = 12.0, ybottom = 48.1, ytop = 50.7)
+text(10.5, 50.8, "pluvial", cex = 1.8)
+text(10.5, 47.6, "nival", cex = 1.8)
 
 par(mar = c(2.0, 0.2, 5.0, 2.9))
 my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
@@ -910,7 +845,7 @@ box()
 #Plot: Effective precipitation
 par(mar = mar_1)
 plot(c(lon), c(lat), pch = 15, col = cols_spat_pef, cex = 1.0, axes = F, ylab = "", xlab = "")
-mtext("e) effective Precipitation", side = 3, line = -1.0, cex = 1.5)
+mtext("b) Effective Precipitation", side = 3, line = -1.0, cex = 1.5)
 
 rect(xleft = 7.1, xright = 10.3, ybottom = 46.2, ytop = 47.5)
 rect(xleft = 5.3, xright = 12.0, ybottom = 48.1, ytop = 50.7)
@@ -923,7 +858,28 @@ axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
 mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
 box()
 
-#Selcet cells
+#Plot: Total discharge generated per cell
+par(mar = mar_1)
+plot(c(lon), c(lat), pch = 15, col = cols_spat_qto, cex = 1.0, axes = F, ylab = "", xlab = "")
+mtext("c) Discharge generated", side = 3, line = -1.0, cex = 1.5)
+
+rect(xleft = 7.1, xright = 10.3, ybottom = 46.2, ytop = 47.5)
+rect(xleft = 5.3, xright = 12.0, ybottom = 48.1, ytop = 50.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(range(qto_mea_c, na.rm = T)[1], range(qto_mea_c, na.rm = T)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(qto_mea_c), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
+box()
+
+dev.off()
+
+
+
+
+#Select cells
 lat_in_1 <- c(lat)[which(c(lat) < 47.5 & c(lon) > 7.1)]
 lat_in_2 <- c(lat)[which(c(lat) < 50.7 & c(lat) > 48.1)]
 
@@ -979,19 +935,26 @@ for (i in 1:length(cube_index_col_2)) {
   print(paste(i, "of", length(cube_index_col_2)))
   
   epn_sing <- pef_cube [cube_index_col_2[i], cube_index_row_2[i], ]
+  sno_sing <- snow_cube[cube_index_col_2[i], cube_index_row_2[i], ]
   qto_sing <- qto_cube [cube_index_col_2[i], cube_index_row_2[i], ]
   
   if(i == 1){
     epns_plu <- epn_sing
+    snos_plu <- sno_sing
     qtos_plu <- qto_sing
   }else{
     epns_plu <- cbind(epns_plu, epn_sing)
+    snos_plu <- cbind(snos_plu, sno_sing)
     qtos_plu <- cbind(qtos_plu, qto_sing)
   }
 }
 
 plu_ep_sum <- apply(epns_plu, 1, sum_na)
 plu_qt_sum <- apply(qtos_plu, 1, sum_na)
+plu_sd_sum <- apply(snos_plu, 1, sum_na)
+plu_sd_sum_dif <- c(NA, diff(plu_sd_sum))
+plu_sd_sum_dif[which(plu_sd_sum_dif > 0)] <- NA
+plu_sn_sum <- plu_sd_sum_dif * -1 #melt positive values
 
 
 #Moving average sum
@@ -1016,8 +979,13 @@ window_plu_qt <- 5
 plu_qt_sum_ma <- rollapply(data = plu_qt_sum, width = window_plu_qt,
                            FUN = sum_na, align = "center", fill = NA)
 
+window_plu_sn <- 5
+plu_sn_sum_ma <- rollapply(data = plu_sn_sum, width = window_plu_sn,
+                           FUN = sum_na, align = "center", fill = NA)
+
 plot(plu_ep_sum_ma, type = "l")
 plot(plu_qt_sum_ma, type = "l")
+plot(plu_sn_sum_ma, type = "l")
 
 #Peak over threshold
 pot_thre_niv_sn <- quantile(niv_sn_sum_ma, 0.95, na.rm = T)
@@ -1025,8 +993,7 @@ pot_thre_niv_ep <- quantile(niv_ep_sum_ma, 0.95, na.rm = T)
 pot_thre_niv_qt <- quantile(niv_qt_sum_ma, 0.95, na.rm = T)
 pot_thre_plu_ep <- quantile(plu_ep_sum_ma, 0.95, na.rm = T)
 pot_thre_plu_qt <- quantile(plu_qt_sum_ma, 0.95, na.rm = T)
-# pot_thre_niv_ep <- pot_thre_niv_sn
-# pot_thre_plu_ep <- pot_thre_niv_sn
+pot_thre_plu_sn <- quantile(plu_sn_sum_ma, 0.95, na.rm = T)
 
 pot_data_niv_sn <- data.frame(obs = niv_sn_sum_ma,
                               time = date[-1])
@@ -1038,66 +1005,167 @@ pot_data_plu_ep <- data.frame(obs = plu_ep_sum_ma,
                               time = date[-1])
 pot_data_plu_qt <- data.frame(obs = plu_qt_sum_ma,
                               time = date[-1])
+pot_data_plu_sn <- data.frame(obs = plu_sn_sum_ma,
+                              time = date[-1])
 
 pot_data_niv_sn$obs[is.na(pot_data_niv_sn$obs)] <- 0
 pot_data_niv_ep$obs[is.na(pot_data_niv_ep$obs)] <- 0
 pot_data_niv_qt$obs[is.na(pot_data_niv_qt$obs)] <- 0
 pot_data_plu_ep$obs[is.na(pot_data_plu_ep$obs)] <- 0
 pot_data_plu_qt$obs[is.na(pot_data_plu_qt$obs)] <- 0
+pot_data_plu_sn$obs[is.na(pot_data_plu_sn$obs)] <- 0
 
 pot_peaks_niv_sn <- clust(data = pot_data_niv_sn, u = pot_thre_niv_sn, tim.cond = 14, clust.max = T, plot = F)
 pot_peaks_niv_ep <- clust(data = pot_data_niv_ep, u = pot_thre_niv_ep, tim.cond = 14, clust.max = T, plot = F)
 pot_peaks_niv_qt <- clust(data = pot_data_niv_qt, u = pot_thre_niv_qt, tim.cond = 14, clust.max = T, plot = F)
 pot_peaks_plu_ep <- clust(data = pot_data_plu_ep, u = pot_thre_plu_ep, tim.cond = 14, clust.max = T, plot = F)
 pot_peaks_plu_qt <- clust(data = pot_data_plu_qt, u = pot_thre_plu_qt, tim.cond = 14, clust.max = T, plot = F)
+pot_peaks_plu_sn <- clust(data = pot_data_plu_sn, u = pot_thre_plu_sn, tim.cond = 14, clust.max = T, plot = F)
 
-plot(niv_sn_sum_ma, type = "l")
-points(pot_peaks_niv_sn[, 3], pot_peaks_niv_sn[, 2], col = "red3")
+#Plot times series with POT
+pdf(paste0(bas_dir,"res_figs/pot_flood.pdf"), width = 16, height = 6)
 
-plot(niv_ep_sum_ma, type = "l")
-points(pot_peaks_niv_ep[, 3], pot_peaks_niv_ep[, 2], col = "orange3")
+mar_sea <- c(2, 5.0, 3, 0.5)
+par(mar = mar_sea)
+par(mfrow = c(2, 3))
+par(family = "serif")
 
-plot(niv_qt_sum_ma, type = "l")
-points(pot_peaks_niv_qt[, 3], pot_peaks_niv_qt[, 2], col = "gold3")
+plot(pot_data_niv_sn$time, niv_sn_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_niv_sn$time[pot_peaks_niv_sn[, 3]], pot_peaks_niv_sn[, 2], col = "darkred", 
+       cex = 1.2, pch = 19)
+mtext("Moving 14d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("a) Nival area - Snowmelt", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
 
-plot(plu_ep_sum_ma, type = "l")
-points(pot_peaks_plu_ep[, 3], pot_peaks_plu_ep[, 2], col = "blue3")
+plot(pot_data_niv_ep$time, niv_ep_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_niv_ep$time[pot_peaks_niv_ep[, 3]], pot_peaks_niv_ep[, 2], col = "orange3",
+       cex = 1.2, pch = 19)
+mtext("Moving 14d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("b) Nival area - Effective precip.", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
 
-plot(plu_qt_sum_ma, type = "l")
-points(pot_peaks_plu_qt[, 3], pot_peaks_plu_qt[, 2], col = "steelblue3")
+plot(pot_data_niv_qt$time, niv_qt_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_niv_ep$time[pot_peaks_niv_qt[, 3]], pot_peaks_niv_qt[, 2], col = "gold3",
+       cex = 1.2, pch = 19)
+mtext("Moving 14d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("c) Nival area - Discharge generated", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+
+plot(pot_data_plu_sn$time, plu_sn_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_plu_sn$time[pot_peaks_plu_sn[, 3]], pot_peaks_plu_sn[, 2], col = "black",
+       cex = 1.2, pch = 19)
+mtext("Moving 5d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("d) Pluvial area - Snowmelt", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+
+plot(pot_data_plu_ep$time, plu_ep_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_plu_sn$time[pot_peaks_plu_ep[, 3]], pot_peaks_plu_ep[, 2], col = "darkblue",
+       cex = 1.2, pch = 19)
+mtext("Moving 5d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("e) Pluvial area - Effective precip.", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+
+plot(pot_data_plu_qt$time, plu_qt_sum_ma, type = "l", ylab = "", xlab = "", cex.axis = 1.2)
+points(pot_data_plu_qt$time[pot_peaks_plu_qt[, 3]], pot_peaks_plu_qt[, 2], col = "steelblue3",
+       cex = 1.2, pch = 19)
+mtext("Moving 5d sum [mm]", side = 2, line = 2.4, cex = 1.2, adj = 0.5)
+mtext("f) Pluvial area - Discharge generated", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+
+dev.off()
+
 
 peaks_doy_niv_sn <- as.numeric(format(pot_data_niv_sn$time[pot_peaks_niv_sn[, 3]], '%j'))
 peaks_doy_niv_ep <- as.numeric(format(pot_data_niv_ep$time[pot_peaks_niv_ep[, 3]], '%j'))
 peaks_doy_niv_qt <- as.numeric(format(pot_data_niv_qt$time[pot_peaks_niv_qt[, 3]], '%j'))
 peaks_doy_plu_ep <- as.numeric(format(pot_data_plu_ep$time[pot_peaks_plu_ep[, 3]], '%j'))
 peaks_doy_plu_qt <- as.numeric(format(pot_data_plu_qt$time[pot_peaks_plu_qt[, 3]], '%j'))
+peaks_doy_plu_sn <- as.numeric(format(pot_data_plu_sn$time[pot_peaks_plu_sn[, 3]], '%j'))
+
+
+pdf(paste0(bas_dir,"res_figs/seas_flood.pdf"), width = 16, height = 6)
 
 x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
 x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
 
 ylims <- range(c(pot_peaks_niv_sn[ ,2], pot_peaks_niv_ep[ ,2], pot_peaks_niv_qt[ ,2], 
-                 pot_peaks_plu_ep[, 2], pot_peaks_plu_qt[, 2]))
-plot(peaks_doy_niv_sn, pot_peaks_niv_sn[, 2], xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims, type = "n")
-points(peaks_doy_niv_sn, pot_peaks_niv_sn[, 2], col = alpha("darkred", alpha = 0.3), pch = 19, cex = 2)
-points(peaks_doy_niv_ep, pot_peaks_niv_ep[, 2], col = alpha("orange3", alpha = 0.3), pch = 19, cex = 2)
-points(peaks_doy_niv_qt, pot_peaks_niv_qt[, 2], col = alpha("gold3", alpha = 0.3), pch = 19, cex = 2)
-points(peaks_doy_plu_ep, pot_peaks_plu_ep[, 2], col = alpha("darkblue", alpha = 0.3), pch = 19, cex = 2)
-points(peaks_doy_plu_qt, pot_peaks_plu_qt[, 2], col = alpha("steelblue4", alpha = 0.3), pch = 19, cex = 2)
+                 pot_peaks_plu_ep[, 2], pot_peaks_plu_qt[, 2], pot_peaks_plu_sn[, 2]))
 
+mar_sea <- c(2, 3.5, 3, 0.5)
+par(mar = mar_sea)
+par(mfrow = c(2, 3))
+par(family = "serif")
+alpha_sel <- 0.4
+
+#Nival part - Snowmelt
+plot(peaks_doy_niv_sn, pot_peaks_niv_sn[, 2], col = alpha("darkred", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
 axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
      col = "black", col.axis = "black", tck = -0.06)#plot ticks
 axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
      col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
-axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("a) Nival area - Snowmelt", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
 box()
 
-d_1 <- density(peaks_doy_niv_sn)
-d_2 <- density(peaks_doy_plu_qt)
+#Nival part - Effective precipitation
+plot(peaks_doy_niv_ep, pot_peaks_niv_ep[, 2], col = alpha("orange3", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("a) Nival area - Effective precip.", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+box()
 
-plot(d_1, xlim = c(0, 1000), ylim = c(0,0.01))
-lines(d_2)
-d <- density(peaks_doy_plu_qt)
-plot(d, xlim = c(0, 365))
+#Nival part - Discharge generated
+plot(peaks_doy_niv_qt, pot_peaks_niv_qt[, 2], col = alpha("gold3", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("c) Nival area - Discharge generated", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+box()
+
+#Pluvial part - Snowmelt
+plot(peaks_doy_plu_sn, pot_peaks_plu_sn[, 2], col = alpha("black", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("d) Pluvial area - Snowmelt", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+box()
+
+#Pluvial part - Effective precipitation
+plot(peaks_doy_plu_ep, pot_peaks_plu_ep[, 2], col = alpha("darkblue", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("e) Pluvial area - Effective precip.", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+box()
+
+#Pluvial part - Discharge generated
+plot(peaks_doy_plu_qt, pot_peaks_plu_qt[, 2], col = alpha("steelblue3", alpha = alpha_sel), pch = 19, 
+     cex = 2, xlim = c(0, 365), axes = F, ylab = "", xlab = "", ylim = ylims)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.2)
+mtext("Event magnitude [mm]", side = 2, line = 1.7, cex = 1.2, adj = 0.5)
+mtext("f) Pluvial area - Discharge generated", side = 3, line = 0.5, cex = 1.2, adj = 0.0)
+box()
+
+dev.off()
+
+
 
 # #Annual maxima
 # data_day_niv_ep <- ord_day(data_in = niv_ep_sum_ma,
@@ -1144,3 +1212,436 @@ plot(d, xlim = c(0, 365))
 # plot(yea_doy_niv_ep, yea_mag_niv_ep, xlim = c(0, 365), col = "orange3", pch = 19)
 # 
 # plot(yea_doy_plu_ep, yea_mag_plu_ep, xlim = c(0, 365), col = "blue3", pch = 19)
+
+#dis_rout----
+
+nc_disc_file <- paste0(run_dir, "output/mRM_Fluxes_States.nc")
+nc_disc <- nc_open(nc_disc_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_disc, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_disc, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_disc, time.dim.name = "time")))
+
+count_date <- length(date)
+
+disc_cube <- ncvar_get(nc_disc, start = c(1, 1, 1), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "Qrouted")
+
+disc_mea <- apply(disc_cube, c(1,2), mea_na)
+
+#Get meta data and measured time series for selected gauges (GRDC)
+
+grdc_dir <- "D:/nrc_user/rottler/GRDC_DAY/"
+
+base_file <- paste0(grdc_dir, "6935051_Q_Day.Cmd.txt")
+spey_file <- paste0(grdc_dir, "6335170_Q_Day.Cmd.txt")
+rock_file <- paste0(grdc_dir, "6335600_Q_Day.Cmd.txt")
+worm_file <- paste0(grdc_dir, "6335180_Q_Day.Cmd.txt")
+wuer_file <- paste0(grdc_dir, "6335500_Q_Day.Cmd.txt")
+kaub_file <- paste0(grdc_dir, "6335100_Q_Day.Cmd.txt")
+coch_file <- paste0(grdc_dir, "6336050_Q_Day.Cmd.txt")
+koel_file <- paste0(grdc_dir, "6335060_Q_Day.Cmd.txt")
+lobi_file <- paste0(grdc_dir, "6435060_Q_Day.Cmd.txt")
+
+file_paths <- c(base_file, spey_file, rock_file, worm_file, wuer_file, 
+                kaub_file, coch_file, koel_file, lobi_file)
+
+grdc_meta <- NULL
+
+for(i in 1:length(file_paths)){
+  
+  #get rows with meta information
+  meta_rows <- read_lines(file_paths[i], n_max = 32)
+  meta_rows <- iconv(meta_rows, "UTF-8", "ASCII", "")
+  
+  #Name
+  sta_name <- substr(meta_rows[11], 26, nchar(meta_rows[11]))
+  
+  #Longitude
+  sta_long <- substr(meta_rows[14], 24, nchar( meta_rows[14]))
+  
+  #Latitude
+  sta_lati <- substr(meta_rows[13], 24, nchar(meta_rows[13]))
+  
+  #Meta data single station
+  meta_sing <- c(sta_name, sta_lati, sta_long)
+  
+  #Collect meta data all stations
+  grdc_meta <- rbind(grdc_meta, meta_sing)
+  
+}
+
+colnames(grdc_meta) <- c("name", "latitude", "longitude")
+rownames(grdc_meta) <- NULL
+grdc_meta <- as.data.frame(grdc_meta)
+grdc_meta$name  <- as.character(levels(grdc_meta$name))[grdc_meta$name]
+grdc_meta$latitude   <- as.numeric(levels(grdc_meta$latitude))[grdc_meta$latitude]
+grdc_meta$longitude  <- as.numeric(levels(grdc_meta$longitude))[grdc_meta$longitude]
+  
+disc_base_full <- read_grdc(base_file)
+disc_spey_full <- read_grdc(spey_file)
+disc_rock_full <- read_grdc(rock_file)
+disc_worm_full <- read_grdc(worm_file)
+disc_wuer_full <- read_grdc(wuer_file)
+disc_kaub_full <- read_grdc(kaub_file)
+disc_coch_full <- read_grdc(coch_file)
+disc_koel_full <- read_grdc(koel_file)
+disc_lobi_full <- read_grdc(lobi_file)
+
+disc_base <- disc_base_full[which(disc_base_full$date %in% date), ]
+disc_spey <- disc_spey_full[which(disc_spey_full$date %in% date), ]
+disc_rock <- disc_rock_full[which(disc_rock_full$date %in% date), ]
+disc_worm <- disc_worm_full[which(disc_worm_full$date %in% date), ]
+disc_wuer <- disc_wuer_full[which(disc_wuer_full$date %in% date), ]
+disc_kaub <- disc_kaub_full[which(disc_kaub_full$date %in% date), ]
+disc_coch <- disc_coch_full[which(disc_coch_full$date %in% date), ]
+disc_koel <- disc_koel_full[which(disc_koel_full$date %in% date), ]
+disc_lobi <- disc_lobi_full[which(disc_lobi_full$date %in% date), ]
+
+#Get simulated runoff for selected gauges
+
+gaug_spa <- SpatialPoints(grdc_meta[, c(2, 3)], proj4string = crswgs84)
+
+grid_spa <- SpatialPoints(cbind(c(lat), c(lon)), proj4string = crswgs84)
+
+#determine cells (rows-clumns in grid) representing gauges
+f_index_row <- function (val_in, lons_in = lon, col_or_row = "row"){
+  if (col_or_row == "row") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 1]
+  }
+  if (col_or_row == "col") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 2]
+  }
+  return(index_out)
+}
+f_index_col <- function (val_in, lons_in = lon, col_or_row = "col"){
+  if (col_or_row == "row") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 1]
+  }
+  if (col_or_row == "col") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 2]
+  }
+  return(index_out)
+}
+
+coords_sel_gaugs <- NULL
+rows_sel_gaugs <- NULL
+cols_sel_gaugs <- NULL
+
+for(i in 1:length(gaug_spa)){
+
+  cell_sel <- which(pointDistance(gaug_spa@coords[i, c(2, 1)], grid_spa@coords[, c(2, 1)], lonlat = T) ==
+                      min_na(pointDistance(gaug_spa@coords[i, c(2, 1)], grid_spa@coords[, c(2, 1)], lonlat = T)))
+  
+  row_sel <- f_index_row(grid_spa@coords[cell_sel, 2])
+  col_sel <- f_index_col(grid_spa@coords[cell_sel, 2])
+  
+  coords_sel_gaugs <- rbind(coords_sel_gaugs, grid_spa@coords[cell_sel, ])
+  rows_sel_gaugs <- c(rows_sel_gaugs, row_sel)
+  cols_sel_gaugs <- c(cols_sel_gaugs, col_sel)
+  
+}
+
+#gauge cochem one row lower
+rows_sel_gaugs[7] <- rows_sel_gaugs[7]+1
+
+simu_base <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[1], cols_sel_gaugs[1], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_spey <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[2], cols_sel_gaugs[2], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_rock <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[3], cols_sel_gaugs[3], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_worm <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[4], cols_sel_gaugs[4], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_wuer <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[5], cols_sel_gaugs[5], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_kaub <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[6], cols_sel_gaugs[6], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_coch <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[7], cols_sel_gaugs[7], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_koel <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[8], cols_sel_gaugs[8], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+simu_lobi <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[9], cols_sel_gaugs[9], 1), 
+                       count = c(1, 1, count_date), varid = "Qrouted")
+
+#Validation different time windows
+sta_yea_val_all <- c(1954, 1954, 1974, 1994)
+end_yea_val_all <- c(2013, 1973, 1993, 2013)
+
+kge_out <- NULL
+for(i in 1:length(sta_yea_val_all)){
+
+  date_vali <- seq(as.Date(paste0(sta_yea_val_all[i],"-01", "-01")), 
+                   as.Date(paste0(end_yea_val_all[i],"-12", "-31")), 
+                   by = "day")
+  date_sel_ind <- which(date %in% date_vali)
+  
+  kge_sel <-  c(
+    KGE(as.numeric(simu_base[date_sel_ind]), as.numeric(disc_base$value[date_sel_ind])),
+    KGE(as.numeric(simu_spey[date_sel_ind]), as.numeric(disc_spey$value[date_sel_ind])),
+    KGE(as.numeric(simu_rock[date_sel_ind]), as.numeric(disc_rock$value[date_sel_ind])),
+    KGE(as.numeric(simu_worm[date_sel_ind]), as.numeric(disc_worm$value[date_sel_ind])),
+    KGE(as.numeric(simu_wuer[date_sel_ind]), as.numeric(disc_wuer$value[date_sel_ind])),
+    KGE(as.numeric(simu_kaub[date_sel_ind]), as.numeric(disc_kaub$value[date_sel_ind])),
+    KGE(as.numeric(simu_coch[date_sel_ind]), as.numeric(disc_coch$value[date_sel_ind])),
+    KGE(as.numeric(simu_koel[date_sel_ind]), as.numeric(disc_koel$value[date_sel_ind])),
+    KGE(as.numeric(simu_lobi[date_sel_ind]), as.numeric(disc_lobi$value[date_sel_ind]))
+  )  
+  
+  kge_out <- cbind(kge_out, kge_sel)
+  
+}
+
+round(kge_out, 3)
+
+#Read basins and river network
+basin_base_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/basel_catch.shp")
+basin_spey_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/speyer_catch.shp")
+basin_rock_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/rockenau_catch.shp")
+basin_worm_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/worms_catch.shp")
+basin_wuer_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/wuerzburg_catch.shp")
+basin_kaub_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/kaub_catch.shp")
+basin_coch_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/cochem_catch.shp")
+basin_koel_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/koeln_catch.shp")
+basin_lobi_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/lobith_catch.shp")
+river_netw_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/river_network.shp")
+
+basin_base <- spTransform(basin_base_raw, CRS = crswgs84)
+basin_spey <- spTransform(basin_spey_raw, CRS = crswgs84)
+basin_rock <- spTransform(basin_rock_raw, CRS = crswgs84)
+basin_worm <- spTransform(basin_worm_raw, CRS = crswgs84)
+basin_wuer <- spTransform(basin_wuer_raw, CRS = crswgs84)
+basin_kaub <- spTransform(basin_kaub_raw, CRS = crswgs84)
+basin_coch <- spTransform(basin_coch_raw, CRS = crswgs84)
+basin_koel <- spTransform(basin_koel_raw, CRS = crswgs84)
+basin_lobi <- spTransform(basin_lobi_raw, CRS = crswgs84)
+river_netw <- spTransform(river_netw_raw, CRS = crswgs84)
+
+cols_spat_dis <- foreach(i = 1:length(c(disc_mea)), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = c(disc_mea)[i],
+          dat_ref = c(disc_mea),
+          do_log = T,
+          do_bicol = F,
+          virid_dir = -1)
+  
+}
+
+
+pdf(paste0(bas_dir,"res_figs/dis_vali_raw.pdf"), width = 12, height = 6)
+
+layout(matrix(c(rep(1, 7), 2, rep(3, 8)),
+              1, 16, byrow = T), widths=c(), heights=c())
+
+#Plot routed discharge
+
+par(family = "serif")
+
+cex_pch <- 1.32
+
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+
+plot(c(lon), c(lat), pch = 15, col = cols_spat_dis, cex = 1.0, axes = F, ylab = "", xlab = "")
+mtext("a) Discharge routed", side = 3, line = -1.0, cex = 1.5)
+points(coords_sel_gaugs[, 2], coords_sel_gaugs[, 1], pch = 25, bg = "white", cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+# my_bre <- seq(range(log(snow_max_c), na.rm = T)[1], range(log(snow_max_c), na.rm = T)[2], length.out = length(my_col)+1)
+my_bre <- seq(range(log(c(disc_mea)), na.rm = T)[1], range(log(c(disc_mea)), na.rm = T)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(c(disc_mea)), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+# axis(4, mgp=c(3, 0.50, 0), at = log(c(1, 10, 100, 1000, 2000)), labels = c(1, 10, 100, 1000, 2000), tck = -0.1, cex.axis = 1.6)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[ln(m"^"3", "s"^"-1",")]")), side = 3, line = 0.7, cex = 1.2)
+box()
+
+#Plot Basins + River network
+
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+
+col_rhine <- alpha("black", alpha = 0.15)
+col_tribu <- alpha("steelblue4", alpha = 0.5)
+
+plot(basin_lobi, col = col_rhine, border = F)
+plot(basin_koel, col = col_rhine, border = F, add = T)
+plot(basin_kaub, col = col_rhine, border = F, add = T)
+plot(basin_worm, col = col_rhine, border = F, add = T)
+plot(basin_spey, col = col_rhine, border = F, add = T)
+plot(basin_base, col = col_rhine, border = F, add = T)
+
+plot(basin_coch, col = col_tribu, border = F, add = T)
+plot(basin_wuer, col = col_tribu, border = F, add = T)
+plot(basin_rock, col = col_tribu, border = F, add = T)
+
+plot(river_netw, col = "darkblue", add = T)
+
+points(coords_sel_gaugs[, 2], coords_sel_gaugs[, 1], pch = 25, bg = "black", cex = 1.7)
+points(coords_sel_gaugs[c(3, 5, 7), 2], coords_sel_gaugs[c(3, 5, 7), 1], pch = 25, col = "steelblue4", bg = "steelblue4", cex = 1.7)
+mtext("b) Gauges validation", side = 3, line = -1.0, cex = 1.5)
+
+dev.off()
+
+
+#disc_comp----
+
+#Select gauge/time series
+stat_sel <- "Cologne"
+disc_obs_sel <- disc_koel
+disc_sim_sel <- simu_koel
+
+quants <- seq(0.01, 0.99, by = 0.01)
+date_simu <- seq(as.Date("1954-01-01", format = "%Y-%m-%d"), 
+                 as.Date("2013-12-31", format = "%Y-%m-%d"), by = "day")
+
+f_qvalu_obs <- function(quant_sel){dis_ana(disc = disc_obs_sel$value,
+                                           date = disc_obs_sel$date,
+                                           start_year = sta_yea,
+                                           end_year = end_yea,
+                                           break_day = 0,
+                                           quant_in = quant_sel,
+                                           do_moving_average = F,
+                                           window_width = 30,
+                                           method_analys = "quantile",
+                                           method_quant = "empirical"
+)}
+
+qvalu_obs <- foreach(k = quants, .combine = 'cbind') %dopar%{
+  f_qvalu_obs(k)
+}
+
+f_qvalu_sim <- function(quant_sel){dis_ana(disc = disc_sim_sel,
+                                           date = date_simu,
+                                           start_year = sta_yea,
+                                           end_year = end_yea,
+                                           break_day = 0,
+                                           quant_in = quant_sel,
+                                           do_moving_average = F,
+                                           window_width = 30,
+                                           method_analys = "quantile",
+                                           method_quant = "empirical"
+)}
+
+qvalu_sim <- foreach(k = quants, .combine = 'cbind') %dopar%{
+  f_qvalu_sim(k)
+}
+
+qvalu_dif <- qvalu_obs - qvalu_sim
+
+
+#Plot: Seasonality of runoff
+
+pdf(paste0(bas_dir, "res_figs/runoff_qu_", stat_sel,".pdf"), width = 3*2.0, height = 3*1.5)
+# tiff(paste0(bas_dir, "res_figs/runoff_qu_", stat_sel,".tiff"), width = 3*2.0, height = 3*1.5,
+#      units = "in", res = 800)
+par(family = "serif")
+
+layout(matrix(c(rep(1, 8), 2,
+                rep(5, 8), 6,
+                rep(3, 8), 4),
+              3, 9, byrow = T), widths=c(), heights=c())
+
+cols_max <- grDevices::colorRampPalette(c("white", "cadetblue3", viridis::viridis(9, direction = 1)[c(4:1, 1)]))(100)
+cols_min <- grDevices::colorRampPalette(c("red4","orangered4", "orange2","gold2", "yellow2", "white"))(100)
+my_col <- c(cols_min, cols_max)
+my_bre <- lseq(alptempr::min_na(c(qvalu_obs, qvalu_sim)), alptempr::max_na(c(qvalu_obs, qvalu_sim)), length.out = length(my_col)+1)
+
+dis_image(data_plot = qvalu_obs, cols = my_col, breaks = my_bre, 
+          header = paste("a)",  stat_sel, "observations"), lab_unit = "[m³/s]")
+
+
+cols_max <- grDevices::colorRampPalette(c("white", "cadetblue3", viridis::viridis(9, direction = 1)[c(4:1, 1)]))(100)
+cols_min <- grDevices::colorRampPalette(c("red4","orangered4", "orange2","gold2", "yellow2", "white"))(100)
+my_col <- c(cols_min, cols_max)
+my_bre <- lseq(alptempr::min_na(c(qvalu_sim, qvalu_obs)), alptempr::max_na(c(qvalu_sim, qvalu_obs)), length.out = length(my_col)+1)
+
+dis_image(data_plot = qvalu_sim, cols = my_col, breaks = my_bre, 
+          header = paste("c)", stat_sel, "simulations"), lab_unit = "[m³/s]")
+
+
+cols_max <- colorRampPalette(c(rep("grey98", 15), "lemonchiffon2", "lightgoldenrod2", "gold3", "goldenrod3", "darkred"))(100)
+cols_min <- colorRampPalette(c(viridis::viridis(9, direction = 1)[c(1,2,3,4)], "lightskyblue3", rep("lightcyan3", 1), rep("grey98", 15)))(100)
+my_col <- c(cols_min, cols_max)
+# my_bre <- seq(-max_na(abs(qvalu_dif)), max_na(abs(qvalu_dif)), length.out = length(my_col)+1)
+
+my_bre <- c(-(lseq(0.01, max_na(abs(qvalu_dif)), length.out = length(my_col)/2)[(length(my_col)/2):1]),
+            lseq(0.01, max_na(abs(qvalu_dif)), length.out = length(my_col)/2+1))
+
+dis_image(data_plot = qvalu_dif, cols = my_col, breaks = my_bre, 
+          header = paste("b)", stat_sel, "obs - sim"), lab_unit = "[m³/s]", do_cont = F)
+
+
+dev.off()
+
+
+#coin_calc----
+
+#Function binarize discharge data
+bina_pot <- function(val_in, time_in, quan_thres = 0.90, do_numb = T, numb_events = 60, inde_con = 21){
+
+  thres_val <- quantile(val_in, quan_thres, na.rm = T)
+  
+  pot_data <- data.frame(obs  = val_in,
+                         time = time_in)
+  
+  pot_peaks <- clust(data = pot_data, u = thres_val, tim.cond = 14, clust.max = T, plot = F)
+  
+  if(do_numb){
+  
+    pot_peaks <- pot_peaks[order(pot_peaks[, 2], decreasing = T), ]
+    pot_peaks <- pot_peaks[1:numb_events, ]
+    
+  }
+  
+  bina_vals <- rep(0, length(val_in))
+  bina_vals[as.numeric(pot_peaks[, 3])] <- 1
+  
+  return(bina_vals)
+  
+}
+
+bina_base_obs <- bina_pot(val_in = disc_base$value, time_in = disc_base$date)  
+bina_spey_obs <- bina_pot(val_in = disc_spey$value, time_in = disc_spey$date)  
+bina_rock_obs <- bina_pot(val_in = disc_rock$value, time_in = disc_rock$date)  
+bina_worm_obs <- bina_pot(val_in = disc_worm$value, time_in = disc_worm$date)  
+bina_wuer_obs <- bina_pot(val_in = disc_wuer$value, time_in = disc_wuer$date)  
+bina_kaub_obs <- bina_pot(val_in = disc_kaub$value, time_in = disc_kaub$date)  
+bina_coch_obs <- bina_pot(val_in = disc_coch$value, time_in = disc_coch$date)  
+bina_koel_obs <- bina_pot(val_in = disc_koel$value, time_in = disc_koel$date)  
+bina_lobi_obs <- bina_pot(val_in = disc_lobi$value, time_in = disc_lobi$date)  
+
+bina_base_sim <- bina_pot(simu_base, date_simu)  
+bina_spey_sim <- bina_pot(simu_spey, date_simu)  
+bina_rock_sim <- bina_pot(simu_rock, date_simu)  
+bina_worm_sim <- bina_pot(simu_worm, date_simu)  
+bina_wuer_sim <- bina_pot(simu_wuer, date_simu)  
+bina_kaub_sim <- bina_pot(simu_kaub, date_simu)  
+bina_coch_sim <- bina_pot(simu_coch, date_simu)  
+bina_koel_sim <- bina_pot(simu_koel, date_simu)  
+bina_lobi_sim <- bina_pot(simu_lobi, date_simu)  
+
+bina_obs <- cbind(bina_base_obs, bina_spey_obs, bina_rock_obs, bina_worm_obs, bina_wuer_obs,
+                  bina_kaub_obs, bina_coch_obs, bina_koel_obs, bina_koel_obs)
+
+bina_sim <- cbind(bina_base_sim, bina_spey_sim, bina_rock_sim, bina_worm_sim, bina_wuer_sim,
+                  bina_kaub_sim, bina_coch_sim, bina_koel_sim, bina_koel_sim)
+
+for(i in 1:ncol(bina_obs)){
+  
+  eca_out <- CC.eca.ts(seriesA = bina_obs[, i], seriesB = bina_sim[, i], delT = 7, tau = 0,
+                       sym = TRUE, sigtest = "poisson")[5]
+  #precursor coincidence: fraction of A-type events preceded by at least one B-type event
+  
+  print(eca_out)
+  
+}
+
+
+CC.eca.ts(seriesA = bina_obs[, 1], seriesB = bina_obs[, 7], delT = 7, tau = 0,
+          sym = TRUE, sigtest = "poisson")
+

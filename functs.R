@@ -259,7 +259,7 @@ dis_ana <- function(disc, date, start_year = 1950, end_year = 2010, method_analy
 #Plot: Discharge image
 dis_image <- function(data_plot, cols, breaks, header, lab_unit, do_cont = T){
   
-  par(mar = c(2.2, 2.5, 2.5, 0.2))
+  par(mar = c(1.8, 1.8, 1.8, 0.2))
   par(family = "serif")
   
   x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
@@ -272,12 +272,12 @@ dis_image <- function(data_plot, cols, breaks, header, lab_unit, do_cont = T){
         z = data_plot, col = cols, breaks = breaks,
         ylab = "", xlab = "", axes = F)
   axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
-       col = "black", col.axis = "black", tck = -0.06)#plot ticks
+       col = "black", col.axis = "black", tck = -0.08)#plot ticks
   axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
-       col="black", col.axis="black", mgp=c(3, 0.50, 0), cex.axis = 1.4)#plot labels
+       col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = 1.4)#plot labels
   axis(2, at = ytiks, labels = ylabs/100, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
-  mtext(header, side = 3, line = 0.3, cex = 1.5, adj = 0.0)
-  mtext(lab_unit, side = 3, line = 0.2, cex = 1.2, adj = 1.0)
+  mtext(header, side = 3, line = 0.3, cex = 1.0, adj = 0.0)
+  mtext(lab_unit, side = 3, line = 0.2, cex = 1.0, adj = 1.0)
   box()
   
   if(do_cont){
@@ -296,7 +296,7 @@ dis_image <- function(data_plot, cols, breaks, header, lab_unit, do_cont = T){
   }
   
   
-  par(mar = c(2.2, 0.2, 2.5, 3.0))
+  par(mar = c(1.8, 0.2, 1.8, 3.0))
   
   alptempr::image_scale(as.matrix(data_plot), col = cols, breaks = breaks, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
   axis(4, mgp=c(3, 0.35, 0), tck = -0.08, cex.axis = 1.4)
