@@ -276,7 +276,7 @@ dis_image <- function(data_plot, cols, breaks, header, lab_unit, do_cont = T){
   axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
        col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = 1.4)#plot labels
   axis(2, at = ytiks, labels = ylabs/100, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
-  mtext(header, side = 3, line = 0.3, cex = 1.0, adj = 0.0)
+  mtext(header, side = 3, line = 0.3, cex = 1.1, adj = 0.0)
   mtext(lab_unit, side = 3, line = 0.2, cex = 1.0, adj = 1.0)
   box()
   
