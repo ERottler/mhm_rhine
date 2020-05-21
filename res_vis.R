@@ -16,6 +16,9 @@ run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
 
 bas_dir <- "U:/rhine_fut/R/"
 
+#directory to snow cover data from DLR
+scf_dlr_dir <- "D:/nrc_user/rottler/SCF_data/snow_dlr/SnowPack_DLR.tar/SnowPack_DLR/" 
+
 #load functions
 source(paste0(bas_dir, "mhm_rhine/functs.R"))
 
@@ -31,7 +34,7 @@ n_cores <- 25 #number of cores used for parallel computing
 
 #Make cluster for parallel computing
 my_clust <- makeCluster(n_cores)
-clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr))
+clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
 registerDoParallel(my_clust)
 
 #Projections
@@ -1154,7 +1157,7 @@ qvalu_dif_koel <- qvalu_obs_koel - qvalu_sim_koel
 
 #Plot: Seasonality of runoff
 
-pdf(paste0(bas_dir, "res_figs/runoff_quant",".pdf"), width = 2*6.0, height = 6*1.5)
+pdf(paste0(bas_dir, "res_figs/runoff_quant",".pdf"), width = 2*6.0, height = 6*1.7)
 # tiff(paste0(bas_dir, "res_figs/runoff_qu_", stat_sel,".tiff"), width = 3*2.0, height = 3*1.5,
 #      units = "in", res = 800)
 par(family = "serif")
@@ -1187,7 +1190,7 @@ my_bre <- lseq(alptempr::min_na(c(qvalu_sim_base, qvalu_obs_base)),
                alptempr::max_na(c(qvalu_sim_base, qvalu_obs_base)), length.out = length(my_col)+1)
 
 dis_image(data_plot = qvalu_sim_base, cols = my_col, breaks = my_bre, 
-          header = paste("c)", stat_sel, "simulations"), lab_unit = "[m³/s]")
+          header = paste("b)", stat_sel, "simulations"), lab_unit = "[m³/s]")
 
 #Basel Difference
 cols_max <- colorRampPalette(c(rep("grey98", 15), "lemonchiffon2", "lightgoldenrod2", "gold3", "goldenrod3", "darkred"))(100)
@@ -1198,7 +1201,7 @@ my_bre <- c(-(lseq(0.01, max_na(abs(qvalu_dif_base)), length.out = length(my_col
             lseq(0.01, max_na(abs(qvalu_dif_base)), length.out = length(my_col)/2+1))
 
 dis_image(data_plot = qvalu_dif_base, cols = my_col, breaks = my_bre, 
-          header = paste("b)", stat_sel, "obs - sim"), lab_unit = "[m³/s]", do_cont = F)
+          header = paste("c)", stat_sel, "obs - sim"), lab_unit = "[m³/s]", do_cont = F)
 
 #Rockenau Observations
 stat_sel <- "Rockenau"
@@ -1333,6 +1336,19 @@ qto_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind),
 qto_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
                       count = c(nrow(lon), ncol(lon), count_date), varid = "Q")
 
+sw1_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L01")
+sw2_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L02")
+sw3_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L03")
+sw4_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L04")
+sw5_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L05")
+sw6_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_L06")
+
 #get precipitation input
 nc_prec_file <- paste0(run_dir, "input/meteo/pre.nc")
 
@@ -1389,17 +1405,26 @@ for (i in 1:length(cube_index_col_base)) {
   sno_sing <- snow_cube[cube_index_col_base[i], cube_index_row_base[i], ]
   qto_sing <- qto_cube [cube_index_col_base[i], cube_index_row_base[i], ]
   pre_sing <- pre_cube [cube_index_col_base[i], cube_index_row_base[i], ]
+  sw1_sing <- sw1_cube [cube_index_col_base[i], cube_index_row_base[i], ]
+  sw2_sing <- sw2_cube [cube_index_col_base[i], cube_index_row_base[i], ]
+  sw3_sing <- sw3_cube [cube_index_col_base[i], cube_index_row_base[i], ]
   
   if(i == 1){
     epn_base <- epn_sing
     sno_base <- sno_sing
     qto_base <- qto_sing
     pre_base <- pre_sing
+    sw1_base <- sw1_sing
+    sw2_base <- sw2_sing
+    sw3_base <- sw3_sing
   }else{
     epn_base <- cbind(epn_base, epn_sing)
     sno_base <- cbind(sno_base, sno_sing)
     qto_base <- cbind(qto_base, qto_sing)
     pre_base <- cbind(pre_base, pre_sing)
+    sw1_base <- cbind(sw1_base, sw1_sing)
+    sw2_base <- cbind(sw2_base, sw2_sing)
+    sw3_base <- cbind(sw3_base, sw3_sing)
   }
   
 }
@@ -1413,86 +1438,116 @@ for (i in 1:length(cube_index_col_coch)) {
   sno_sing <- snow_cube[cube_index_col_coch[i], cube_index_row_coch[i], ]
   qto_sing <- qto_cube [cube_index_col_coch[i], cube_index_row_coch[i], ]
   pre_sing <- pre_cube [cube_index_col_coch[i], cube_index_row_coch[i], ]
+  sw1_sing <- sw1_cube [cube_index_col_coch[i], cube_index_row_coch[i], ]
+  sw2_sing <- sw2_cube [cube_index_col_coch[i], cube_index_row_coch[i], ]
+  sw3_sing <- sw3_cube [cube_index_col_coch[i], cube_index_row_coch[i], ]
   
   if(i == 1){
     epn_coch <- epn_sing
     sno_coch <- sno_sing
     qto_coch <- qto_sing
     pre_coch <- pre_sing
+    sw1_coch <- sw1_sing
+    sw2_coch <- sw2_sing
+    sw3_coch <- sw3_sing
   }else{
     epn_coch <- cbind(epn_coch, epn_sing)
     sno_coch <- cbind(sno_coch, sno_sing)
     qto_coch <- cbind(qto_coch, qto_sing)
     pre_coch <- cbind(pre_coch, pre_sing)
+    sw1_coch <- cbind(sw1_coch, sw1_sing)
+    sw2_coch <- cbind(sw2_coch, sw2_sing)
+    sw3_coch <- cbind(sw3_coch, sw3_sing)
   }
   
 }
 
 #Values on basin scale
-base_ep_sum <- c(NA, apply(epn_base, 1, sum_na)) #fluxes/states only start from 02.01.1954
-base_qt_sum <- c(NA, apply(qto_base, 1, sum_na))
-base_sd_sum <- c(NA, apply(sno_base, 1, sum_na))
-base_pr_sum <- apply(pre_base, 1, sum_na)
-base_sd_sum_dif <- c(NA, diff(base_sd_sum))
-base_sd_sum_dif[which(base_sd_sum_dif > 0)] <- NA
-base_me_sum <- base_sd_sum_dif * -1 #melt positive values
+base_ep_mea <- c(NA, apply(epn_base, 1, mea_na)) #fluxes/states only start from 02.01.1954
+base_qt_mea <- c(NA, apply(qto_base, 1, mea_na))
+base_sd_mea <- c(NA, apply(sno_base, 1, mea_na))
+base_w1_mea <- c(NA, apply(sw1_base, 1, mea_na))
+base_w2_mea <- c(NA, apply(sw2_base, 1, mea_na))
+base_w3_mea <- c(NA, apply(sw3_base, 1, mea_na))
+base_pr_mea <- apply(pre_base, 1, mea_na)
+base_sd_mea_dif <- c(NA, diff(base_sd_mea))
+base_sd_mea_dif[which(base_sd_mea_dif > 0)] <- NA
+base_me_mea <- base_sd_mea_dif * -1 #melt positive values
+base_wc_mea <- apply(cbind(base_w1_mea, base_w2_mea, base_w3_mea), 1, mea_na)
 
-coch_ep_sum <- c(NA, apply(epn_coch, 1, sum_na)) #fluxes/states only start from 02.01.1954
-coch_qt_sum <- c(NA, apply(qto_coch, 1, sum_na))
-coch_sd_sum <- c(NA, apply(sno_coch, 1, sum_na))
-coch_pr_sum <- apply(pre_coch, 1, sum_na)
-coch_sd_sum_dif <- c(NA, diff(coch_sd_sum))
-coch_sd_sum_dif[which(coch_sd_sum_dif > 0)] <- NA
-coch_me_sum <- coch_sd_sum_dif * -1 #melt positive values
+coch_ep_mea <- c(NA, apply(epn_coch, 1, mea_na)) #fluxes/states only start from 02.01.1954
+coch_qt_mea <- c(NA, apply(qto_coch, 1, mea_na))
+coch_sd_mea <- c(NA, apply(sno_coch, 1, mea_na))
+coch_w1_mea <- c(NA, apply(sw1_coch, 1, mea_na))
+coch_w2_mea <- c(NA, apply(sw2_coch, 1, mea_na))
+coch_w3_mea <- c(NA, apply(sw3_coch, 1, mea_na))
+coch_pr_mea <- apply(pre_coch, 1, mea_na)
+coch_sd_mea_dif <- c(NA, diff(coch_sd_mea))
+coch_sd_mea_dif[which(coch_sd_mea_dif > 0)] <- NA
+coch_me_mea <- coch_sd_mea_dif * -1 #melt positive values
+coch_wc_mea <- apply(cbind(coch_w1_mea, coch_w2_mea, coch_w3_mea), 1, mea_na)
 
-#14d snowmelt
-base_melt_14 <- rollapply(data = base_me_sum, width = 14,
+#Mean annual cycle volumetric soil water content first 30 cm
+base_wc_mea_day <- ord_day(base_wc_mea,
+                           date = date_simu,
+                           start_y = 1954,
+                           end_y = 2013)
+base_wc_ann <- apply(base_wc_mea_day, 2, mea_na)
+
+coch_wc_mea_day <- ord_day(coch_wc_mea,
+                           date = date_simu,
+                           start_y = 1954,
+                           end_y = 2013)
+coch_wc_ann <- apply(coch_wc_mea_day, 2, mea_na)
+
+#Moving window snowmelt
+base_melt_ma <- rollapply(data = base_me_mea, width = 14,
                             FUN = sum_na, align = "right", fill = NA)
-coch_melt_14 <- rollapply(data = coch_me_sum, width = 14,
+coch_melt_ma <- rollapply(data = coch_me_mea, width = 14,
                           FUN = sum_na, align = "right", fill = NA)
-#3d liquid precipitation
-base_prec <- base_ep_sum - base_me_sum
-coch_prec <- coch_ep_sum - coch_me_sum
-base_prec_03 <- rollapply(data = base_prec, width = 3,
+#Moving window liquid precipitation
+base_prec <- base_ep_mea - base_me_mea
+coch_prec <- coch_ep_mea - coch_me_mea
+base_prec_ma <- rollapply(data = base_prec, width = 5,
                              FUN = sum_na, align = "right", fill = NA)
-coch_prec_03 <- rollapply(data = coch_prec, width = 3,
+coch_prec_ma <- rollapply(data = coch_prec, width = 5,
                           FUN = sum_na, align = "right", fill = NA)
 
-#3d total precipitation
-base_pret_03 <- rollapply(data = base_pr_sum, width = 3,
+#Moving window total precipitation
+base_pret_ma <- rollapply(data = base_pr_mea, width = 5,
                           FUN = sum_na, align = "right", fill = NA)
-coch_pret_03 <- rollapply(data = coch_pr_sum, width = 3,
+coch_pret_ma <- rollapply(data = coch_pr_mea, width = 5,
                           FUN = sum_na, align = "right", fill = NA)
 
 #Get runoff peaks
 quan_thres <- 0.90
-number_peaks <- 90
+number_peaks <- 60
 time_cond <- 21
 
 thres_val_base <- quantile(simu_base, quan_thres, na.rm = T)
 thres_val_coch <- quantile(simu_coch, quan_thres, na.rm = T)
-thres_val_base_melt <- quantile(base_melt_14, quan_thres, na.rm = T)
-thres_val_coch_melt <- quantile(coch_melt_14, quan_thres, na.rm = T)
-thres_val_base_prli <- quantile(base_prec_03, quan_thres, na.rm = T)
-thres_val_coch_prli <- quantile(coch_prec_03, quan_thres, na.rm = T)
-thres_val_base_prto <- quantile(base_pret_03, quan_thres, na.rm = T)
-thres_val_coch_prto <- quantile(coch_pret_03, quan_thres, na.rm = T)
+thres_val_base_melt <- quantile(base_melt_ma, quan_thres, na.rm = T)
+thres_val_coch_melt <- quantile(coch_melt_ma, quan_thres, na.rm = T)
+thres_val_base_prli <- quantile(base_prec_ma, quan_thres, na.rm = T)
+thres_val_coch_prli <- quantile(coch_prec_ma, quan_thres, na.rm = T)
+thres_val_base_prto <- quantile(base_pret_ma, quan_thres, na.rm = T)
+thres_val_coch_prto <- quantile(coch_pret_ma, quan_thres, na.rm = T)
 
 pot_data_base <- data.frame(obs  = simu_base,
                             time = date_simu)
 pot_data_coch <- data.frame(obs  = simu_coch,
                             time = date_simu)
-pot_data_base_melt <- data.frame(obs  = base_melt_14,
+pot_data_base_melt <- data.frame(obs  = base_melt_ma,
                             time = date_simu)
-pot_data_coch_melt <- data.frame(obs  = coch_melt_14,
+pot_data_coch_melt <- data.frame(obs  = coch_melt_ma,
                             time = date_simu)
-pot_data_base_prli <- data.frame(obs  = base_prec_03,
+pot_data_base_prli <- data.frame(obs  = base_prec_ma,
                                  time = date_simu)
-pot_data_coch_prli <- data.frame(obs  = coch_prec_03,
+pot_data_coch_prli <- data.frame(obs  = coch_prec_ma,
                                  time = date_simu)
-pot_data_base_prto <- data.frame(obs  = base_pret_03,
+pot_data_base_prto <- data.frame(obs  = base_pret_ma,
                                  time = date_simu)
-pot_data_coch_prto <- data.frame(obs  = coch_pret_03,
+pot_data_coch_prto <- data.frame(obs  = coch_pret_ma,
                                  time = date_simu)
 
 pot_peaks_base_all <- clust(data = pot_data_base, u = thres_val_base, 
@@ -1536,10 +1591,10 @@ pot_peaks_coch_prli <- pot_peaks_coch_all_prli_ord[1:number_peaks, ]
 pot_peaks_base_prto <- pot_peaks_base_all_prto_ord[1:number_peaks, ]
 pot_peaks_coch_prto <- pot_peaks_coch_all_prto_ord[1:number_peaks, ]
 
-melt_peak_base <- base_melt_14[pot_peaks_base[, 3]]
-prec_peak_base <- base_prec_03[pot_peaks_base[, 3]]
-melt_peak_coch <- coch_melt_14[pot_peaks_coch[, 3]]
-prec_peak_coch <- coch_prec_03[pot_peaks_coch[, 3]]
+melt_peak_base <- base_melt_ma[pot_peaks_base[, 3]]
+prec_peak_base <- base_prec_ma[pot_peaks_base[, 3]]
+melt_peak_coch <- coch_melt_ma[pot_peaks_coch[, 3]]
+prec_peak_coch <- coch_prec_ma[pot_peaks_coch[, 3]]
 
 #fraction snowmelt contribution
 peak_frac_mel_base <- melt_peak_base / (melt_peak_base + prec_peak_base)
@@ -1562,65 +1617,417 @@ mel_2_ind_base <- which(peak_frac_mel_base > mel_thres_2)
 mel_1_ind_coch <- which(peak_frac_mel_coch > mel_thres_1)
 mel_2_ind_coch <- which(peak_frac_mel_coch > mel_thres_2)
 
-par(mfrow = c(5, 2))
-par(mar = c(2, 3, 2, 0.5))
-
-simu_base_df <- data.frame(date = date_simu,
-                           value = simu_base)
-seas.var.plot(simu_base_df, var = "value", width = "mon", main = "a) Basel",
-              ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")))
-
-simu_coch_df <- data.frame(date = date_simu,
-                           value = simu_coch)
-seas.var.plot(simu_coch_df, var = "value", width = "mon", main = "b) Cochem",
-              ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")))
-
-plot(peak_doy_base, peak_frac_mel_base, col = "red3", pch = 19, ylab = "", xlab = "", axes = F,
-     xlim = c(0, 365))
-points(peak_doy_base[mel_1_ind_base], peak_frac_mel_base[mel_1_ind_base], col = "grey55", pch = 19)
-points(peak_doy_base[mel_2_ind_base], peak_frac_mel_base[mel_2_ind_base], col = "steelblue4", pch = 19)
-box()
-
-plot(peak_doy_coch, peak_frac_mel_coch, col = "red3", pch = 19, ylab = "", xlab = "", axes = F,
-     xlim = c(0, 365))
-points(peak_doy_coch[mel_1_ind_coch], peak_frac_mel_coch[mel_1_ind_coch], col = "grey55", pch = 19)
-points(peak_doy_coch[mel_2_ind_coch], peak_frac_mel_coch[mel_2_ind_coch], col = "steelblue4", pch = 19)
-box()
-
-plot(peak_doy_base_melt, pot_peaks_base_melt[ ,2], col = "black", pch = 19, 
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
-
-plot(peak_doy_coch_melt, pot_peaks_coch_melt[ ,2], col = "black", pch = 19,
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
-
-plot(peak_doy_base_prli, pot_peaks_base_prli[ ,2], col = "black", pch = 19, 
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
-
-plot(peak_doy_coch_prli, pot_peaks_coch_prli[ ,2], col = "black", pch = 19, 
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
-
-plot(peak_doy_base_prto, pot_peaks_base_prto[ ,2], col = "black", pch = 19, 
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
-
-plot(peak_doy_coch_prto, pot_peaks_coch_prto[ ,2], col = "black", pch = 19, 
-     xlim = c(0, 365), ylab = "", xlab = "", axes = F)
-box()
 
 
+pdf(paste0(bas_dir, "res_figs/runoff_seas",".pdf"), width = 12.0, height = 12)
+
+par(family = "serif")
+
+layout(matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
+              7, 2, byrow = T), widths=c(), heights=c(0.2, 1, 1, 1, 1, 1, 1))
+
+x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
+x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
+
+cex_points <- 1.9
+cex_main <- 1.3
+cex_x_label <- 1.5
+alpha_sel <- 0.5
+
+par(mar = c(0,0,0,0))
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("Basel",  side = 3, line = -2.2, cex = 1.5, adj = 0.5, outer = F)
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("Cochem",  side = 3, line = -2.2, cex = 1.5, adj = 0.5, outer = F)
+
+par(mar = c(2, 3.5, 2.5, 0.5))
+
+#Basel runoff peaks
+plot(peak_doy_base, pot_peaks_base[, 2], pch = 19, ylab = "", xlab = "", axes = F,
+     xlim = c(0, 365), type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_base, pot_peaks_base[, 2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("a) Runoff peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Cochem runoff peaks
+plot(peak_doy_coch, pot_peaks_coch[, 2], pch = 19, ylab = "", xlab = "", axes = F,
+     xlim = c(0, 365), type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_coch, pot_peaks_coch[, 2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("b) Runoff peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Basel snowmelt fraction
+plot(peak_doy_base, peak_frac_mel_base, pch = 19, ylab = "", xlab = "", axes = F,
+     xlim = c(0, 365), ylim = c(0, 1), type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_base, peak_frac_mel_base, col = alpha("black", alpha = alpha_sel), 
+       pch = 19, cex = cex_points)
+# points(peak_doy_base[mel_1_ind_base], peak_frac_mel_base[mel_1_ind_base], col = alpha("black", alpha = alpha_sel), 
+#        pch = 19, cex = cex_points)
+# points(peak_doy_base[mel_2_ind_base], peak_frac_mel_base[mel_2_ind_base], col = alpha("black", alpha = alpha_sel), 
+#        pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("c) Snowmelt contribution", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("Fraction melt [-]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Cochem snowmelt fraction
+plot(peak_doy_coch, peak_frac_mel_coch, pch = 19, ylab = "", xlab = "", axes = F,
+     xlim = c(0, 365), ylim = c(0, 1), type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_coch, peak_frac_mel_coch, col = alpha("black", alpha = alpha_sel), 
+       pch = 19, cex = cex_points)
+# points(peak_doy_coch[mel_1_ind_coch], peak_frac_mel_coch[mel_1_ind_coch], col = alpha("black", alpha = alpha_sel), 
+#        pch = 19, cex = cex_points)
+# points(peak_doy_coch[mel_2_ind_coch], peak_frac_mel_coch[mel_2_ind_coch], col = alpha("black", alpha = alpha_sel), 
+#        pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("d) Snowmelt contribution", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("Fraction melt [-]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+
+#Basel melt peaks 
+plot(peak_doy_base_melt, pot_peaks_base_melt[ ,2], type = "n", xlim = c(0, 365), ylab = "", xlab = "", axes = F, 
+     ylim = range(c(pot_peaks_base_melt[ ,2], pot_peaks_coch_melt[ ,2])))
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_base_melt, pot_peaks_base_melt[ , 2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("e) Snowmelt peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("14-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+
+#Cochem melt peaks
+plot(peak_doy_coch_melt, pot_peaks_coch_melt[ ,2], type = "n", xlim = c(0, 365), ylab = "", xlab = "", axes = F,
+     ylim = range(c(pot_peaks_base_melt[ ,2], pot_peaks_coch_melt[ ,2])))
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_coch_melt, pot_peaks_coch_melt[ ,2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("f) Snowmelt peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("14-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+
+#Basel liquid precipitation
+plot(peak_doy_base_prli, pot_peaks_base_prli[ ,2], xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_base_prli, pot_peaks_base_prli[ ,2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("g) Liquid rainfall peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("5-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Cochem liquid precipiation
+plot(peak_doy_coch_prli, pot_peaks_coch_prli[ ,2], xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_coch_prli, pot_peaks_coch_prli[ ,2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("h) Liquid rainfall peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("5-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Basel total precipitation
+plot(peak_doy_base_prto, pot_peaks_base_prto[ ,2], xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_base_prto, pot_peaks_base_prto[ ,2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("i) Total rainfall peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("5-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Cochem total precipitation
+plot(peak_doy_coch_prto, pot_peaks_coch_prto[ ,2], xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n")
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+points(peak_doy_coch_prto, pot_peaks_coch_prto[ ,2], col = alpha("black", alpha = alpha_sel), pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("j) Total rainfall peaks", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("5-day sum [mm]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Basel Soil water content
+plot(base_wc_ann, xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n",
+     ylim = c(min_na(c(base_wc_ann, coch_wc_ann)), 1))
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+lines(base_wc_ann, col = "black", pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("k) Soil water content (0-30 cm)", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("Vol. SWC [-]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+#Cochem Soil water content
+plot(coch_wc_ann, xlim = c(0, 365), ylab = "", xlab = "", axes = F, type = "n", 
+     ylim = c(min_na(c(base_wc_ann, coch_wc_ann)), 1))
+abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
+lines(coch_wc_ann, col = "black", pch = 19, cex = cex_points)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("J","F","M","A","M","J","J","A","S", "O", "N", "D"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.30, 0), cex.axis = cex_x_label)#plot labels
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+mtext("l) Soil water content (0-30 cm)", side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+mtext("Vol. SWC [-]", side = 2, line = 1.6, cex = 1.1)
+box(bty = "o")
+
+dev.off()
 
 
 
 
-hist(peak_doy_base, nclass = 12)
-hist(peak_doy_coch, nclass = 12)
 
-hist(pot_peaks_base[, 2], nclass = 25)
-hist(pot_peaks_coch[, 2], nclass = 25)
+#Runoff timing
+vio_dat <- data.frame(doy = c(peak_doy_coch, peak_doy_base),
+                      basin = c(rep("Cochem", length(peak_doy_coch)), 
+                                rep("Basel",  length(peak_doy_base))))
+vio_dat$basin <- as.factor(vio_dat$basin)
+
+vio_run <- ggplot(vio_dat, aes(x = basin, y = doy, fill = basin)) +
+  geom_violin(trim = F, show.legend = F) +
+  ylim(0, 365) +
+  coord_flip() +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=0.5),
+        text = element_text(size = 12)) +
+  labs(title="a) Runoff timing", y="Day of the year", x = "") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5, binwidth = 7, 
+               show.legend = F, fill = "black")
+
+#Runoff histograms
+his_dat <- data.frame(mag = c(pot_peaks_coch[, 2], pot_peaks_base[, 2]),
+                      basin = c(rep("Cochem", length(peak_doy_coch)), 
+                                rep("Basel",  length(peak_doy_base))))
+his_dat$basin <- as.factor(his_dat$basin)
+
+his_run <- ggplot(his_dat, aes(x = mag, fill = basin)) +
+  geom_histogram(alpha = 1.0, binwidth = 250) +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  labs(title="b) Runff magnitudes", y="", x = "Magnitude [mm/14d]") +
+  theme_bw() +
+  theme(text = element_text(size = 12))
+
+#Snowmelt timing
+vio_dat <- data.frame(doy = c(peak_doy_coch_melt, peak_doy_base_melt),
+                      basin = c(rep("Cochem", length(peak_doy_coch_melt)), 
+                                rep("Basel",  length(peak_doy_base_melt))))
+vio_dat$basin <- as.factor(vio_dat$basin)
+
+vio_sno <- ggplot(vio_dat, aes(x = basin, y = doy, fill = basin)) +
+  geom_violin(trim = F, show.legend = F) +
+  ylim(0, 365) +
+  coord_flip() +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=0.5),
+        text = element_text(size = 12)) +
+  labs(title="c) 14d snowmelt timing", y="Day of the year", x = "") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5, binwidth = 7, 
+               show.legend = F, fill = "black")
+
+
+#Snowmelt histograms
+his_dat <- data.frame(mag = c(pot_peaks_coch_melt[, 2], pot_peaks_base_melt[, 2]),
+                      basin = c(rep("Cochem", length(peak_doy_coch_melt)), 
+                                rep("Basel",  length(peak_doy_base_melt))))
+his_dat$basin <- as.factor(his_dat$basin)
+
+his_sno <- ggplot(his_dat, aes(x = mag, fill = basin)) +
+  geom_histogram(alpha = 1.0, binwidth = 5) +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  labs(title="d) 14d snowmelt magnitudes", y="", x = "Magnitude [mm/14d]") +
+  theme_bw() +
+  theme(text = element_text(size = 12))
+
+#Liquid rainfall timing
+vio_dat <- data.frame(doy = c(peak_doy_coch_prli, peak_doy_base_prli),
+                      basin = c(rep("Cochem", length(peak_doy_coch_prli)), 
+                                rep("Basel",  length(peak_doy_base_prli))))
+vio_dat$basin <- as.factor(vio_dat$basin)
+
+vio_rli <- ggplot(vio_dat, aes(x = basin, y = doy, fill = basin)) +
+  geom_violin(trim = F, show.legend = F) +
+  ylim(0, 365) +
+  coord_flip() +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=0.5),
+        text = element_text(size = 12)) +
+  labs(title="e) 5d liquid rainfall timing", y="Day of the year", x = "") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5, binwidth = 7, 
+               show.legend = F, fill = "black")
+
+
+#Liquid rainfall histograms
+his_dat <- data.frame(mag = c(pot_peaks_coch_prli[, 2], pot_peaks_base_prli[, 2]),
+                      basin = c(rep("Cochem", length(peak_doy_coch_prli)), 
+                                rep("Basel",  length(peak_doy_base_prli))))
+his_dat$basin <- as.factor(his_dat$basin)
+
+his_rli <- ggplot(his_dat, aes(x = mag, fill = basin)) +
+  geom_histogram(alpha = 1.0, binwidth = 5) +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  labs(title="f) 5d liquid rainfall magnitudes", y="", x = "Magnitude [mm/5d]") +
+  theme_bw() +
+  theme(text = element_text(size = 12))
+
+#Total rainfall timing
+vio_dat <- data.frame(doy = c(peak_doy_coch_prto, peak_doy_base_prto),
+                      basin = c(rep("Cochem", length(peak_doy_coch_prto)), 
+                                rep("Basel",  length(peak_doy_base_prto))))
+vio_dat$basin <- as.factor(vio_dat$basin)
+
+vio_rto <- ggplot(vio_dat, aes(x = basin, y = doy, fill = basin)) +
+  geom_violin(trim = F, show.legend = F) +
+  ylim(0, 365) +
+  coord_flip() +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=0.5),
+        text = element_text(size = 12)) +
+  labs(title="g) 5d total rainfall timing", y="Day of the year", x = "") +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5, binwidth = 7, 
+               show.legend = F, fill = "black")
+
+
+#Liquid rainfall histograms
+his_dat <- data.frame(mag = c(pot_peaks_coch_prto[, 2], pot_peaks_base_prto[, 2]),
+                      basin = c(rep("Cochem", length(peak_doy_coch_prto)), 
+                                rep("Basel",  length(peak_doy_base_prto))))
+his_dat$basin <- as.factor(his_dat$basin)
+
+his_rto <- ggplot(his_dat, aes(x = mag, fill = basin)) +
+  geom_histogram(alpha = 1.0, binwidth = 5) +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  labs(title="h) 5d total rainfall magnitudes", y="", x = "Magnitude [mm/5d]") +
+  theme_bw() +
+  theme(text = element_text(size = 12))
+
+#Snowmelt contribution timing
+his_dat <- data.frame(mag = c(peak_frac_mel_coch, peak_frac_mel_base),
+                      doy = c(peak_doy_coch, peak_doy_base),
+                      basin = c(rep("Cochem", length(peak_frac_mel_coch)), 
+                                rep("Basel",  length(peak_frac_mel_base))))
+his_dat$basin <- as.factor(his_dat$basin)
+
+his_cot <- ggplot(his_dat, aes(x = doy, y = mag, color = basin)) +
+  geom_point(aes(size=mag), show.legend = T) +
+  scale_color_manual(values=c("grey40", "grey75")) +
+  labs(title="i) Snowmelt contribution timing", x = "Day of the year", y = "Fraction [-]") +
+  theme_bw() +
+  theme(legend.position = "right",
+        text = element_text(size = 12))
+
+#Snowmelt contribution histograms
+his_com <- ggplot(his_dat, aes(x = mag, fill = basin)) +
+  geom_histogram(alpha = 1.0, binwidth = 0.1, na.rm = T) +
+  scale_fill_manual(values=c("grey40", "grey75")) +
+  labs(title="j) Snowmelt contribution magnitudes", y="", x = "Fraction [-]") +
+  theme_bw() +
+  theme(text = element_text(size = 12))
+
+#Soil water content Cochem
+swc_dat <- data.frame(mag = c(coch_wc_mea),
+                      doy = as.numeric(format(date_simu, "%j")))
+swc_dat$doy <- as.factor(swc_dat$doy)
+
+swc_dat_peak <- data.frame(mag = coch_wc_mea[pot_peaks_coch[, 3]],
+                           doy = peak_doy_coch)
+swc_dat_peak$doy <- as.factor(swc_dat_peak$doy)
+
+swc_coch <- ggplot(swc_dat, aes(x = doy, y = mag)) +
+  geom_point(alpha = 0.2, size = 1, shape = 16) +
+  geom_point(data = swc_dat_peak, aes(x = doy, y = mag), colour = "red", alpha = 1.0) +
+  labs(title="k) Cochem soil water content (0-30 cm)", x = "Day of the year", y = "Vol. SWC [-]") +
+  theme_bw() +
+  theme(legend.position = "right",
+        text = element_text(size = 12)) +
+  scale_x_discrete(breaks=seq(50, 350, 50), labels=seq(50, 350, 50)) +
+  ylim(min_na(c(base_wc_mea, coch_wc_mea)), 1)
+
+#Soil water content Basel
+swc_dat <- data.frame(mag = c(base_wc_mea),
+                      doy = as.numeric(format(date_simu, "%j")))
+swc_dat$doy <- as.factor(swc_dat$doy)
+
+swc_dat_peak <- data.frame(mag = base_wc_mea[pot_peaks_base[, 3]],
+                           doy = peak_doy_base)
+swc_dat_peak$doy <- as.factor(swc_dat_peak$doy)
+
+swc_base <- ggplot(swc_dat, aes(x = doy, y = mag)) +
+  geom_point(alpha = 0.2, size = 1, shape = 16) +
+  geom_point(data = swc_dat_peak, aes(x = doy, y = mag), colour = "red", alpha = 1.0) +
+  labs(title="l) Basel soil water content (0-30 cm)", x = "Day of the year", y = "Vol. SWC [-]") +
+  theme_bw() +
+  theme(legend.position = "right",
+        text = element_text(size = 12)) +
+  scale_x_discrete(breaks=seq(50, 350, 50), labels=seq(50, 350, 50)) +
+  ylim(min_na(c(base_wc_mea, coch_wc_mea)), 1)
+
+
+pdf(paste0(bas_dir, "res_figs/runoff_seaso",".pdf"), width = 12.0, height = 15)
+
+ggarrange(vio_run, his_run, 
+          vio_sno, his_sno,
+          vio_rli, his_rli,
+          vio_rto, his_rto,
+          his_cot, his_com,
+          swc_coch, swc_base,
+          ncol = 2, nrow = 6,
+          heights = c(1, 1))
+
+dev.off()
 
 
 #seas_flod_old----
@@ -2221,3 +2628,486 @@ for(i in 1:ncol(bina_obs)){
   
 }
 
+
+#snow_cover----
+
+#Snow cover duration simulations
+
+nc_flux_file <- paste0(run_dir, "output/mHM_Fluxes_States.nc")
+nc_flux <- nc_open(nc_flux_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_flux, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_flux, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")))
+
+sta_date_ind <- which(format(date) == "1954-01-02")
+count_date <- length(date)
+
+#Fluxes and states
+snow_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+
+sd2sc <- function(val_in, sc_thr = 2){
+  
+  if(is.na(val_in)){
+    val_out <- NA
+  }else{
+    if(val_in > sc_thr){
+      val_out <- 1
+    }else{
+      val_out <- 0
+    }
+    
+  }
+  
+}
+
+date_scd <- scf_date
+
+date_scd_ind <- which(date %in% date_scd)
+
+cells_sel <- which(!is.na(c(snow_cube[, , date_scd_ind[1]])))
+
+for(i in 1:length(date_scd_ind)){
+  
+  print(i)
+  
+  scd_sim_sing <- sapply(c(snow_cube[, , date_scd_ind[i]][cells_sel]), sd2sc)
+  
+  if(i == 1){
+    scd_sim <-  scd_sim_sing
+  }else{
+    scd_sim <-  scd_sim + scd_sim_sing
+  }
+  
+}
+
+#Snow cover duration MODIS
+
+#get file names
+file_names <- dir(path = scf_dlr_dir, recursive = T)
+# unique(nchar(file_names))
+# file_names[which(nchar(file_names) %in% c(36, 32, 10))]
+file_names <- file_names[which(nchar(file_names) == nchar(file_names[1]))]
+scf_file <- raster(paste0(scf_dlr_dir , file_names[1]))
+
+basin_lobi_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/lobith_catch.shp")
+
+basin_lobi_buf <- buffer(basin_lobi_raw, width = 30000)
+
+basin_lobi <- spTransform(basin_lobi_buf, CRS = crs(scf_file, asText = T))
+
+#get dates from file names
+f_scf_date <- function(file_path, provider = "DLR"){
+  
+  #Extract date from file name
+  if(provider == "DLR"){
+    
+    doy <- as.numeric(substr(file_path, nchar(file_path)-6, nchar(file_path)-4))
+    yea <- substr(file_path, nchar(file_path)-11, nchar(file_path)-8)
+    date <- as.character(as.Date(doy, origin = paste0(yea, "-01-01")))
+    
+  }
+  
+  if(provider == "EURAC"){
+    
+    day <- substr(file_path, nchar(file_path)-12, nchar(file_path)-11)
+    mon <- substr(file_path, nchar(file_path)-14, nchar(file_path)-13)
+    yea <- substr(file_path, nchar(file_path)-18, nchar(file_path)-15)
+    date <- paste0(yea, "-", mon, "-", day)
+    
+  }
+  
+  return(date)
+  
+}
+
+f_scf_date(paste0(scf_dlr_dir, file_names[1]))
+
+scf_dates <- foreach(i = 1:length(file_names), .combine = 'cbind') %dopar% {
+  
+  f_scf_date(paste0(scf_dlr_dir, file_names[i]))
+  
+}
+
+scf_date <- as.Date(as.character(scf_dates[1, ]), "%Y-%m-%d")
+
+# #select files covering validation period
+# file_names_sel <- file_names[which(scf_date %in% date_vali)]
+file_names_sel <- file_names
+
+#sum up days with snow cover for selected basin (with buffer) and time frame
+
+f_scd_extr <- function(file_path, snow_val, basin_in, provider){
+  
+  #Read file
+  scf <- raster(file_path)
+
+  #corp file to basin area (with buffer)
+  scf_cro <- raster::crop(scf, extent(basin_in))
+  scf_sub <- raster::mask(scf_cro, basin_in)
+  
+  #get values and set to 0 if not snow, to 1 if snow
+  scf_val_NA <- values(scf_sub)
+  scf_val_NA[which(scf_val_NA != snow_val)] <- 0
+  scf_val_NA[which(scf_val_NA == snow_val)] <- 1
+  
+  #Extract date from file name
+  if(provider == "DLR"){
+    
+    doy <- as.numeric(substr(file_path, nchar(file_path)-6, nchar(file_path)-4))
+    yea <- substr(file_path, nchar(file_path)-11, nchar(file_path)-8)
+    date <- as.character(as.Date(doy, origin = paste0(yea, "-01-01")))
+    
+  }
+  
+  if(provider == "EURAC"){
+    
+    day <- substr(file_path, nchar(file_path)-12, nchar(file_path)-11)
+    mon <- substr(file_path, nchar(file_path)-14, nchar(file_path)-13)
+    yea <- substr(file_path, nchar(file_path)-18, nchar(file_path)-15)
+    date <- paste0(yea, "-", mon, "-", day)
+    
+  }
+  
+  return(scf_val_NA)
+  
+}
+
+f_scd_extr(file_path = paste0(scf_dlr_dir, file_names_calc[1]),
+           snow_val = 50,
+           basin_in = basin_lobi,
+           provider = "DLR")
+
+block_size <- 1000
+block_stas <- c(1, seq(block_size+1, length(file_names_sel), by = block_size))
+block_ends <- c(seq(block_size, length(file_names_sel), by = block_size), length(file_names_sel))
+
+for(b in 1:length(block_stas)){
+  
+  file_names_calc <- file_names_sel[block_stas[b]:block_ends[b]]
+  
+  print(paste(Sys.time(),"Spatial analysis: Days with snow cover", "Block:", b, "out of", length(block_stas)))
+  
+  scd_out <- foreach(i = 1:length(file_names_calc), .combine = 'cbind') %dopar% {
+    
+    f_scd_extr(file_path = paste0(scf_dlr_dir, file_names_calc[i]),
+               snow_val = 50,
+               basin_in = basin_lobi,
+               provider = "DLR")
+    
+  }
+  
+  if(b == 1){
+    scd_buf_all <- scd_out
+  }else{
+    scd_buf_all <- cbind(scd_buf_all, scd_out)
+  }
+}
+
+scd_buf_sum <- apply(scd_buf_all, 1, sum_na)
+rm(scd_buf_all) #remove file after calculation as very big
+gc() #colltect some garbage
+
+#fill dummy raster with calculated snow cover fraction values
+scf_buf_crop <- raster::crop(scf_file, extent(basin_lobi))
+scf_buf <- mask(scf_buf_crop, basin_lobi)
+scf_buf@data@values <- scd_buf_sum
+scf_buf_aggr <- aggregate(scf_buf, fact = 10, fun = mean, na.rm = TRUE)
+plot(scf_buf, col = viridis(200, direction = -1))
+plot(scf_buf_aggr, col = viridis(200, direction = -1))
+
+#Get values grid points simulated
+
+grid_points_cube_84 <-  sp::SpatialPoints(data.frame(lon = c(lon), lat = c(lat)), proj4string =  crswgs84)
+
+scd_dlr <- raster::extract(scf_buf_aggr, grid_points_cube_84[cells_sel])
+
+
+val2col <- function(val_in, dat_ref, do_log = F, do_bicol = T, col_na = "white"){
+  
+  if(do_log){
+    
+    val_in <- log(val_in)
+    dat_ref <- log(dat_ref)
+    
+  }
+  
+  if(is.na(val_in)){#set NAs to mean to keep script running; later back to NA
+    val_in <- mea_na(dat_ref)
+    set2NA_1 <- T
+  }else{
+    set2NA_1 <- F
+  }
+  
+  if(do_bicol){
+    
+    col_ind <- round((abs(val_in) / max_na(abs(dat_ref))) * 100)
+    
+    if(val_in < 0){
+      my_col  <- colorRampPalette(c("grey80", "lemonchiffon2", "lightgoldenrod2", "gold3", "goldenrod3", "orangered4", "darkred"))(100)
+    }else{
+      my_col  <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+    }
+    
+  }else{
+    col_ind <- round((val_in-min_na(dat_ref)) / (max_na(dat_ref)-min_na(dat_ref)) * 200)  
+    my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+  }
+  
+  
+  if(is.na(col_ind)){
+    set2NA_2 <- T
+    col_ind <- 1 #set to one to keep script running; later set to NA color
+  }else{
+    set2NA_2 = F
+  }
+  
+  if(col_ind == 0){#for minimum and very small values
+    
+    col_ind <- 1
+    
+  }
+  
+  col_out <- my_col[col_ind]
+  
+  if(length(col_out) < 1){
+    
+    col_out <- col_na
+    
+  }
+  
+  if(set2NA_1 | set2NA_2){
+    
+    col_out <- col_na
+    
+  }
+  
+  return(col_out)
+  
+}
+
+#Values to colors simulation
+scd_sim_ann <- scd_sim / round(length(date_scd) / 365)
+cols_spat_sim <- foreach(i = 1:length(scd_sim_ann), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_sim_ann[i],
+          dat_ref = scd_sim_ann,
+          do_bicol = F)
+  
+}
+
+#Values to colors difference
+scd_dif <- (scd_sim - scd_dlr) / round(length(date_scd) / 365) #Calculate difference Obs. and Sim.
+cols_spat_dif <- foreach(i = 1:length(scd_dif), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif[i], 
+          dat_ref = scd_dif,
+          do_log = F,
+          do_bicol = T)
+  
+}
+
+#Values to colors observations
+scd_dlr_ann <- scd_dlr / round(length(date_scd) / 365)
+cols_spat_obs <- foreach(i = 1:length(scd_dlr_ann), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dlr_ann[i],
+          dat_ref = scd_dlr_ann,
+          do_bicol = F)
+  
+}
+
+
+pdf(paste0(bas_dir, "res_figs/scd_maps",".pdf"), width = 16, height = 4.2)
+
+#Plot maps
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4, rep(5, 7), 6),
+              1, 24, byrow = T), widths=c(), heights=c())
+# layout.show(n = 7)
+
+par(family = "serif")
+cex_pch <- 0.60
+
+#Map Simulations
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_sim, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("a) Snow simulations", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, max_na(abs(scd_sim_ann)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_sim_ann), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map Difference
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_dif, cex = cex_pch)
+# plot(basin_base, add = T, lwd = 1.5)
+mtext("b) Difference (a - c)", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(-max_na(abs(scd_dif)), max_na(abs(scd_dif)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map MODIS
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_obs, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("c) MODIS snow cover", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, max_na(abs(scd_dlr_ann)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dlr_ann), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+dev.off()
+
+
+#Changes snow cover duration over time
+
+date_scd_1 <- date_simu <- seq(as.Date("1954-01-01", format = "%Y-%m-%d"), 
+                               as.Date("1983-12-31", format = "%Y-%m-%d"), by = "day")
+
+date_scd_2 <- date_simu <- seq(as.Date("1984-01-01", format = "%Y-%m-%d"), 
+                               as.Date("2013-12-31", format = "%Y-%m-%d"), by = "day")
+
+date_scd_ind_1 <- which(date %in% date_scd_1)
+date_scd_ind_2 <- which(date %in% date_scd_2)
+
+cells_sel <- which(!is.na(c(snow_cube[, , date_scd_ind[1]])))
+
+for(i in 1:length(date_scd_ind_1)){
+  
+  print(i)
+  
+  scd_sim_sing <- sapply(c(snow_cube[, , date_scd_ind_1[i]][cells_sel]), sd2sc)
+  
+  if(i == 1){
+    scd_sim_1 <-  scd_sim_sing
+  }else{
+    scd_sim_1 <-  scd_sim_1 + scd_sim_sing
+  }
+  
+}
+
+for(i in 1:length(date_scd_ind_2)){
+  
+  print(i)
+  
+  scd_sim_sing <- sapply(c(snow_cube[, , date_scd_ind_2[i]][cells_sel]), sd2sc)
+  
+  if(i == 1){
+    scd_sim_2 <-  scd_sim_sing
+  }else{
+    scd_sim_2 <-  scd_sim_2 + scd_sim_sing
+  }
+  
+}
+
+#Values to colors simulation part 1
+scd_sim_ann_1 <- scd_sim_1 / round(length(date_scd_1) / 365)
+cols_spat_sim_1 <- foreach(i = 1:length(scd_sim_ann_1), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_sim_ann_1[i],
+          dat_ref = scd_sim_ann_1,
+          do_bicol = F)
+  
+}
+
+#Values to colors difference
+scd_dif <- (scd_sim_1 - scd_sim_2) / round(length(date_scd_1) / 365) #Calculate difference Obs. and Sim.
+cols_spat_dif <- foreach(i = 1:length(scd_dif), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif[i], 
+          dat_ref = scd_dif,
+          do_log = F,
+          do_bicol = T)
+  
+}
+
+#Values to colors observations
+scd_sim_ann_2 <- scd_sim_2 / round(length(date_scd_2) / 365)
+cols_spat_obs <- foreach(i = 1:length(scd_sim_ann_2), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_sim_ann_2[i],
+          dat_ref = scd_sim_ann_2,
+          do_bicol = F)
+  
+}
+
+
+pdf(paste0(bas_dir, "res_figs/scd_maps_time",".pdf"), width = 16, height = 4.2)
+
+#Plot maps
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4, rep(5, 7), 6),
+              1, 24, byrow = T), widths=c(), heights=c())
+# layout.show(n = 7)
+
+par(family = "serif")
+cex_pch <- 0.60
+
+#Map Simulations
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_sim, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("a) Simulations 1954-1983", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, max_na(abs(scd_sim_ann_1)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_sim_ann_1), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map Difference
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_dif, cex = cex_pch)
+# plot(basin_base, add = T, lwd = 1.5)
+mtext("b) Difference (a - c)", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(-max_na(abs(scd_dif)), max_na(abs(scd_dif)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map MODIS
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_obs, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("c) Simulations 1984-2013", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, max_na(abs(scd_sim_ann_2)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_sim_ann_2), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+dev.off()
