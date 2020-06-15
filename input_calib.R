@@ -13,6 +13,7 @@ pacman::p_load(parallel, doParallel, zoo, zyp, alptempr, emdbook, scales, ncdf4,
 
 # run_dir <- "D:/nrc_user/rottler/mhm_run/6935053/"
 run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
+out_dir <- "D:/nrc_user/rottler/mhm_run/6435060/output/OBS/"
 
 bas_dir <- "U:/rhine_fut/R/"
 
@@ -22,10 +23,10 @@ scf_dlr_dir <- "D:/nrc_user/rottler/SCF_data/snow_dlr/SnowPack_DLR.tar/SnowPack_
 #load functions
 source(paste0(bas_dir, "mhm_rhine/functs.R"))
 
-sta_yea <- 1954
+sta_yea <- 1951
 end_yea <- 2013
 
-date_simu <- seq(as.Date("1954-01-01", format = "%Y-%m-%d"), 
+date_simu <- seq(as.Date("1951-01-01", format = "%Y-%m-%d"), 
                  as.Date("2013-12-31", format = "%Y-%m-%d"), by = "day")
 
 stopCluster(my_clust)
@@ -327,6 +328,12 @@ dev.off()
 
 
 #dis_vis----
+
+dis_mhm <- read.table(paste0(out_dir, "daily_discharge.out"), header = T)
+
+NSE(dis_mhm$Qsim_0006435060, dis_mhm$Qobs_0006435060)
+NSE(dis_mhm$Qsim_0006935051, dis_mhm$Qobs_0006935051)
+
 
 #Plot: Runoff time series
 pdf(paste0(bas_dir, "res_figs/runoff_ts.pdf"), width = 8, height = 4)
@@ -751,7 +758,7 @@ dev.off()
 
 #dis_rout----
 
-nc_disc_file <- paste0(run_dir, "output/mRM_Fluxes_States.nc")
+nc_disc_file <- paste0(out_dir, "mRM_Fluxes_States.nc")
 nc_disc <- nc_open(nc_disc_file)
 
 #get lat/lon/time of .nc meteo data
