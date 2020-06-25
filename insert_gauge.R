@@ -20,11 +20,11 @@ idgauges <- raster(paste0(run_dir, "input/morph/idgauges.asc"))
 
 grdc_dir <- "D:/nrc_user/rottler/GRDC_DAY/"
 
-# rhei_file <- paste0(grdc_dir, "6935053_Q_Day.Cmd.txt")
-base_file <- paste0(grdc_dir, "6935051_Q_Day.Cmd.txt")
-gauge_ID <- 6935051
+coch_file <- paste0(grdc_dir, "6336050_Q_Day.Cmd.txt")
+# base_file <- paste0(grdc_dir, "6935051_Q_Day.Cmd.txt")
+gauge_ID <- 6336050
 
-file_paths <- c(base_file)
+file_paths <- c(coch_file)
 
 grdc_meta <- NULL
 
@@ -58,6 +58,9 @@ grdc_meta$name  <- as.character(levels(grdc_meta$name))[grdc_meta$name]
 grdc_meta$latitude   <- as.numeric(levels(grdc_meta$latitude))[grdc_meta$latitude]
 grdc_meta$longitude  <- as.numeric(levels(grdc_meta$longitude))[grdc_meta$longitude]
 
+#gauge Cochem one row lower in facc
+grdc_meta$latitude   <- grdc_meta$latitude - 0.05
+
 gauges_84 <- SpatialPointsDataFrame(data.frame(lon = grdc_meta$longitude, 
                                                lat = grdc_meta$latitude), 
                                     data = data.frame(data =rep(-1, length(grdc_meta$longitude))), 
@@ -82,16 +85,16 @@ writeRaster(idgauges, paste0(paste0(run_dir, "input/idgauges.asc")), overwrite =
 
 
 #read discharge time series
-# disc_rhei <- read_grdc(base_file)
-disc_base <- read_grdc(base_file)
+# disc_base <- read_grdc(base_file)
+disc_coch <- read_grdc(coch_file)
 
-disc_yea <- format(disc_base$date, "%Y")
-disc_mon <- format(disc_base$date, "%m")
-disc_day <- format(disc_base$date, "%d")
-disc_hou <- rep("00", length(disc_base$date))
-disc_min <- rep("00", length(disc_base$date))
+disc_yea <- format(disc_coch$date, "%Y")
+disc_mon <- format(disc_coch$date, "%m")
+disc_day <- format(disc_coch$date, "%d")
+disc_hou <- rep("00", length(disc_coch$date))
+disc_min <- rep("00", length(disc_coch$date))
 
-disc_out <- cbind(disc_yea, disc_mon, disc_day, disc_hou, disc_min, disc_base$value)
+disc_out <- cbind(disc_yea, disc_mon, disc_day, disc_hou, disc_min, disc_coch$value)
 
 write.table(disc_out, paste0(run_dir, "input/", gauge_ID, ".day"), sep = "\t", row.names = F, col.names = F,
             quote = F)

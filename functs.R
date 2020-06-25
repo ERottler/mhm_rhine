@@ -398,3 +398,29 @@ val2col <- function(val_in, dat_ref, do_log = F, do_bicol = T, col_na = "white",
   return(col_out)
   
 }
+
+#determine cells (rows-clumns in grid) representing gauges
+f_index_row <- function (val_in, lons_in = lon, col_or_row = "row"){
+  if (col_or_row == "row") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 1]
+  }
+  if (col_or_row == "col") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 2]
+  }
+  return(index_out)
+}
+f_index_col <- function (val_in, lons_in = lon, col_or_row = "col"){
+  if (col_or_row == "row") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 1]
+  }
+  if (col_or_row == "col") {
+    index_out <- which(round(lons_in, digits = 6) == round(val_in, 
+                                                           digits = 6), arr.ind = T)[1, 2]
+  }
+  return(index_out)
+}
+
+#Get discharge from nc-files
