@@ -1,6 +1,7 @@
 ###
 
-#Analyze mhm model results
+#mHM simulations Part I: Model set up and calibration
+#Erwin Rottler, University of Potsdam, Summer 2020
 
 ###
 
@@ -12,10 +13,10 @@ pacman::p_load(parallel, doParallel, zoo, zyp, alptempr, emdbook, scales, ncdf4,
                CoinCalc, seas)
 
 # run_dir <- "D:/nrc_user/rottler/mhm_run/6935053/"
-run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
-out_dir <- "D:/nrc_user/rottler/mhm_run/6435060/output/OBS/"
-
 bas_dir <- "U:/rhine_fut/R/"
+run_dir <- "D:/nrc_user/rottler/mhm_run/6435060/"
+inp_dir <- "D:/nrc_user/rottler/mhm_run/6435060/input/meteo/EOBS/"
+out_dir <- "D:/nrc_user/rottler/mhm_run/6435060/output/EOBS/"
 
 #directory to snow cover data from DLR
 scf_dlr_dir <- "D:/nrc_user/rottler/SCF_data/snow_dlr/SnowPack_DLR.tar/SnowPack_DLR/" 
@@ -24,14 +25,14 @@ scf_dlr_dir <- "D:/nrc_user/rottler/SCF_data/snow_dlr/SnowPack_DLR.tar/SnowPack_
 source(paste0(bas_dir, "mhm_rhine/functs.R"))
 
 sta_yea <- 1951
-end_yea <- 2013
+end_yea <- 2000
 
 date_simu <- seq(as.Date("1951-01-01", format = "%Y-%m-%d"), 
-                 as.Date("2013-12-31", format = "%Y-%m-%d"), by = "day")
+                 as.Date("2000-12-31", format = "%Y-%m-%d"), by = "day")
 
 stopCluster(my_clust)
 
-n_cores <- 25 #number of cores used for parallel computing
+n_cores <- 5 #number of cores used for parallel computing
 
 #Make cluster for parallel computing
 my_clust <- makeCluster(n_cores)
@@ -54,39 +55,63 @@ basin_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/process
 basin <- spTransform(basin_raw, CRS = crswgs84)
 
 #Load ncdf E-OBS gridded datasets
-nc_temp_file <- paste0(run_dir, "input/meteo/tavg.nc")
-nc_prec_file <- paste0(run_dir, "input/meteo/pre.nc")
-nc_petr_file <- paste0(run_dir, "input/meteo_HS/pet.nc")
+nc_tavg_file <- paste0(inp_dir, "tavg.nc")
+nc_tmax_file <- paste0(inp_dir, "tmax.nc")
+nc_tmin_file <- paste0(inp_dir, "tmin.nc")
+nc_prec_file <- paste0(inp_dir, "pre.nc")
+# nc_petr_file <- paste0(run_dir, "input/meteo_HS/pet.nc")
 
-nc_temp <- nc_open(nc_temp_file)
+nc_tavg <- nc_open(nc_tavg_file)
+nc_tmax <- nc_open(nc_tmax_file)
+nc_tmin <- nc_open(nc_tmin_file)
 nc_prec <- nc_open(nc_prec_file)
-nc_petr <- nc_open(nc_petr_file)
+# nc_petr <- nc_open(nc_petr_file)
 
 #get lat/lon/time of .nc meteo data
-lon <- ncdf4::ncvar_get(nc_temp, varid = "lon2D")
-lat <- ncdf4::ncvar_get(nc_temp, varid = "lat2D")
-date <- as.Date(as.character(nc.get.time.series(nc_temp, time.dim.name = "time")))
+lon <- ncdf4::ncvar_get(nc_tavg, varid = "lon2D")
+lat <- ncdf4::ncvar_get(nc_tavg, varid = "lat2D")
+date <- as.Date(as.character(nc.get.time.series(nc_tavg, time.dim.name = "time")))
 
-sta_date_ind <- which(format(date) == "1954-01-01")
+sta_date_ind <- which(format(date) == "1951-01-01")
 count_date <- length(date) - sta_date_ind
 
-temps_cube <- ncvar_get(nc_temp, start = c(1, 1, sta_date_ind), 
+tavgs_cube <- ncvar_get(nc_tavg, start = c(1, 1, sta_date_ind), 
                         count = c(nrow(lon), ncol(lat), count_date), varid = "tavg")
+
+tmaxs_cube <- ncvar_get(nc_tmax, start = c(1, 1, sta_date_ind), 
+                        count = c(nrow(lon), ncol(lat), count_date), varid = "tmax")
+
+tmins_cube <- ncvar_get(nc_tmin, start = c(1, 1, sta_date_ind), 
+                        count = c(nrow(lon), ncol(lat), count_date), varid = "tmin")
 
 precs_cube <- ncvar_get(nc_prec, start = c(1, 1, sta_date_ind), 
                         count = c(nrow(lon), ncol(lat), count_date), varid = "pre")
 
-evapo_cube <- ncvar_get(nc_petr, start = c(1, 1, sta_date_ind), 
-                        count = c(nrow(lon), ncol(lat), count_date), varid = "pet")
-
-temps_mea <- apply(temps_cube, c(1,2), mea_na)
+tavgs_mea <- apply(tavgs_cube, c(1,2), mea_na)
+tmaxs_mea <- apply(tmaxs_cube, c(1,2), mea_na)
+tmins_mea <- apply(tmins_cube, c(1,2), mea_na)
 precs_mea <- apply(precs_cube, c(1,2), sum_na) / length(sta_yea:end_yea)
-evapo_mea <- apply(evapo_cube, c(1,2), sum_na) / length(sta_yea:end_yea)
 
-cols_spat_tem <- foreach(i = 1:length(c(temps_mea)), .combine = 'cbind') %dopar% {
+cols_spat_tav <- foreach(i = 1:length(c(tavgs_mea)), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = c(temps_mea)[i],
-          dat_ref = c(temps_mea),
+  val2col(val_in = c(tavgs_mea)[i],
+          dat_ref = c(tavgs_mea),
+          do_bicol = F,
+          virid_dir = 1)
+  
+}
+cols_spat_tmi <- foreach(i = 1:length(c(tmaxs_mea)), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = c(tmaxs_mea)[i],
+          dat_ref = c(tmaxs_mea),
+          do_bicol = F,
+          virid_dir = 1)
+  
+}
+cols_spat_tma <- foreach(i = 1:length(c(tmins_mea)), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = c(tmins_mea)[i],
+          dat_ref = c(tmins_mea),
           do_bicol = F,
           virid_dir = 1)
   
@@ -98,37 +123,64 @@ cols_spat_pre <- foreach(i = 1:length(c(precs_mea)), .combine = 'cbind') %dopar%
           do_bicol = F)
   
 }
-cols_spat_eva <- foreach(i = 1:length(c(evapo_mea)), .combine = 'cbind') %dopar% {
-  
-  val2col(val_in = c(evapo_mea)[i],
-          dat_ref = c(evapo_mea),
-          do_bicol = F)
-  
-}
 
-pdf(paste0(bas_dir,"res_figs/met_map.pdf"), width = 16, height = 6)
+pdf(paste0(bas_dir,"res_figs/met_map.pdf"), width = 16, height = 4.8)
 
-layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4, rep(5, 7), 6),
-              1, 24, byrow = T), widths=c(), heights=c())
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4, 
+                rep(5, 7), 6, rep(7, 7), 8),
+              1, 32, byrow = T), widths=c(), heights=c())
 
 par(family = "serif")
 
 cex_pch <- 1.32
 
-#Plot Temperature
+#Plot Temperature average
 par(mar = c(0.5, 0.5, 1.0, 0.5))
 plot(basin, xlim = c(range(c(lon))), ylim = c(range(c(lat))))
-points(c(lon), c(lat), pch = 15, col = cols_spat_tem, cex = cex_pch)
+points(c(lon), c(lat), pch = 15, col = cols_spat_tav, cex = cex_pch)
 par(new = T)
 plot(basin, add = T)
-mtext("a) Temperature", side = 3, line = -1.0, cex = 1.7)
-
+mtext("a) Tavg", side = 3, line = -1.0, cex = 1.7)
 
 par(mar = c(2.0, 0.2, 5.0, 2.9))
 
 my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = 1)))(200))
-my_bre <- seq(range(temps_mea)[1], range(temps_mea)[2], length.out = length(my_col)+1)
+my_bre <- seq(range(tavgs_mea)[1], range(tavgs_mea)[2], length.out = length(my_col)+1)
 alptempr::image_scale(as.matrix(sc_doy_simu), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext("[°C]", side = 3, line = 0.7, cex = 1.2)
+box()
+
+#Plot Temperature maximum
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin, xlim = c(range(c(lon))), ylim = c(range(c(lat))))
+points(c(lon), c(lat), pch = 15, col = cols_spat_tma, cex = cex_pch)
+par(new = T)
+plot(basin, add = T)
+mtext("b) Tmax", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = 1)))(200))
+my_bre <- seq(range(tmaxs_mea)[1], range(tmaxs_mea)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(tmaxs_mea), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext("[°C]", side = 3, line = 0.7, cex = 1.2)
+box()
+
+#Plot Temperature minimum
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin, xlim = c(range(c(lon))), ylim = c(range(c(lat))))
+points(c(lon), c(lat), pch = 15, col = cols_spat_tmi, cex = cex_pch)
+par(new = T)
+plot(basin, add = T)
+mtext("c) Tmin", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 2.9))
+
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = 1)))(200))
+my_bre <- seq(range(tmins_mea)[1], range(tmins_mea)[2], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(tmins_mea), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
 axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
 mtext("[°C]", side = 3, line = 0.7, cex = 1.2)
 box()
@@ -139,30 +191,12 @@ plot(basin, xlim = c(range(c(lon))), ylim = c(range(c(lat))))
 points(c(lon), c(lat), pch = 15, col = cols_spat_pre, cex = cex_pch)
 par(new = T)
 plot(basin, add = T)
-mtext("b) Precipitation", side = 3, line = -1.0, cex = 1.7)
+mtext("d) Precipitation", side = 3, line = -1.0, cex = 1.7)
 
 par(mar = c(2.0, 0.2, 5.0, 2.9))
 
 my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
 my_bre <- seq(range(precs_mea)[1], range(precs_mea)[2], length.out = length(my_col)+1)
-alptempr::image_scale(as.matrix(sc_doy_simu), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
-axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
-mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
-box()
-
-#Plot Evapotrationspiration
-par(mar = c(0.5, 0.5, 1.0, 0.5))
-plot(basin, xlim = c(range(c(lon))), ylim = c(range(c(lat))))
-points(c(lon), c(lat), pch = 15, col = cols_spat_eva, cex = cex_pch)
-par(new = T)
-plot(basin, add = T)
-mtext("c) Evapotranspiration", side = 3, line = -1.0, cex = 1.7)
-
-
-par(mar = c(2.0, 0.2, 5.0, 2.9))
-
-my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
-my_bre <- seq(range(evapo_mea)[1], range(evapo_mea)[2], length.out = length(my_col)+1)
 alptempr::image_scale(as.matrix(sc_doy_simu), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
 axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
 mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
@@ -758,7 +792,7 @@ dev.off()
 
 #dis_rout----
 
-nc_disc_file <- paste0(out_dir, "mRM_Fluxes_States.nc")
+nc_disc_file <- paste0(out_dir, "output/mRM_Fluxes_States.nc")
 nc_disc <- nc_open(nc_disc_file)
 
 #get lat/lon/time of .nc meteo data
@@ -923,8 +957,8 @@ simu_reki <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[11], cols_sel_gaugs[11]
                        count = c(1, 1, count_date), varid = "Qrouted")
 
 #Validation different time windows
-sta_yea_val_all <- c(1954, 1954, 1974, 1994)
-end_yea_val_all <- c(2013, 1973, 1993, 2013)
+sta_yea_val_all <- c(1951, 1976, 1951)
+end_yea_val_all <- c(1975, 2000, 2000)
 
 kge_out <- NULL
 nse_out <- NULL
