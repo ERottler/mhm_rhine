@@ -334,7 +334,7 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   
@@ -353,7 +353,7 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   
@@ -372,7 +372,7 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
 
 plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   
@@ -391,7 +391,7 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
 
 plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   
@@ -408,9 +408,9 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
                             "black", "black", "black", "black", "black"), 
                           alpha = alpha_sel)
 
-plot(plot_data_1[, 1], plot_data_2[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
+plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
@@ -432,9 +432,9 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
                             "black", "black", "black", "black", "black"), 
                           alpha = alpha_sel)
 
-plot(plot_data_1[, 1], plot_data_2[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
+plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
@@ -456,9 +456,9 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
                             "black", "black", "darkred", "black", "black"), 
                           alpha = alpha_sel)
 
-plot(plot_data_1[, 1], plot_data_2[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
+plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
@@ -480,9 +480,9 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
                             "black", "black", "darkred", "black", "black"), 
                           alpha = alpha_sel)
 
-plot(plot_data_1[, 1], plot_data_2[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
+plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(plot_data_1)){
+for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
   points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))

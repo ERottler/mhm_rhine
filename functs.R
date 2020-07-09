@@ -423,4 +423,47 @@ f_index_col <- function (val_in, lons_in = lon, col_or_row = "col"){
   return(index_out)
 }
 
-#Get discharge from nc-files
+# Cube index from points inside polygon.
+# Get column number of matching point.
+get_cube_index_col <- function(val_in, coor_in = lon2D, col_or_row = "col"){
+  
+  if(col_or_row == "col"){
+    index_out <- which(round(coor_in, digits =6) == round(val_in, digits =6), arr.ind = T)[1,1]
+  }
+  
+  if(col_or_row == "row"){
+    index_out <- which(round(coor_in, digits =6) == round(val_in, digits =6), arr.ind = T)[1,2]
+  }
+  
+  return(index_out)
+  
+}
+
+
+# Cube index from points inside polygon.
+# Get row number of matching point.
+get_cube_index_row <- function(val_in, coor_in = lon2D, col_or_row = "row"){
+  if(col_or_row == "col"){
+    index_out <- which(round(coor_in, digits =6) == round(val_in, digits =6), arr.ind = T)[1,1]
+  }
+  
+  if(col_or_row == "row"){
+    index_out <- which(round(coor_in, digits =6) == round(val_in, digits =6), arr.ind = T)[1,2]
+  }
+  
+  return(index_out)
+}
+
+#get warming period from table
+get_warming_period <- function(gcm_model, delta_t, rcp){
+  
+  row_sel <- which(warming_periods$gcm.model == gcm_model &
+                     warming_periods$Del_T   == delta_t &
+                     warming_periods$RCP     == rcp)
+  
+  sta_year <- warming_periods$start[row_sel]
+  end_year <- warming_periods$end[row_sel]
+  
+  return(c(sta_year, end_year))
+  
+}
