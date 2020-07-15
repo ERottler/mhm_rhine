@@ -20,15 +20,15 @@ grdc_dir <- "D:/nrc_user/rottler/GRDC_DAY/"
 #load functions
 source(paste0(bas_dir, "mhm_rhine/functs.R"))
 
-stopCluster(my_clust)
-
-n_cores <- 5 #number of cores used for parallel computing
-
-#Make cluster for parallel computing
-my_clust <- makeCluster(n_cores)
-clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
-clusterExport(my_clust, "index_col_base")
-registerDoParallel(my_clust)
+# stopCluster(my_clust)
+# 
+# n_cores <- 5 #number of cores used for parallel computing
+# 
+# #Make cluster for parallel computing
+# my_clust <- makeCluster(n_cores)
+# clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
+# clusterExport(my_clust, "index_col_base")
+# registerDoParallel(my_clust)
 
 #Projections
 crswgs84 <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
@@ -1376,193 +1376,346 @@ max_prl_doy_3p0K_koel <- c(pmax_3p0K_1[, 12],  pmax_3p0K_2[, 12],  pmax_3p0K_3[,
                            pmax_3p0K_4[, 12],  pmax_3p0K_5[, 12],  pmax_3p0K_6[, 12],
                            pmax_3p0K_7[, 12],  pmax_3p0K_8[, 12])
 
-par(mfrow = c(1, 4))
-boxplot(max_dis_fra_hist_coch, ylim = c(0, 1), col = "blue3")
-boxplot(max_dis_fra_1p5K_coch, ylim = c(0, 1), col = "grey25")
-boxplot(max_dis_fra_2p0K_coch, ylim = c(0, 1), col = "orange2")
-boxplot(max_dis_fra_3p0K_coch, ylim = c(0, 1), col = "red3")
+plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, ylims_in = c(0, 1),
+                     y_lab = "", do_legend = F){
 
-par(mfrow = c(1, 4))
-boxplot(max_dis_fra_hist_base, ylim = c(0, 1), col = "blue3")
-boxplot(max_dis_fra_1p5K_base, ylim = c(0, 1), col = "grey25")
-boxplot(max_dis_fra_2p0K_base, ylim = c(0, 1), col = "orange2")
-boxplot(max_dis_fra_3p0K_base, ylim = c(0, 1), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_fra_hist_koel, ylim = c(0, 1), col = "blue3")
-boxplot(max_dis_fra_1p5K_koel, ylim = c(0, 1), col = "grey25")
-boxplot(max_dis_fra_2p0K_koel, ylim = c(0, 1), col = "orange2")
-boxplot(max_dis_fra_3p0K_koel, ylim = c(0, 1), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_mag_hist_coch, ylim = c(0, 5000), col = "blue3")
-boxplot(max_dis_mag_1p5K_coch, ylim = c(0, 5000), col = "grey25")
-boxplot(max_dis_mag_2p0K_coch, ylim = c(0, 5000), col = "orange2")
-boxplot(max_dis_mag_3p0K_coch, ylim = c(0, 5000), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_mag_hist_base, ylim = c(0, 7000), col = "blue3")
-boxplot(max_dis_mag_1p5K_base, ylim = c(0, 7000), col = "grey25")
-boxplot(max_dis_mag_2p0K_base, ylim = c(0, 7000), col = "orange2")
-boxplot(max_dis_mag_3p0K_base, ylim = c(0, 7000), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_mag_hist_koel, ylim = c(0, 12000), col = "blue3")
-boxplot(max_dis_mag_1p5K_koel, ylim = c(0, 12000), col = "grey25")
-boxplot(max_dis_mag_2p0K_koel, ylim = c(0, 12000), col = "orange2")
-boxplot(max_dis_mag_3p0K_koel, ylim = c(0, 12000), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_doy_hist_coch, ylim = c(0, 365), col = "blue3")
-boxplot(max_dis_doy_1p5K_coch, ylim = c(0, 365), col = "grey25")
-boxplot(max_dis_doy_2p0K_coch, ylim = c(0, 365), col = "orange2")
-boxplot(max_dis_doy_3p0K_coch, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_doy_hist_base, ylim = c(0, 365), col = "blue3")
-boxplot(max_dis_doy_1p5K_base, ylim = c(0, 365), col = "grey25")
-boxplot(max_dis_doy_2p0K_base, ylim = c(0, 365), col = "orange2")
-boxplot(max_dis_doy_3p0K_base, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_dis_doy_hist_koel, ylim = c(0, 365), col = "blue3")
-boxplot(max_dis_doy_1p5K_koel, ylim = c(0, 365), col = "grey25")
-boxplot(max_dis_doy_2p0K_koel, ylim = c(0, 365), col = "orange2")
-boxplot(max_dis_doy_3p0K_koel, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_mag_hist_coch, ylim = c(0, 120), col = "blue3")
-boxplot(max_mel_mag_1p5K_coch, ylim = c(0, 120), col = "grey25")
-boxplot(max_mel_mag_2p0K_coch, ylim = c(0, 120), col = "orange2")
-boxplot(max_mel_mag_3p0K_coch, ylim = c(0, 120), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_mag_hist_base, ylim = c(0, 120), col = "blue3")
-boxplot(max_mel_mag_1p5K_base, ylim = c(0, 120), col = "grey25")
-boxplot(max_mel_mag_2p0K_base, ylim = c(0, 120), col = "orange2")
-boxplot(max_mel_mag_3p0K_base, ylim = c(0, 120), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_mag_hist_koel, ylim = c(0, 120), col = "blue3")
-boxplot(max_mel_mag_1p5K_koel, ylim = c(0, 120), col = "grey25")
-boxplot(max_mel_mag_2p0K_koel, ylim = c(0, 120), col = "orange2")
-boxplot(max_mel_mag_3p0K_koel, ylim = c(0, 120), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_doy_hist_coch, ylim = c(0, 365), col = "blue3")
-boxplot(max_mel_doy_1p5K_coch, ylim = c(0, 365), col = "grey25")
-boxplot(max_mel_doy_2p0K_coch, ylim = c(0, 365), col = "orange2")
-boxplot(max_mel_doy_3p0K_coch, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_doy_hist_base, ylim = c(0, 365), col = "blue3")
-boxplot(max_mel_doy_1p5K_base, ylim = c(0, 365), col = "grey25")
-boxplot(max_mel_doy_2p0K_base, ylim = c(0, 365), col = "orange2")
-boxplot(max_mel_doy_3p0K_base, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_mel_doy_hist_koel, ylim = c(0, 365), col = "blue3")
-boxplot(max_mel_doy_1p5K_koel, ylim = c(0, 365), col = "grey25")
-boxplot(max_mel_doy_2p0K_koel, ylim = c(0, 365), col = "orange2")
-boxplot(max_mel_doy_3p0K_koel, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_mag_hist_coch, ylim = c(0, 60), col = "blue3")
-boxplot(max_prt_mag_1p5K_coch, ylim = c(0, 60), col = "grey25")
-boxplot(max_prt_mag_2p0K_coch, ylim = c(0, 60), col = "orange2")
-boxplot(max_prt_mag_3p0K_coch, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_mag_hist_base, ylim = c(0, 60), col = "blue3")
-boxplot(max_prt_mag_1p5K_base, ylim = c(0, 60), col = "grey25")
-boxplot(max_prt_mag_2p0K_base, ylim = c(0, 60), col = "orange2")
-boxplot(max_prt_mag_3p0K_base, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_mag_hist_koel, ylim = c(0, 60), col = "blue3")
-boxplot(max_prt_mag_1p5K_koel, ylim = c(0, 60), col = "grey25")
-boxplot(max_prt_mag_2p0K_koel, ylim = c(0, 60), col = "orange2")
-boxplot(max_prt_mag_3p0K_koel, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_doy_hist_coch, ylim = c(0, 365), col = "blue3")
-boxplot(max_prt_doy_1p5K_coch, ylim = c(0, 365), col = "grey25")
-boxplot(max_prt_doy_2p0K_coch, ylim = c(0, 365), col = "orange2")
-boxplot(max_prt_doy_3p0K_coch, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_doy_hist_base, ylim = c(0, 365), col = "blue3")
-boxplot(max_prt_doy_1p5K_base, ylim = c(0, 365), col = "grey25")
-boxplot(max_prt_doy_2p0K_base, ylim = c(0, 365), col = "orange2")
-boxplot(max_prt_doy_3p0K_base, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prt_doy_hist_koel, ylim = c(0, 365), col = "blue3")
-boxplot(max_prt_doy_1p5K_koel, ylim = c(0, 365), col = "grey25")
-boxplot(max_prt_doy_2p0K_koel, ylim = c(0, 365), col = "orange2")
-boxplot(max_prt_doy_3p0K_koel, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_mag_hist_coch, ylim = c(0, 60), col = "blue3")
-boxplot(max_prl_mag_1p5K_coch, ylim = c(0, 60), col = "grey25")
-boxplot(max_prl_mag_2p0K_coch, ylim = c(0, 60), col = "orange2")
-boxplot(max_prl_mag_3p0K_coch, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_mag_hist_base, ylim = c(0, 60), col = "blue3")
-boxplot(max_prl_mag_1p5K_base, ylim = c(0, 60), col = "grey25")
-boxplot(max_prl_mag_2p0K_base, ylim = c(0, 60), col = "orange2")
-boxplot(max_prl_mag_3p0K_base, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_mag_hist_koel, ylim = c(0, 60), col = "blue3")
-boxplot(max_prl_mag_1p5K_koel, ylim = c(0, 60), col = "grey25")
-boxplot(max_prl_mag_2p0K_koel, ylim = c(0, 60), col = "orange2")
-boxplot(max_prl_mag_3p0K_koel, ylim = c(0, 60), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_doy_hist_coch, ylim = c(0, 365), col = "blue3")
-boxplot(max_prl_doy_1p5K_coch, ylim = c(0, 365), col = "grey25")
-boxplot(max_prl_doy_2p0K_coch, ylim = c(0, 365), col = "orange2")
-boxplot(max_prl_doy_3p0K_coch, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_doy_hist_base, ylim = c(0, 365), col = "blue3")
-boxplot(max_prl_doy_1p5K_base, ylim = c(0, 365), col = "grey25")
-boxplot(max_prl_doy_2p0K_base, ylim = c(0, 365), col = "orange2")
-boxplot(max_prl_doy_3p0K_base, ylim = c(0, 365), col = "red3")
-
-par(mfrow = c(1, 4))
-boxplot(max_prl_doy_hist_koel, ylim = c(0, 365), col = "blue3")
-boxplot(max_prl_doy_1p5K_koel, ylim = c(0, 365), col = "grey25")
-boxplot(max_prl_doy_2p0K_koel, ylim = c(0, 365), col = "orange2")
-boxplot(max_prl_doy_3p0K_koel, ylim = c(0, 365), col = "red3")
-
-
-select_max <- function(max_sel_in, max_fra_in, fra_range_low, fra_range_high){
+  if(calc_ylims){
+    ylims <- c(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
+               max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)))
+  }else{
+    ylims <- ylims_in
+  }
   
-  sel_ind <- which(max_fra_in > fra_range_low &
-                   max_fra_in < fra_range_high)
+  col_hist <- "steelblue4"
+  col_1p5K <- "grey25"
+  col_2p0K <- "orange3"
+  col_3p0K <- "darkred"
   
-  max_sel_out <- max_sel_in[sel_ind]
+  max_df <- data.frame(max_hist = range(max_hist, na.rm = T),
+                       max_1p5K = range(max_1p5K, na.rm = T),
+                       max_2p0K = range(max_2p0K, na.rm = T),
+                       max_3p0K = range(max_3p0K, na.rm = T))
   
-  return(max_sel_out)
+  boxplot(max_df, boxfill = NA, border = NA, axes = F, ylim = ylims)
+  axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+  mtext(y_lab, side = 2, line = 1.8, cex = 1.3)
+  if(do_legend){
+    legend("topleft", c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.2,
+           box.lwd = 0.0, box.col = "black", bg = "white")
+  }
+  box()
+  
+  boxplot(max_hist, ylim = ylims, col = col_hist, axes = F, xaxt = "n", 
+          add = TRUE, at = 1, boxwex = 1.3)
+  boxplot(max_1p5K, ylim = ylims, col = col_1p5K, axes = F, xaxt = "n", 
+          add = TRUE, at = 2, boxwex = 1.3)
+  boxplot(max_2p0K, ylim = ylims, col = col_2p0K, axes = F, xaxt = "n", 
+          add = TRUE, at = 3, boxwex = 1.3)
+  boxplot(max_3p0K, ylim = ylims, col = col_3p0K, axes = F, xaxt = "n",
+          add = TRUE, at = 4, boxwex = 1.3)
   
 }
 
-par(mfrow = c(1, 4))
-boxplot(select_max(max_doy_hist_base, max_fra_hist_base, 0.50, 0.90), ylim = c(0, 365), col = "blue3")
-boxplot(select_max(max_doy_1p5K_base, max_fra_hist_base, 0.50, 0.90), ylim = c(0, 365), col = "grey25")
-boxplot(select_max(max_doy_2p0K_base, max_fra_hist_base, 0.50, 0.90), ylim = c(0, 365), col = "orange2")
-boxplot(select_max(max_doy_3p0K_base, max_fra_hist_base, 0.50, 0.90), ylim = c(0, 365), col = "red3")
+pdf(paste0(bas_dir,"res_figs/max_box_fut.pdf"), width = 16, height = 18)
 
-plot(max_doy_hist_coch, max_fra_hist_coch, xlim = c(0, 365), ylim = c(0, 1))
-plot(max_doy_3p0K_coch, max_fra_3p0K_coch, xlim = c(0, 365), ylim = c(0, 1))
+par(family = "serif")
+par(mar = c(0.5, 3.0, 0.5, 0.5))
 
-plot(max_doy_hist_base, max_fra_hist_base, xlim = c(0, 365), ylim = c(0, 1))
-plot(max_doy_1p5K_base, max_fra_1p5K_base, xlim = c(0, 365), ylim = c(0, 1))
-plot(max_doy_2p0K_base, max_fra_2p0K_base, xlim = c(0, 365), ylim = c(0, 1))
-plot(max_doy_3p0K_base, max_fra_3p0K_base, xlim = c(0, 365), ylim = c(0, 1))
+layout(matrix(c(rep(28, 4),
+                29, 1, 2, 3,
+                29, 4, 5, 6,
+                29, 7, 8, 9,
+                29, 10, 11, 12,
+                29, 13, 14, 15,
+                29, 16, 17, 18,
+                29, 19, 20, 21,
+                29, 22, 23, 24,
+                29, 25, 26, 27),
+              10, 4, byrow = T), widths=c(0.15, rep(1, 3)), heights=c(0.2, rep(1, 9)))
+# layout.show(n = 29)
+
+#Discharge magnitude
+plot_box(max_dis_mag_hist_base, max_dis_mag_1p5K_base, max_dis_mag_2p0K_base, max_dis_mag_3p0K_base,
+         y_lab = expression(paste("[m"^"3", "s"^"-1","]")), calc_ylims = T, do_legend = T)
+
+plot_box(max_dis_mag_hist_coch, max_dis_mag_1p5K_coch, max_dis_mag_2p0K_coch, max_dis_mag_3p0K_coch,
+         y_lab = "", calc_ylims = T, do_legend = T)
+
+plot_box(max_dis_mag_hist_koel, max_dis_mag_1p5K_koel, max_dis_mag_2p0K_koel, max_dis_mag_3p0K_koel,
+         y_lab = "", calc_ylims = T, do_legend = T)
+
+#Discharge timing
+plot_box(max_dis_doy_hist_base, max_dis_doy_1p5K_base, max_dis_doy_2p0K_base, max_dis_doy_3p0K_base,
+         y_lab = "DOY", ylims_in = c(1, 365))
+
+plot_box(max_dis_doy_hist_coch, max_dis_doy_1p5K_coch, max_dis_doy_2p0K_coch, max_dis_doy_3p0K_coch,
+         y_lab = "", ylims_in = c(1, 365))
+
+plot_box(max_dis_doy_hist_koel, max_dis_doy_1p5K_koel, max_dis_doy_2p0K_koel, max_dis_doy_3p0K_koel,
+         y_lab = "", ylims_in = c(1, 365))
+
+#Melt fraction
+plot_box(max_dis_fra_hist_base, max_dis_fra_1p5K_base, max_dis_fra_2p0K_base, max_dis_fra_3p0K_base,
+         y_lab = "[-]")
+
+plot_box(max_dis_fra_hist_coch, max_dis_fra_1p5K_coch, max_dis_fra_2p0K_coch, max_dis_fra_3p0K_coch,
+         y_lab = "")
+
+plot_box(max_dis_fra_hist_koel, max_dis_fra_1p5K_koel, max_dis_fra_2p0K_koel, max_dis_fra_3p0K_koel,
+         y_lab = "")
+
+#Melt magnitude
+plot_box(max_mel_mag_hist_base, max_mel_mag_1p5K_base, max_mel_mag_2p0K_base, max_mel_mag_3p0K_base,
+         y_lab = "[mm]", calc_ylims = T)
+
+plot_box(max_mel_mag_hist_coch, max_mel_mag_1p5K_coch, max_mel_mag_2p0K_coch, max_mel_mag_3p0K_coch,
+         y_lab = "", calc_ylims = T)
+
+plot_box(max_mel_mag_hist_koel, max_mel_mag_1p5K_koel, max_mel_mag_2p0K_koel, max_mel_mag_3p0K_koel,
+         y_lab = "", calc_ylims = T)
+
+#Melt timing
+plot_box(max_mel_doy_hist_base, max_mel_doy_1p5K_base, max_mel_doy_2p0K_base, max_mel_doy_3p0K_base,
+         y_lab = "DOY", ylims_in = c(1, 365))
+
+plot_box(max_mel_doy_hist_coch, max_mel_doy_1p5K_coch, max_mel_doy_2p0K_coch, max_mel_doy_3p0K_coch,
+         y_lab = "", ylims_in = c(1, 365))
+
+plot_box(max_mel_doy_hist_koel, max_mel_doy_1p5K_koel, max_mel_doy_2p0K_koel, max_mel_doy_3p0K_koel,
+         y_lab = "", ylims_in = c(1, 365))
+
+#Precipitation total magnitude
+plot_box(max_prt_mag_hist_base, max_prt_mag_1p5K_base, max_prt_mag_2p0K_base, max_prt_mag_3p0K_base,
+         y_lab = "[mm]", calc_ylims = T)
+
+plot_box(max_prt_mag_hist_coch, max_prt_mag_1p5K_coch, max_prt_mag_2p0K_coch, max_prt_mag_3p0K_coch,
+         y_lab = "", calc_ylims = T)
+
+plot_box(max_prt_mag_hist_koel, max_prt_mag_1p5K_koel, max_prt_mag_2p0K_koel, max_prt_mag_3p0K_koel,
+         y_lab = "", calc_ylims = T)
+
+#Precipitation total timing
+plot_box(max_prt_doy_hist_base, max_prt_doy_1p5K_base, max_prt_doy_2p0K_base, max_prt_doy_3p0K_base,
+         y_lab = "DOY", ylims_in = c(1, 365))
+
+plot_box(max_prt_doy_hist_coch, max_prt_doy_1p5K_coch, max_prt_doy_2p0K_coch, max_prt_doy_3p0K_coch,
+         y_lab = "", ylims_in = c(1, 365))
+
+plot_box(max_prt_doy_hist_koel, max_prt_doy_1p5K_koel, max_prt_doy_2p0K_koel, max_prt_doy_3p0K_koel,
+         y_lab = "", ylims_in = c(1, 365))
+
+#Precipitation liquid magnitude
+plot_box(max_prl_mag_hist_base, max_prl_mag_1p5K_base, max_prl_mag_2p0K_base, max_prl_mag_3p0K_base,
+         y_lab = "[mm]", calc_ylims = T)
+
+plot_box(max_prl_mag_hist_coch, max_prl_mag_1p5K_coch, max_prl_mag_2p0K_coch, max_prl_mag_3p0K_coch,
+         y_lab = "", calc_ylims = T)
+
+plot_box(max_prl_mag_hist_koel, max_prl_mag_1p5K_koel, max_prl_mag_2p0K_koel, max_prl_mag_3p0K_koel,
+         y_lab = "", calc_ylims = T)
+
+#Precipitation liquid timing
+plot_box(max_prl_doy_hist_base, max_prl_doy_1p5K_base, max_prl_doy_2p0K_base, max_prl_doy_3p0K_base,
+         y_lab = "DOY", ylims_in = c(1, 365))
+
+plot_box(max_prl_doy_hist_coch, max_prl_doy_1p5K_coch, max_prl_doy_2p0K_coch, max_prl_doy_3p0K_coch,
+         y_lab = "", ylims_in = c(1, 365))
+
+plot_box(max_prl_doy_hist_koel, max_prl_doy_1p5K_koel, max_prl_doy_2p0K_koel, max_prl_doy_3p0K_koel,
+         y_lab = "", ylims_in = c(1, 365))
+
+#Gauging station
+cex_header <- 1.7
+par(mar = c(0,0,0,0))
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("a) Basel",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.191)
+mtext("b) Cochem",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.525)
+mtext("c) Cologne",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
+mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
+mtext("Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
+mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
+mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.495, outer = T)
+mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.374, outer = T)
+mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.254, outer = T)
+mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.134, outer = T)
+mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.018, outer = T)
+
+dev.off()
+
+
+
+
+
+plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 20, y_lab = ""){
+  
+  col_hist <- "steelblue4"
+  col_1p5K <- "grey25"
+  col_2p0K <- "orange3"
+  col_3p0K <- "darkred"
+  
+  breaks <- seq(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
+                max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)), length.out = n_breaks)
+  
+  ylims <- c(0, max_na(c(hist(max_hist, plot = F)$density, hist(max_1p5K, plot = F)$density,
+                         hist(max_2p0K, plot = F)$density, hist(max_3p0K, plot = F)$density)))
+  
+  par(mar =c(0.4, 0.5, 0.0, 0.5))
+  
+  hist(max_hist, freq = F, col = col_hist, axes = F, breaks = breaks, 
+       ylab = "", xlab = "", main = "", ylim = ylims)
+  hist(max_1p5K, freq = F, col = col_1p5K, axes = F, breaks = breaks, 
+       ylab = "", xlab = "", main = "", ylim = ylims)
+  hist(max_2p0K, freq = F, col = col_2p0K, axes = F, breaks = breaks, 
+       ylab = "", xlab = "", main = "", ylim = ylims)
+  hist(max_3p0K, freq = F, col = col_3p0K, axes = F, breaks = breaks, 
+       ylab = "", xlab = "", main = "", ylim = ylims)
+  axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+
+  cex_header <- 1.2
+  par(mar = c(0,0,0,0))
+  
+  plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+  mtext(y_lab, side = 3, line = -2.9, cex = cex_header, adj = 0.5)
+  
+  }
+
+pdf(paste0(bas_dir,"res_figs/max_his_fut.pdf"), width = 16, height = 24)
+
+par(family = "serif")
+
+layout(matrix(c(rep(137, 46),
+                136, seq(1,     36+9, 1),
+                136, seq(37+9,  72+18, 1),
+                136, seq(73+18, 108+27, 1)),
+              46, 4, byrow = F), widths=c(0.10, rep(1, 3)), heights=c(1, rep(1, 45)))
+# layout.show(n = 137)
+
+plot_hist(max_dis_mag_hist_base, max_dis_mag_1p5K_base, max_dis_mag_2p0K_base, max_dis_mag_3p0K_base,
+          y_lab = expression(paste("[m"^"3", "s"^"-1","]")))
+
+plot_hist(max_dis_doy_hist_base, max_dis_doy_1p5K_base, max_dis_doy_2p0K_base, max_dis_doy_3p0K_base,
+          y_lab = "Day of the year")
+
+plot_hist(max_dis_fra_hist_base, max_dis_fra_1p5K_base, max_dis_fra_2p0K_base, max_dis_fra_3p0K_base,
+          y_lab = "Fraction [-]")
+
+plot_hist(max_mel_mag_hist_base, max_mel_mag_1p5K_base, max_mel_mag_2p0K_base, max_mel_mag_3p0K_base,
+          y_lab = "[mm]")
+
+plot_hist(max_mel_doy_hist_base, max_mel_doy_1p5K_base, max_mel_doy_2p0K_base, max_mel_doy_3p0K_base,
+          y_lab = "Day of the year")
+
+plot_hist(max_prt_mag_hist_base, max_prt_mag_1p5K_base, max_prt_mag_2p0K_base, max_prt_mag_3p0K_base,
+          y_lab = "[mm]")
+
+plot_hist(max_prt_doy_hist_base, max_prt_doy_1p5K_base, max_prt_doy_2p0K_base, max_prt_doy_3p0K_base,
+          y_lab = "Day of the year")
+
+plot_hist(max_prl_mag_hist_base, max_prl_mag_1p5K_base, max_prl_mag_2p0K_base, max_prl_mag_3p0K_base,
+          y_lab = "[mm]")
+
+plot_hist(max_prl_doy_hist_base, max_prl_doy_1p5K_base, max_prl_doy_2p0K_base, max_prl_doy_3p0K_base,
+          y_lab = "Day of the year")
+
+plot_hist(max_dis_mag_hist_coch, max_dis_mag_1p5K_coch, max_dis_mag_2p0K_coch, max_dis_mag_3p0K_coch,
+          y_lab = expression(paste("[m"^"3", "s"^"-1","]")))
+
+plot_hist(max_dis_doy_hist_coch, max_dis_doy_1p5K_coch, max_dis_doy_2p0K_coch, max_dis_doy_3p0K_coch,
+          y_lab = "Day of the year")
+
+plot_hist(max_dis_fra_hist_coch, max_dis_fra_1p5K_coch, max_dis_fra_2p0K_coch, max_dis_fra_3p0K_coch,
+          y_lab = "Fraction [-]")
+
+plot_hist(max_mel_mag_hist_coch, max_mel_mag_1p5K_coch, max_mel_mag_2p0K_coch, max_mel_mag_3p0K_coch,
+          y_lab = "[mm]")
+
+plot_hist(max_mel_doy_hist_coch, max_mel_doy_1p5K_coch, max_mel_doy_2p0K_coch, max_mel_doy_3p0K_coch,
+          y_lab = "DOY")
+
+plot_hist(max_prt_mag_hist_coch, max_prt_mag_1p5K_coch, max_prt_mag_2p0K_coch, max_prt_mag_3p0K_coch,
+          y_lab = "[mm]")
+
+plot_hist(max_prt_doy_hist_coch, max_prt_doy_1p5K_coch, max_prt_doy_2p0K_coch, max_prt_doy_3p0K_coch,
+          y_lab = "Day of the year")
+
+plot_hist(max_prl_mag_hist_coch, max_prl_mag_1p5K_coch, max_prl_mag_2p0K_coch, max_prl_mag_3p0K_coch,
+          y_lab = "[mm]")
+
+plot_hist(max_prl_doy_hist_coch, max_prl_doy_1p5K_coch, max_prl_doy_2p0K_coch, max_prl_doy_3p0K_coch,
+          y_lab = "Day of the year")
+
+plot_hist(max_dis_mag_hist_koel, max_dis_mag_1p5K_koel, max_dis_mag_2p0K_koel, max_dis_mag_3p0K_koel,
+          y_lab = expression(paste("[m"^"3", "s"^"-1","]")))
+
+plot_hist(max_dis_doy_hist_koel, max_dis_doy_1p5K_koel, max_dis_doy_2p0K_koel, max_dis_doy_3p0K_koel,
+          y_lab = "Day of the year")
+
+plot_hist(max_dis_fra_hist_koel, max_dis_fra_1p5K_koel, max_dis_fra_2p0K_koel, max_dis_fra_3p0K_koel,
+          y_lab = "Fraction [-]")
+
+plot_hist(max_mel_mag_hist_koel, max_mel_mag_1p5K_koel, max_mel_mag_2p0K_koel, max_mel_mag_3p0K_koel,
+          y_lab = "[mm]")
+
+plot_hist(max_mel_doy_hist_koel, max_mel_doy_1p5K_koel, max_mel_doy_2p0K_koel, max_mel_doy_3p0K_koel,
+          y_lab = "Day of the year")
+
+plot_hist(max_prt_mag_hist_koel, max_prt_mag_1p5K_koel, max_prt_mag_2p0K_koel, max_prt_mag_3p0K_koel,
+          y_lab = "[mm]")
+
+plot_hist(max_prt_doy_hist_koel, max_prt_doy_1p5K_koel, max_prt_doy_2p0K_koel, max_prt_doy_3p0K_koel,
+          y_lab = "Day of the year")
+
+plot_hist(max_prl_mag_hist_koel, max_prl_mag_1p5K_koel, max_prl_mag_2p0K_koel, max_prl_mag_3p0K_koel,
+          y_lab = "[mm]")
+
+plot_hist(max_prl_doy_hist_koel, max_prl_doy_1p5K_koel, max_prl_doy_2p0K_koel, max_prl_doy_3p0K_koel,
+          y_lab = "Day of the year")
+
+#Gauging station
+cex_header <- 1.7
+par(mar = c(0,0,0,0))
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("a) Basel",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.161)
+mtext("b) Cochem",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.520)
+mtext("c) Cologne",
+      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
+par(xpd=TRUE)
+legend(22, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+       box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
+legend(58, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+       box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
+legend(94, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+       box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
+
+par(xpd=FALSE)
+
+plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
+mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
+mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
+mtext("Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
+mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
+mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.490, outer = T)
+mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.384, outer = T)
+mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.264, outer = T)
+mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.154, outer = T)
+mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.030, outer = T)
+
+dev.off()
+
 
 #ann_cyc_flux----
 
@@ -2424,7 +2577,7 @@ ann_cycl <- function(data_hist, data_1p5K, data_2p0K, data_3p0K, main = "", do_l
   col_1p5K <- "grey25"
   col_2p0K <- "orange3"
   col_3p0K <- "darkred"
-  alpha_points <- 0.40
+  alpha_points <- 0.50
   cex_points <- 0.8
   cex_x_label <- 1.5
   cex_main <- 1.7
@@ -2468,7 +2621,6 @@ ann_cycl <- function(data_hist, data_1p5K, data_2p0K, data_3p0K, main = "", do_l
 pdf(paste0(bas_dir,"res_figs/ann_cyc_fut.pdf"), width = 16, height = 16)
 
 par(family = "serif")
-par(mfrow = c(7, 3))
 par(mar = c(1.5, 3.0, 1.0, 1.0))
 
 layout(matrix(c(rep(22, 4),
