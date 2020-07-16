@@ -319,6 +319,13 @@ grid_points_base_dem <- spTransform(grid_points_base, crs(dem))
 grid_points_coch_dem <- spTransform(grid_points_coch, crs(dem))
 grid_points_koel_dem <- spTransform(grid_points_koel, crs(dem))
 
+n_cores <- 5 #number of cores used for parallel computing
+
+#Make cluster for parallel computing
+my_clust <- makeCluster(n_cores)
+clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
+registerDoParallel(my_clust)
+
 elevs_base <- foreach(i = 1:length(grid_points_base_dem), .combine = 'c') %dopar% {
   
   elev_buff(grid_points_base_dem[i], 2500, dem_in = dem)
@@ -336,6 +343,8 @@ elevs_koel <- foreach(i = 1:length(grid_points_koel_dem), .combine = 'c') %dopar
   elev_buff(grid_points_koel_dem[i], 2500, dem_in = dem)
   
 }
+
+stopCluster(my_clust)
 
 #Function to extract time series from nc-files
 flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
@@ -1397,8 +1406,9 @@ plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, yli
                        max_3p0K = range(max_3p0K, na.rm = T))
   
   boxplot(max_df, boxfill = NA, border = NA, axes = F, ylim = ylims)
-  axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+  axis(2, mgp=c(3, 0.22, 0), tck = -0.015, cex.axis = 1.5)
   mtext(y_lab, side = 2, line = 1.8, cex = 1.3)
+  grid(nx = 0, ny = 6, col = "grey55", lwd = 0.5)
   if(do_legend){
     legend("topleft", c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
            col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.2,
@@ -1406,21 +1416,25 @@ plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, yli
   }
   box()
   
-  boxplot(max_hist, ylim = ylims, col = col_hist, axes = F, xaxt = "n", 
-          add = TRUE, at = 1, boxwex = 1.3)
-  boxplot(max_1p5K, ylim = ylims, col = col_1p5K, axes = F, xaxt = "n", 
-          add = TRUE, at = 2, boxwex = 1.3)
-  boxplot(max_2p0K, ylim = ylims, col = col_2p0K, axes = F, xaxt = "n", 
-          add = TRUE, at = 3, boxwex = 1.3)
-  boxplot(max_3p0K, ylim = ylims, col = col_3p0K, axes = F, xaxt = "n",
-          add = TRUE, at = 4, boxwex = 1.3)
+  boxplot(max_hist, ylim = ylims, col = col_hist, axes = F, xaxt = "n", add = TRUE, 
+          at = 1, boxwex = 1.3, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(max_1p5K, ylim = ylims, col = col_1p5K, axes = F, xaxt = "n", add = TRUE, 
+          at = 2, boxwex = 1.3, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(max_2p0K, ylim = ylims, col = col_2p0K, axes = F, xaxt = "n", add = TRUE, 
+          at = 3, boxwex = 1.3, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(max_3p0K, ylim = ylims, col = col_3p0K, axes = F, xaxt = "n", add = TRUE, 
+          at = 4, boxwex = 1.3, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
   
 }
 
-pdf(paste0(bas_dir,"res_figs/max_box_fut.pdf"), width = 16, height = 18)
+pdf(paste0(bas_dir,"res_figs/max_box_fut.pdf"), width = 16, height = 22)
 
 par(family = "serif")
-par(mar = c(0.5, 3.0, 0.5, 0.5))
+par(mar = c(0.8, 3.0, 0.8, 0.5))
 
 layout(matrix(c(rep(28, 4),
                 29, 1, 2, 3,
@@ -1554,12 +1568,7 @@ dev.off()
 
 
 
-plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 20, y_lab = ""){
-  
-  col_hist <- "steelblue4"
-  col_1p5K <- "grey25"
-  col_2p0K <- "orange3"
-  col_3p0K <- "darkred"
+plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 25, y_lab = ""){
   
   breaks <- seq(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
                 max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)), length.out = n_breaks)
@@ -1567,7 +1576,7 @@ plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 20, y_l
   ylims <- c(0, max_na(c(hist(max_hist, plot = F)$density, hist(max_1p5K, plot = F)$density,
                          hist(max_2p0K, plot = F)$density, hist(max_3p0K, plot = F)$density)))
   
-  par(mar =c(0.4, 0.5, 0.0, 0.5))
+  par(mar =c(0.6, 0.5, 0.2, 0.5))
   
   hist(max_hist, freq = F, col = col_hist, axes = F, breaks = breaks, 
        ylab = "", xlab = "", main = "", ylim = ylims)
@@ -1577,18 +1586,22 @@ plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 20, y_l
        ylab = "", xlab = "", main = "", ylim = ylims)
   hist(max_3p0K, freq = F, col = col_3p0K, axes = F, breaks = breaks, 
        ylab = "", xlab = "", main = "", ylim = ylims)
-  axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+  axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.4)
 
-  cex_header <- 1.2
+  cex_header <- 1.3
   par(mar = c(0,0,0,0))
   
   plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-  mtext(y_lab, side = 3, line = -2.9, cex = cex_header, adj = 0.5)
+  mtext(y_lab, side = 3, line = -2.5, cex = cex_header, adj = 0.5)
   
   }
 
-pdf(paste0(bas_dir,"res_figs/max_his_fut.pdf"), width = 16, height = 24)
+pdf(paste0(bas_dir,"res_figs/max_his_fut.pdf"), width = 16, height = 25)
 
+col_hist <- "steelblue4"
+col_1p5K <- "grey25"
+col_2p0K <- "orange3"
+col_3p0K <- "darkred"
 par(family = "serif")
 
 layout(matrix(c(rep(137, 46),
@@ -1691,14 +1704,14 @@ mtext("b) Cochem",
 mtext("c) Cologne",
       side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
 par(xpd=TRUE)
-legend(22, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
-       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+legend(22, 90, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.5,
        box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
-legend(58, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
-       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+legend(58, 90, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.5,
        box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
-legend(94, 80, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
-       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.4,
+legend(94, 90, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+       col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.5,
        box.lwd = 0.0, box.col = "white", bg = "white", ncol = 2)
 
 par(xpd=FALSE)
@@ -2652,66 +2665,50 @@ ann_cycl(ann_prt_hist_base, ann_prt_1p5K_base, ann_prt_2p0K_base, ann_prt_3p0K_b
          y_lab = expression(paste("Precip. [mm]")), 
          do_y_lab = T)
 
-ann_cycl(ann_prt_hist_coch, ann_prt_1p5K_coch, ann_prt_2p0K_coch, ann_prt_3p0K_coch,
-         y_lab = expression(paste("Precip. [mm]")))
+ann_cycl(ann_prt_hist_coch, ann_prt_1p5K_coch, ann_prt_2p0K_coch, ann_prt_3p0K_coch)
 
-ann_cycl(ann_prt_hist_koel, ann_prt_1p5K_koel, ann_prt_2p0K_koel, ann_prt_3p0K_koel,
-         y_lab = expression(paste("Precip. [mm]")))
+ann_cycl(ann_prt_hist_koel, ann_prt_1p5K_koel, ann_prt_2p0K_koel, ann_prt_3p0K_koel)
 
 #Precipitation liquid
 ann_cycl(ann_prl_hist_base, ann_prl_1p5K_base, ann_prl_2p0K_base, ann_prl_3p0K_base,
          y_lab = expression(paste("Precip. [mm]")),
          do_y_lab = T)
 
-ann_cycl(ann_prl_hist_coch, ann_prl_1p5K_coch, ann_prl_2p0K_coch, ann_prl_3p0K_coch,
-         y_lab = expression(paste("Precip. [mm]")))
+ann_cycl(ann_prl_hist_coch, ann_prl_1p5K_coch, ann_prl_2p0K_coch, ann_prl_3p0K_coch)
 
-ann_cycl(ann_prl_hist_koel, ann_prl_1p5K_koel, ann_prl_2p0K_koel, ann_prl_3p0K_koel,
-         y_lab = expression(paste("Precip. [mm]")))
+ann_cycl(ann_prl_hist_koel, ann_prl_1p5K_koel, ann_prl_2p0K_koel, ann_prl_3p0K_koel)
 
 #Protective effect
 ann_cycl(ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
-         y_lab = expression(paste("Precip. liq / Precip. total [-]")),
-         do_y_lab = T)
+         y_lab = expression(paste("Prec. solid/total [-]")), do_y_lab = T)
 
-ann_cycl(ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch,
-         y_lab = expression(paste("Precip. liq / total [-]")))
+ann_cycl(ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch)
 
-ann_cycl(ann_eff_hist_koel, ann_eff_1p5K_koel, ann_eff_2p0K_koel, ann_eff_3p0K_koel,
-         y_lab = expression(paste("Precip. liq / total [-]")))
+ann_cycl(ann_eff_hist_koel, ann_eff_1p5K_koel, ann_eff_2p0K_koel, ann_eff_3p0K_koel)
 
 #Snowmelt
 ann_cycl(ann_mel_hist_base, ann_mel_1p5K_base, ann_mel_2p0K_base, ann_mel_3p0K_base,
-         y_lab = expression(paste("Snowmelt [mm]")),
-         do_y_lab = T)
+         y_lab = expression(paste("Snowmelt [mm]")), do_y_lab = T)
 
-ann_cycl(ann_mel_hist_coch, ann_mel_1p5K_coch, ann_mel_2p0K_coch, ann_mel_3p0K_coch,
-         y_lab = expression(paste("Snowmelt [mm]")))
+ann_cycl(ann_mel_hist_coch, ann_mel_1p5K_coch, ann_mel_2p0K_coch, ann_mel_3p0K_coch)
 
-ann_cycl(ann_mel_hist_koel, ann_mel_1p5K_koel, ann_mel_2p0K_koel, ann_mel_3p0K_koel,
-         y_lab = expression(paste("Snowmelt [mm]")))
+ann_cycl(ann_mel_hist_koel, ann_mel_1p5K_koel, ann_mel_2p0K_koel, ann_mel_3p0K_koel)
 
 #Runoff fraction
 ann_cycl(ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
-         y_lab = expression(paste("Snowmelt fraction [-]")),
-         do_y_lab = T)
+         y_lab = expression(paste("Snowmelt fraction [-]")), do_y_lab = T)
 
-ann_cycl(ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch,
-         y_lab = expression(paste("Snowmelt fraction [-]")))
+ann_cycl(ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch)
 
-ann_cycl(ann_fra_hist_koel, ann_fra_1p5K_koel, ann_fra_2p0K_koel, ann_fra_3p0K_koel,
-         y_lab = expression(paste("Snowmelt fraction [-]")))
+ann_cycl(ann_fra_hist_koel, ann_fra_1p5K_koel, ann_fra_2p0K_koel, ann_fra_3p0K_koel)
 
 #Snowmelt elevation
 ann_cycl(ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
-         y_lab = expression(paste("Elevation [-]")),
-         do_y_lab = T)
+         y_lab = expression(paste("Elevation [-]")), do_y_lab = T)
 
-ann_cycl(ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch,
-         y_lab = expression(paste("Elevation [-]")))
+ann_cycl(ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch)
 
-ann_cycl(ann_ele_hist_koel, ann_ele_1p5K_koel, ann_ele_2p0K_koel, ann_ele_3p0K_koel,
-         y_lab = expression(paste("Elevation [-]")))
+ann_cycl(ann_ele_hist_koel, ann_ele_1p5K_koel, ann_ele_2p0K_koel, ann_ele_3p0K_koel)
 
 cex_header <- 1.7
 par(mar = c(0,0,0,0))

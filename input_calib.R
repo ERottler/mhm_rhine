@@ -222,17 +222,18 @@ par(mfrow = c(1, 4))
 par(mar = c(0.5, 2, 2, 2))
 
 plot(lu_1990, col = cols_lu, axes=F, legend = F, ylab = "", xlab = "", box = F)
-legend("topright", c("forest", "impervious", "pervious"), pch = 15, col = cols_lu, bty = "n", cex = 1.4)
-mtext("1950-1995", side = 3, line = 0.0, cex = 1.2)
+legend("topright", c("forest", "impervious", "pervious"), pch = 15, col = cols_lu, 
+       bty = "n", cex = 2.0)
+mtext("1950-1995", side = 3, line = 0.0, cex = 1.5)
 
 plot(lu_2000, col = cols_lu, axes=F, legend = F, ylab = "", xlab = "", box = F)
-mtext("1996-2003", side = 3, line = 0.0, cex = 1.2)
+mtext("1996-2003", side = 3, line = 0.0, cex = 1.7)
 
 plot(lu_2006, col = cols_lu, axes=F, legend = F, ylab = "", xlab = "", box = F)
-mtext("2004-2009", side = 3, line = 0.0, cex = 1.2)
+mtext("2004-2009", side = 3, line = 0.0, cex = 1.7)
 
 plot(lu_2012, col = cols_lu, axes=F, legend = F, ylab = "", xlab = "", box = F)
-mtext("2010-2016", side = 3, line = 0.0, cex = 1.2)
+mtext("2010-2016", side = 3, line = 0.0, cex = 1.7)
 
 dev.off()
 
@@ -326,12 +327,12 @@ dev.off()
 
 #Further morphological input
 
+dem <- raster(paste0(run_dir, "input/morph/dem.asc"))
 slo_bas <- raster(paste0(run_dir, "input/morph/slope.asc"))
 asp_bas <- raster(paste0(run_dir, "input/morph/aspect.asc"))
 geo_bas <- raster(paste0(run_dir, "input/morph/geology_class.asc"))
 fdir_bas <- raster(paste0(run_dir, "input/morph/fdir.asc"))
 facc_bas <- raster(paste0(run_dir, "input/morph/facc.asc"))
-
 
 pdf(paste0(bas_dir, "res_figs/morph_maps.pdf"), width = 12, height = 8)
 
@@ -349,7 +350,7 @@ plot(asp_bas, col = viridis(100, direction = -1), axes=F, legend = T, ylab = "",
 mtext("Aspect", side = 3, line = 0.0)
 
 plot(geo_bas, breaks = seq(0.5, 8.5, 1), col = viridis(8), axes=F, legend = T, ylab = "", xlab = "", box = F)
-mtext("Geology", side = 3, line = 0.0)
+mtext("Geological Units", side = 3, line = 0.0)
 
 plot(fdir_bas, col = viridis(100, direction = -1), axes=F, legend = T, ylab = "", xlab = "", box = F)
 mtext("Flow direction", side = 3, line = 0.0)
@@ -392,7 +393,7 @@ dev.off()
 #flux_stat----
 
 #General
-nc_flux_file <- paste0(run_dir, "output/mHM_Fluxes_States.nc")
+nc_flux_file <- paste0(run_dir, "output/EOBS/output/mHM_Fluxes_States.nc")
 nc_flux <- nc_open(nc_flux_file)
 
 #get lat/lon/time of .nc meteo data
@@ -412,18 +413,8 @@ aet_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind),
                       count = c(nrow(lon), ncol(lon), count_date), varid = "aET")
 qto_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
                       count = c(nrow(lon), ncol(lon), count_date), varid = "Q")
-sw1_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L01")
-sw2_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L02")
-sw3_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L03")
-sw4_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L04")
-sw5_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L05")
-sw6_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
-                      count = c(nrow(lon), ncol(lon), count_date), varid = "SWC_L06")
+som_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                      count = c(nrow(lon), ncol(lon), count_date), varid = "SM_Lall")
 pef_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
                       count = c(nrow(lon), ncol(lon), count_date), varid = "preEffect")
 qdi_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
@@ -439,12 +430,7 @@ snow_max <- apply(snow_cube, c(1, 2), max_na) #[mm]
 pet_mea <- apply(pet_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 aet_mea <- apply(aet_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 qto_mea <- apply(qto_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
-sw1_mea <- apply(sw1_cube, c(1, 2), mea_na) 
-sw2_mea <- apply(sw2_cube, c(1, 2), mea_na) 
-sw3_mea <- apply(sw3_cube, c(1, 2), mea_na) 
-sw4_mea <- apply(sw4_cube, c(1, 2), mea_na) 
-sw5_mea <- apply(sw5_cube, c(1, 2), mea_na) 
-sw6_mea <- apply(sw6_cube, c(1, 2), mea_na) 
+som_mea <- apply(som_cube, c(1, 2), mea_na) 
 pef_mea <- apply(pef_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 qdi_mea <- apply(qdi_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
 qba_mea <- apply(qba_cube, c(1, 2), sum_na) / length(sta_yea:end_yea) #[mm]
@@ -461,7 +447,7 @@ sw3_mea_c <- c(sw3_mea)
 sw4_mea_c <- c(sw4_mea)
 sw5_mea_c <- c(sw5_mea)
 sw6_mea_c <- c(sw6_mea)
-swc_mea_c <- sw1_mea_c + sw2_mea_c + sw3_mea_c + sw4_mea_c + sw5_mea_c + sw6_mea_c
+som_mea_c <- c(som_mea)
 pef_mea_c <- c(pef_mea)
 qdi_mea_c <- c(qdi_mea)
 qba_mea_c <- c(qba_mea)
@@ -519,10 +505,10 @@ cols_spat_qto <- foreach(i = 1:length(qto_mea_c), .combine = 'cbind') %dopar% {
           col_na = "white")
   
 }
-cols_spat_swc <- foreach(i = 1:length(swc_mea_c), .combine = 'cbind') %dopar% {
+cols_spat_som <- foreach(i = 1:length(som_mea_c), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = swc_mea_c[i],
-          dat_ref = swc_mea_c,
+  val2col(val_in = som_mea_c[i],
+          dat_ref = som_mea_c,
           do_bicol = F,
           virid_dir = -1,
           do_log = F,
