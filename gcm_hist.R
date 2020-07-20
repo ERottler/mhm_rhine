@@ -325,6 +325,15 @@ lims_max <- c(1, max_na(c(disc_mea_max, disc_obs_max, disc_cm1_max, disc_cm1_max
 lims_q90 <- c(1, max_na(c(disc_mea_q90, disc_obs_q90, disc_cm1_q90, disc_cm1_q90, disc_cm2_q90, 
                           disc_cm3_q90, disc_cm4_q90, disc_cm5_q90)))
 
+#plot_eval----
+
+pdf(paste0(bas_dir,"res_figs/eval_hist.pdf"), width = 16, height = 6)
+
+par(family = "serif")
+par(mar = c(3.5, 3.5, 2.5, 0.5))
+par(mfrow = c(2, 4))
+cex_points <- 1.4
+
 #Meased vs. EOBS Q90 all stations
 alpha_sel <- c(0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
                0.4, 0.4, 0.4, 0.4, 0.4)
@@ -336,12 +345,19 @@ plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_q90)){
   
-  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("All gauges validation"), pch = 19, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Meased vs. EOBS MAX all stations
@@ -355,12 +371,19 @@ plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_m
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_max)){
   
-  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("MAX Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("All gauges validation"), pch = 19, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Meased vs. EOBS Q90 selected stations
@@ -374,12 +397,19 @@ plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_q90)){
   
-  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
+       col = c("black", "darkred", "steelblue4"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Meased vs. EOBS Max selected stations
@@ -393,12 +423,19 @@ plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_m
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_max)){
   
-  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
+       col = c("black", "darkred", "steelblue4"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Measured vs. GCMs Q90
@@ -412,17 +449,31 @@ plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_q90)){
   
-  points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm3_q90[, i], pch = 23, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm4_q90[, i], pch = 24, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm5_q90[, i], pch = 25, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm3_q90[, i], pch = 23, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm4_q90[, i], pch = 24, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm5_q90[, i], pch = 25, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
 
 }
-
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("Q90 Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("All gauges validation"), pch = 19, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
+legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
+                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Measured vs. GCMs MAX
@@ -436,17 +487,31 @@ plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_m
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_max)){
   
-  points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm3_max[, i], pch = 23, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm4_max[, i], pch = 24, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm5_max[, i], pch = 25, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm3_max[, i], pch = 23, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm4_max[, i], pch = 24, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm5_max[, i], pch = 25, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("MAX Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("All gauges validation"), pch = 19, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
+legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
+                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Measured vs. GCMs selected Q90
@@ -460,17 +525,31 @@ plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_q90)){
   
-  points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm3_q90[, i], pch = 23, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm4_q90[, i], pch = 24, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_q90[, i], disc_cm5_q90[, i], pch = 25, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm2_q90[, i], pch = 22, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm3_q90[, i], pch = 23, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm4_q90[, i], pch = 24, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_q90[, i], disc_cm5_q90[, i], pch = 25, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("Q90 Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
+       col = c("black", "darkred", "steelblue4"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
+legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
+                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
 #Measured vs. GCMs selected MAX
@@ -484,20 +563,34 @@ plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_m
      ylab = "", xlab = "", axes = FALSE)
 for(i in 1:ncol(disc_mea_max)){
   
-  points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm3_max[, i], pch = 23, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm4_max[, i], pch = 24, bg = cols_sel[i], col = alpha("black", alpha = 0))
-  points(disc_mea_max[, i], disc_cm5_max[, i], pch = 25, bg = cols_sel[i], col = alpha("black", alpha = 0))
+  points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm2_max[, i], pch = 22, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm3_max[, i], pch = 23, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm4_max[, i], pch = 24, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  points(disc_mea_max[, i], disc_cm5_max[, i], pch = 25, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-
 abline(a = 0, b = 1)
-axis(1)
-axis(2)
+axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
+mtext("MAX Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
+mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
+legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
+       col = c("black", "darkred", "steelblue4"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
+legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
+                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
+       col = c("black"), cex = 1.0,
+       box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
-
+dev.off()
 
 
 

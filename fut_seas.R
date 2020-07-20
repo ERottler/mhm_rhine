@@ -1552,15 +1552,15 @@ mtext("c) Cologne",
       side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
-mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
-mtext("Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
-mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
-mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.495, outer = T)
-mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.374, outer = T)
-mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.254, outer = T)
-mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.134, outer = T)
-mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.018, outer = T)
+mtext("1. Disc. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
+mtext("2. Disc. tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
+mtext("3. Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
+mtext("4. Melt mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
+mtext("5. Melt tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.495, outer = T)
+mtext("6. Prec. tot. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.374, outer = T)
+mtext("7. Prec. tot. tim",  side = 2, line = -2.2, cex = cex_header, adj = 0.254, outer = T)
+mtext("8. Prec. liq. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.134, outer = T)
+mtext("9. Prec. liq. tim",  side = 2, line = -2.2, cex = cex_header, adj = 0.018, outer = T)
 
 dev.off()
 
@@ -1568,13 +1568,16 @@ dev.off()
 
 
 
-plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 25, y_lab = ""){
+plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 50, y_lab = ""){
   
   breaks <- seq(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
-                max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)), length.out = n_breaks)
+                max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)), 
+                length.out = n_breaks)
   
-  ylims <- c(0, max_na(c(hist(max_hist, plot = F)$density, hist(max_1p5K, plot = F)$density,
-                         hist(max_2p0K, plot = F)$density, hist(max_3p0K, plot = F)$density)))
+  ylims <- c(0, max_na(c(hist(max_hist, breaks = breaks, plot = F)$density, 
+                         hist(max_1p5K, breaks = breaks, plot = F)$density,
+                         hist(max_2p0K, breaks = breaks, plot = F)$density, 
+                         hist(max_3p0K, breaks = breaks, plot = F)$density)))
   
   par(mar =c(0.6, 0.5, 0.2, 0.5))
   
@@ -1611,7 +1614,8 @@ layout(matrix(c(rep(137, 46),
               46, 4, byrow = F), widths=c(0.10, rep(1, 3)), heights=c(1, rep(1, 45)))
 # layout.show(n = 137)
 
-plot_hist(max_dis_mag_hist_base, max_dis_mag_1p5K_base, max_dis_mag_2p0K_base, max_dis_mag_3p0K_base,
+plot_hist(max_hist = max_dis_mag_hist_base, max_1p5K = max_dis_mag_1p5K_base, 
+          max_2p0K = max_dis_mag_2p0K_base, max_3p0K = max_dis_mag_3p0K_base,
           y_lab = expression(paste("[m"^"3", "s"^"-1","]")))
 
 plot_hist(max_dis_doy_hist_base, max_dis_doy_1p5K_base, max_dis_doy_2p0K_base, max_dis_doy_3p0K_base,
@@ -1717,15 +1721,15 @@ legend(94, 90, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19,
 par(xpd=FALSE)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
-mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
-mtext("Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
-mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
-mtext("Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.490, outer = T)
-mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.384, outer = T)
-mtext("Precip total",  side = 2, line = -2.2, cex = cex_header, adj = 0.264, outer = T)
-mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.154, outer = T)
-mtext("Precip. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.030, outer = T)
+mtext("1. Disc. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.958, outer = T)
+mtext("2. Disc. tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.842, outer = T)
+mtext("3. Melt frac.",  side = 2, line = -2.2, cex = cex_header, adj = 0.727, outer = T)
+mtext("4. Melt mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.607, outer = T)
+mtext("5. Melt tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.490, outer = T)
+mtext("6. Prec. tot. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.384, outer = T)
+mtext("7. Prec. tot. tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.264, outer = T)
+mtext("8. Prec. liq. mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.154, outer = T)
+mtext("9. Prec. liq. tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.030, outer = T)
 
 dev.off()
 
@@ -2582,36 +2586,47 @@ ann_dis_3p0K_base <- apply(ann_dis_3p0K_base_all, 1, mea_na)
 ann_dis_3p0K_coch <- apply(ann_dis_3p0K_coch_all, 1, mea_na)
 ann_dis_3p0K_koel <- apply(ann_dis_3p0K_koel_all, 1, mea_na)
 
-#Function to plot annual cycles
-ann_cycl <- function(data_hist, data_1p5K, data_2p0K, data_3p0K, main = "", do_legend = F,
-                     y_lab = "", do_y_lab = F){
 
+#Functiont to plot annual cycles
+ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all,
+                       data_hist_mea, data_1p5K_mea, data_2p0K_mea, data_3p0K_mea, 
+                       main = "", do_legend = F,
+                       y_lab = "", do_y_lab = F){
+  
   col_hist <- "steelblue4"
   col_1p5K <- "grey25"
   col_2p0K <- "orange3"
   col_3p0K <- "darkred"
-  alpha_points <- 0.50
-  cex_points <- 0.8
+  alpha_points <- 0.06
+  alpha_points_mea <- 0.6
+  cex_points <- 0.6
   cex_x_label <- 1.5
   cex_main <- 1.7
   
-  ylims <- c(min_na(c(data_hist, data_1p5K, data_2p0K, data_3p0K)),
-             max_na(c(data_hist, data_1p5K, data_2p0K, data_3p0K)))
-             
+  ylims <- c(min_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)),
+             max_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)))
   
   x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
   x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
   
-  plot(data_hist, type = "n", col = "blue3", ylim = ylims, ylab = "", xlab = "", axes = F)
+  plot(data_hist_all[, 1], type = "n", col = "blue3", ylim = ylims, ylab = "", xlab = "", axes = F)
   abline(v = x_axis_tic, lwd = 0.8, col = "grey55", lty = "dashed")
-  points(data_hist, col = scales::alpha(col_hist, alpha_points), pch = 19, cex = cex_points)
-  points(data_1p5K, col = scales::alpha(col_1p5K, alpha_points), pch = 19, cex = cex_points)
-  points(data_2p0K, col = scales::alpha(col_2p0K, alpha_points), pch = 19, cex = cex_points)
-  points(data_3p0K, col = scales::alpha(col_3p0K, alpha_points), pch = 19, cex = cex_points)
-  # lines(data_hist, col = col_hist)
-  # lines(data_1p5K, col = col_1p5K)
-  # lines(data_2p0K, col = col_2p0K)
-  # lines(data_3p0K, col = col_3p0K)
+  for (i in 1:ncol(data_hist_all)) {
+    points(data_hist_all[, i], col = scales::alpha(col_hist, alpha_points), pch = 19, cex = cex_points)  
+  }
+  for (i in 1:ncol(data_1p5K_all)) {
+    points(data_1p5K_all[, i], col = scales::alpha(col_1p5K, alpha_points), pch = 19, cex = cex_points)
+  }
+  for (i in 1:ncol(data_2p0K_all)) {
+    points(data_2p0K_all[, i], col = scales::alpha(col_2p0K, alpha_points), pch = 19, cex = cex_points)  
+  }
+  for (i in 1:ncol(data_3p0K_all)) {
+    points(data_3p0K_all[, i], col = scales::alpha(col_3p0K, alpha_points), pch = 19, cex = cex_points)  
+  }
+  points(data_hist_mea, col = scales::alpha(col_hist, alpha_points_mea), pch = 19, cex = cex_points)
+  points(data_1p5K_mea, col = scales::alpha(col_1p5K, alpha_points_mea), pch = 19, cex = cex_points)
+  points(data_2p0K_mea, col = scales::alpha(col_2p0K, alpha_points_mea), pch = 19, cex = cex_points)
+  points(data_3p0K_mea, col = scales::alpha(col_3p0K, alpha_points_mea), pch = 19, cex = cex_points)
   axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
        col = "black", col.axis = "black", tck = -0.05)#plot ticks
   axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
@@ -2629,9 +2644,9 @@ ann_cycl <- function(data_hist, data_1p5K, data_2p0K, data_3p0K, main = "", do_l
   }
   box()
   
-  }
+}
 
-pdf(paste0(bas_dir,"res_figs/ann_cyc_fut.pdf"), width = 16, height = 16)
+pdf(paste0(bas_dir,"res_figs/ann_cyc_fut2.pdf"), width = 16, height = 16)
 
 par(family = "serif")
 par(mar = c(1.5, 3.0, 1.0, 1.0))
@@ -2644,71 +2659,113 @@ layout(matrix(c(rep(22, 4),
                 23, 13, 14, 15,
                 23, 16, 17, 18,
                 23, 19, 20, 21),
-       8, 4, byrow = T), widths=c(0.15, 1, 1, 1), heights=c(0.2, rep(1, 7)))
+              8, 4, byrow = T), widths=c(0.15, 1, 1, 1), heights=c(0.2, rep(1, 7)))
 # layout.show(n = 23)
 
 #Discharge
-ann_cycl(ann_dis_hist_base, ann_dis_1p5K_base, ann_dis_2p0K_base, ann_dis_3p0K_base,
-         y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")), 
-         do_legend = T, do_y_lab = T)
+ann_cycl_2(ann_dis_hist_base_all, ann_dis_1p5K_base_all, 
+           ann_dis_2p0K_base_all, ann_dis_3p0K_base_all,
+           ann_dis_hist_base, ann_dis_1p5K_base, ann_dis_2p0K_base, ann_dis_3p0K_base,
+           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")), 
+           do_legend = T, do_y_lab = T)
 
-ann_cycl(ann_dis_hist_coch, ann_dis_1p5K_coch, ann_dis_2p0K_coch, ann_dis_3p0K_coch,
-         y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-         do_legend = T)
+ann_cycl_2(ann_dis_hist_coch_all, ann_dis_1p5K_coch_all, 
+           ann_dis_2p0K_coch_all, ann_dis_3p0K_coch_all,
+           ann_dis_hist_coch, ann_dis_1p5K_coch, ann_dis_2p0K_coch, ann_dis_3p0K_coch,
+           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
+           do_legend = T)
 
-ann_cycl(ann_dis_hist_koel, ann_dis_1p5K_koel, ann_dis_2p0K_koel, ann_dis_3p0K_koel,
-         y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-         do_legend = T)
+ann_cycl_2(ann_dis_hist_koel_all, ann_dis_1p5K_koel_all, 
+           ann_dis_2p0K_koel_all, ann_dis_3p0K_koel_all,
+           ann_dis_hist_koel, ann_dis_1p5K_koel, ann_dis_2p0K_koel, ann_dis_3p0K_koel,
+           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
+           do_legend = T)
 
 #Precipitation total
-ann_cycl(ann_prt_hist_base, ann_prt_1p5K_base, ann_prt_2p0K_base, ann_prt_3p0K_base,
-         y_lab = expression(paste("Precip. [mm]")), 
-         do_y_lab = T)
+ann_cycl_2(ann_prt_hist_base_all, ann_prt_1p5K_base_all, 
+           ann_prt_2p0K_base_all, ann_prt_3p0K_base_all,
+           ann_prt_hist_base, ann_prt_1p5K_base, ann_prt_2p0K_base, ann_prt_3p0K_base,
+           y_lab = expression(paste("Precip. [mm]")), 
+           do_y_lab = T)
 
-ann_cycl(ann_prt_hist_coch, ann_prt_1p5K_coch, ann_prt_2p0K_coch, ann_prt_3p0K_coch)
+ann_cycl_2(ann_prt_hist_coch_all, ann_prt_1p5K_coch_all, 
+           ann_prt_2p0K_coch_all, ann_prt_3p0K_coch_all,
+           ann_prt_hist_coch, ann_prt_1p5K_coch, ann_prt_2p0K_coch, ann_prt_3p0K_coch)
 
-ann_cycl(ann_prt_hist_koel, ann_prt_1p5K_koel, ann_prt_2p0K_koel, ann_prt_3p0K_koel)
+ann_cycl_2(ann_prt_hist_koel_all, ann_prt_1p5K_koel_all, 
+           ann_prt_2p0K_koel_all, ann_prt_3p0K_koel_all,
+           ann_prt_hist_koel, ann_prt_1p5K_koel, ann_prt_2p0K_koel, ann_prt_3p0K_koel)
 
-#Precipitation liquid
-ann_cycl(ann_prl_hist_base, ann_prl_1p5K_base, ann_prl_2p0K_base, ann_prl_3p0K_base,
-         y_lab = expression(paste("Precip. [mm]")),
-         do_y_lab = T)
+#Precipitation total
+ann_cycl_2(ann_prl_hist_base_all, ann_prl_1p5K_base_all, 
+           ann_prl_2p0K_base_all, ann_prl_3p0K_base_all,
+           ann_prl_hist_base, ann_prl_1p5K_base, ann_prl_2p0K_base, ann_prl_3p0K_base,
+           y_lab = expression(paste("Precip. [mm]")), 
+           do_y_lab = T)
 
-ann_cycl(ann_prl_hist_coch, ann_prl_1p5K_coch, ann_prl_2p0K_coch, ann_prl_3p0K_coch)
+ann_cycl_2(ann_prl_hist_coch_all, ann_prl_1p5K_coch_all, 
+           ann_prl_2p0K_coch_all, ann_prl_3p0K_coch_all,
+           ann_prl_hist_coch, ann_prl_1p5K_coch, ann_prl_2p0K_coch, ann_prl_3p0K_coch)
 
-ann_cycl(ann_prl_hist_koel, ann_prl_1p5K_koel, ann_prl_2p0K_koel, ann_prl_3p0K_koel)
+ann_cycl_2(ann_prl_hist_koel_all, ann_prl_1p5K_koel_all, 
+           ann_prl_2p0K_koel_all, ann_prl_3p0K_koel_all,
+           ann_prl_hist_koel, ann_prl_1p5K_koel, ann_prl_2p0K_koel, ann_prl_3p0K_koel)
 
 #Protective effect
-ann_cycl(ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
-         y_lab = expression(paste("Prec. solid/total [-]")), do_y_lab = T)
+ann_cycl_2(ann_eff_hist_base_all, ann_eff_1p5K_base_all, 
+           ann_eff_2p0K_base_all, ann_eff_3p0K_base_all,
+           ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
+           y_lab = expression(paste("Prec. solid/total [-]")), do_y_lab = T) 
 
-ann_cycl(ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch)
+ann_cycl_2(ann_eff_hist_coch_all, ann_eff_1p5K_coch_all, 
+           ann_eff_2p0K_coch_all, ann_eff_3p0K_coch_all,
+           ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch)
 
-ann_cycl(ann_eff_hist_koel, ann_eff_1p5K_koel, ann_eff_2p0K_koel, ann_eff_3p0K_koel)
+ann_cycl_2(ann_eff_hist_koel_all, ann_eff_1p5K_koel_all, 
+           ann_eff_2p0K_koel_all, ann_eff_3p0K_koel_all,
+           ann_eff_hist_koel, ann_eff_1p5K_koel, ann_eff_2p0K_koel, ann_eff_3p0K_koel)
 
 #Snowmelt
-ann_cycl(ann_mel_hist_base, ann_mel_1p5K_base, ann_mel_2p0K_base, ann_mel_3p0K_base,
-         y_lab = expression(paste("Snowmelt [mm]")), do_y_lab = T)
+ann_cycl_2(ann_mel_hist_base_all, ann_mel_1p5K_base_all, 
+           ann_mel_2p0K_base_all, ann_mel_3p0K_base_all,
+           ann_mel_hist_base, ann_mel_1p5K_base, ann_mel_2p0K_base, ann_mel_3p0K_base,
+           y_lab = expression(paste("Snowmelt [mm]")), do_y_lab = T) 
 
-ann_cycl(ann_mel_hist_coch, ann_mel_1p5K_coch, ann_mel_2p0K_coch, ann_mel_3p0K_coch)
+ann_cycl_2(ann_mel_hist_coch_all, ann_mel_1p5K_coch_all, 
+           ann_mel_2p0K_coch_all, ann_mel_3p0K_coch_all,
+           ann_mel_hist_coch, ann_mel_1p5K_coch, ann_mel_2p0K_coch, ann_mel_3p0K_coch)
 
-ann_cycl(ann_mel_hist_koel, ann_mel_1p5K_koel, ann_mel_2p0K_koel, ann_mel_3p0K_koel)
+ann_cycl_2(ann_mel_hist_koel_all, ann_mel_1p5K_koel_all, 
+           ann_mel_2p0K_koel_all, ann_mel_3p0K_koel_all,
+           ann_mel_hist_koel, ann_mel_1p5K_koel, ann_mel_2p0K_koel, ann_mel_3p0K_koel)
 
 #Runoff fraction
-ann_cycl(ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
-         y_lab = expression(paste("Snowmelt fraction [-]")), do_y_lab = T)
+ann_cycl_2(ann_fra_hist_base_all, ann_fra_1p5K_base_all, 
+           ann_fra_2p0K_base_all, ann_fra_3p0K_base_all,
+           ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
+           y_lab = expression(paste("Snowmelt fraction [-]")), do_y_lab = T) 
 
-ann_cycl(ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch)
+ann_cycl_2(ann_fra_hist_coch_all, ann_fra_1p5K_coch_all, 
+           ann_fra_2p0K_coch_all, ann_fra_3p0K_coch_all,
+           ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch)
 
-ann_cycl(ann_fra_hist_koel, ann_fra_1p5K_koel, ann_fra_2p0K_koel, ann_fra_3p0K_koel)
+ann_cycl_2(ann_fra_hist_koel_all, ann_fra_1p5K_koel_all, 
+           ann_fra_2p0K_koel_all, ann_fra_3p0K_koel_all,
+           ann_fra_hist_koel, ann_fra_1p5K_koel, ann_fra_2p0K_koel, ann_fra_3p0K_koel)
 
 #Snowmelt elevation
-ann_cycl(ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
-         y_lab = expression(paste("Elevation [-]")), do_y_lab = T)
+ann_cycl_2(ann_ele_hist_base_all, ann_ele_1p5K_base_all, 
+           ann_ele_2p0K_base_all, ann_ele_3p0K_base_all,
+           ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
+           y_lab = expression(paste("Elevation [-]")), do_y_lab = T) 
 
-ann_cycl(ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch)
+ann_cycl_2(ann_ele_hist_coch_all, ann_ele_1p5K_coch_all, 
+           ann_ele_2p0K_coch_all, ann_ele_3p0K_coch_all,
+           ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch)
 
-ann_cycl(ann_ele_hist_koel, ann_ele_1p5K_koel, ann_ele_2p0K_koel, ann_ele_3p0K_koel)
+ann_cycl_2(ann_ele_hist_koel_all, ann_ele_1p5K_koel_all, 
+           ann_ele_2p0K_koel_all, ann_ele_3p0K_koel_all,
+           ann_ele_hist_koel, ann_ele_1p5K_koel, ann_ele_2p0K_koel, ann_ele_3p0K_koel)
 
 cex_header <- 1.7
 par(mar = c(0,0,0,0))
@@ -2724,16 +2781,896 @@ mtext("c) Cologne",
       side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Discharge",  side = 2, line = -2.2, cex = cex_header, adj = 0.933, outer = T)
-mtext("5-day prec. total",  side = 2, line = -2.2, cex = cex_header, adj = 0.805, outer = T)
-mtext("5-day prec. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.643, outer = T)
-mtext("Protective effect",  side = 2, line = -2.2, cex = cex_header, adj = 0.483, outer = T)
-mtext("14-day snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.325, outer = T)
-mtext("Melt fraction",  side = 2, line = -2.2, cex = cex_header, adj = 0.180, outer = T)
-mtext("Melt elevation",  side = 2, line = -2.2, cex = cex_header, adj = 0.024, outer = T)
+mtext("1. Disc.",  side = 2, line = -2.2, cex = cex_header, adj = 0.933, outer = T)
+mtext("2. Prec. total",  side = 2, line = -2.2, cex = cex_header, adj = 0.805, outer = T)
+mtext("3. Prec. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.643, outer = T)
+mtext("4. Protect. effect",  side = 2, line = -2.2, cex = cex_header, adj = 0.483, outer = T)
+mtext("5. Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.325, outer = T)
+mtext("6. Melt fract.",  side = 2, line = -2.2, cex = cex_header, adj = 0.180, outer = T)
+mtext("7. Melt elevat.",  side = 2, line = -2.2, cex = cex_header, adj = 0.024, outer = T)
 
 dev.off()
 
 
 
 
+#snow_future----
+
+#Snow cover duration simulations
+
+scd_from_nc <- function(gcm_model, delta_t, rcp){
+  
+  #select nc_file
+  nc_path_sel <- nc_file_paths[which(grepl(gcm_model, nc_file_paths) &
+                                       grepl(rcp, nc_file_paths))]
+  nc_file_sel <- nc_open(paste0(nc_path_sel, "output/mHM_Fluxes_States.nc"))
+  
+  #path to precipitation input
+  # nc_path_sel_prec <- gsub("output", "input/meteo", nc_path_sel)
+  # pr_file_sel <- nc_open(paste0(nc_path_sel, "input/pre.nc"))
+  
+  #get warming period
+  wp_years <- get_warming_period(gcm_model, delta_t, rcp)
+  
+  date_sel <- seq(as.Date(paste0(wp_years[1], "-01-01"), format = "%Y-%m-%d"), 
+                  as.Date(paste0(wp_years[2], "-12-31"), format = "%Y-%m-%d"), by = "day")
+  
+  #date from nc-file
+  date <- as.Date(as.character(nc.get.time.series(nc_file_sel, time.dim.name = "time")))
+  
+  #if simulation time frame does not entirely cover warming period
+  if(date_sel[1] > date[1]){
+    sta_date_ind <- which(format(date) == paste0(wp_years[1], "-01-01"))
+    count_date <- length(date_sel)
+  }else{
+    sta_date_ind <- 1
+    count_date <- length(date_sel) - which(format(date_sel) == date[1]) + 1
+  }
+  
+  #snowpack
+  snow_cube <- ncvar_get(nc_file_sel, start = c(1, 1, sta_date_ind), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+  
+  sd2sc <- function(val_in, sc_thr = 3){
+    
+    if(is.na(val_in)){
+      val_out <- NA
+    }else{
+      if(val_in > sc_thr){
+        val_out <- 1
+      }else{
+        val_out <- 0
+      }
+      
+    }
+    
+  }
+  
+  for(i in 1:count_date){
+    
+    # print(i)
+    
+    scd_sim_sing <- sapply(c(snow_cube[, , i]), sd2sc)
+    
+    if(i == 1){
+      scd_sim <-  scd_sim_sing
+    }else{
+      scd_sim <-  scd_sim + scd_sim_sing
+    }
+    
+  }
+  
+  #annual average snow cover duration
+  scd_sim_ann <- scd_sim / round(count_date / 365)
+  
+  return(scd_sim_ann)
+  
+}
+
+#historical
+tic()
+scd_hist_1 <- scd_from_nc("GFDL-ESM2M",     "historical", "historical")
+scd_hist_2 <- scd_from_nc("HadGEM2-ES",     "historical", "historical")
+scd_hist_3 <- scd_from_nc("IPSL-CM5A-LR",   "historical", "historical")
+scd_hist_4 <- scd_from_nc("MIROC-ESM-CHEM", "historical", "historical")
+scd_hist_5 <- scd_from_nc("NorESM1-M",      "historical", "historical")
+toc()
+
+#1.5K warming level
+tic()
+scd_1p5K_1  <- scd_from_nc("HadGEM2-ES",     "1p5", "2p6")
+scd_1p5K_2  <- scd_from_nc("IPSL-CM5A-LR",   "1p5", "2p6")
+scd_1p5K_3  <- scd_from_nc("MIROC-ESM-CHEM", "1p5", "2p6")
+scd_1p5K_4  <- scd_from_nc("NorESM1-M",      "1p5", "2p6")
+scd_1p5K_5  <- scd_from_nc("GFDL-ESM2M",     "1p5", "6p0")
+scd_1p5K_6  <- scd_from_nc("HadGEM2-ES",     "1p5", "6p0")
+scd_1p5K_7  <- scd_from_nc("IPSL-CM5A-LR",   "1p5", "6p0")
+scd_1p5K_8  <- scd_from_nc("MIROC-ESM-CHEM", "1p5", "6p0")
+scd_1p5K_9  <- scd_from_nc("NorESM1-M",      "1p5", "6p0")
+scd_1p5K_10 <- scd_from_nc("GFDL-ESM2M",     "1p5", "8p5")
+scd_1p5K_11 <- scd_from_nc("HadGEM2-ES",     "1p5", "8p5")
+scd_1p5K_12 <- scd_from_nc("IPSL-CM5A-LR",   "1p5", "8p5")
+scd_1p5K_13 <- scd_from_nc("MIROC-ESM-CHEM", "1p5", "8p5")
+scd_1p5K_14 <- scd_from_nc("NorESM1-M",      "1p5", "8p5")
+toc()
+
+#2K warming level
+tic()
+scd_2p0K_1  <- scd_from_nc("HadGEM2-ES",     "2p0", "2p6")
+scd_2p0K_2  <- scd_from_nc("IPSL-CM5A-LR",   "2p0", "2p6")
+scd_2p0K_3  <- scd_from_nc("MIROC-ESM-CHEM", "2p0", "2p6")
+scd_2p0K_4  <- scd_from_nc("GFDL-ESM2M",     "2p0", "6p0")
+scd_2p0K_5  <- scd_from_nc("HadGEM2-ES",     "2p0", "6p0")
+scd_2p0K_6  <- scd_from_nc("IPSL-CM5A-LR",   "2p0", "6p0")
+scd_2p0K_7  <- scd_from_nc("MIROC-ESM-CHEM", "2p0", "6p0")
+scd_2p0K_8  <- scd_from_nc("NorESM1-M",      "2p0", "6p0")
+scd_2p0K_9  <- scd_from_nc("GFDL-ESM2M",     "2p0", "8p5")
+scd_2p0K_10 <- scd_from_nc("HadGEM2-ES",     "2p0", "8p5")
+scd_2p0K_11 <- scd_from_nc("IPSL-CM5A-LR",   "2p0", "8p5")
+scd_2p0K_12 <- scd_from_nc("MIROC-ESM-CHEM", "2p0", "8p5")
+scd_2p0K_13 <- scd_from_nc("NorESM1-M",      "2p0", "8p5")
+toc()
+
+#3K warming level
+tic()
+scd_3p0K_1 <- scd_from_nc("HadGEM2-ES",     "3p0", "6p0")
+scd_3p0K_2 <- scd_from_nc("IPSL-CM5A-LR",   "3p0", "6p0")
+scd_3p0K_3 <- scd_from_nc("MIROC-ESM-CHEM", "3p0", "6p0")
+scd_3p0K_4 <- scd_from_nc("GFDL-ESM2M",     "3p0", "8p5")
+scd_3p0K_5 <- scd_from_nc("HadGEM2-ES",     "3p0", "8p5")
+scd_3p0K_6 <- scd_from_nc("IPSL-CM5A-LR",   "3p0", "8p5")
+scd_3p0K_7 <- scd_from_nc("MIROC-ESM-CHEM", "3p0", "8p5")
+scd_3p0K_8 <- scd_from_nc("NorESM1-M",      "3p0", "8p5")
+toc()
+
+scd_hist_all <- cbind(scd_hist_1,  scd_hist_2,  scd_hist_3,  scd_hist_4, scd_hist_5)
+scd_1p5K_all <- cbind(scd_1p5K_1,  scd_1p5K_2,  scd_1p5K_3,  scd_1p5K_4, scd_1p5K_5,
+                      scd_1p5K_6,  scd_1p5K_7,  scd_1p5K_8,  scd_1p5K_9, scd_1p5K_10, 
+                      scd_1p5K_11, scd_1p5K_12, scd_1p5K_13, scd_1p5K_14)
+scd_2p0K_all <- cbind(scd_2p0K_1,  scd_2p0K_2,  scd_2p0K_3,  scd_2p0K_4, scd_2p0K_5,
+                      scd_2p0K_6,  scd_2p0K_7,  scd_2p0K_8,  scd_2p0K_9, scd_2p0K_10, 
+                      scd_2p0K_11, scd_2p0K_12, scd_2p0K_13)
+scd_3p0K_all <- cbind(scd_3p0K_1,  scd_3p0K_2,  scd_3p0K_3,  scd_3p0K_4, scd_3p0K_5,
+                      scd_3p0K_6,  scd_3p0K_7,  scd_3p0K_8)
+
+scd_hist <- apply(scd_hist_all, 1, mea_na)
+scd_1p5K <- apply(scd_1p5K_all, 1, mea_na)
+scd_2p0K <- apply(scd_2p0K_all, 1, mea_na)
+scd_3p0K <- apply(scd_3p0K_all, 1, mea_na)
+
+#get cells in basin
+nc_dummy <- nc_open(paste0(run_dir, "output/GFDL-ESM2M/historical/output/mRM_Fluxes_States.nc"))
+lon <- ncdf4::ncvar_get(nc_dummy, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_dummy, varid = "lat")
+
+#spatial grid points from lat/lon
+grid_points_cube_84 <-  sp::SpatialPoints(data.frame(lon = c(lon), lat = c(lat)), proj4string =  crswgs84)
+
+n_cores <- 5 #number of cores used for parallel computing
+
+#Make cluster for parallel computing
+my_clust <- makeCluster(n_cores)
+clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
+registerDoParallel(my_clust)
+
+cols_spat_sim_hist <- foreach(i = 1:length(scd_hist), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_hist[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+cols_spat_sim_1p5K <- foreach(i = 1:length(scd_1p5K), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_1p5K[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+cols_spat_sim_2p0K <- foreach(i = 1:length(scd_2p0K), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_2p0K[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+cols_spat_sim_3p0K <- foreach(i = 1:length(scd_3p0K), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_3p0K[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+
+scd_dif_1 <- (scd_2p0K - scd_hist)
+scd_dif_2 <- (scd_3p0K - scd_hist)
+scd_dif_3 <- (scd_3p0K - scd_2p0K)
+scd_lims <- range(c(scd_dif_1, scd_dif_2, scd_dif_3), na.rm = T)
+
+cols_spat_dif_1 <- foreach(i = 1:length(scd_dif_1), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif_1[i], 
+          dat_ref = scd_lims[1]:scd_lims[2],
+          do_log = F,
+          do_bicol = T)
+  
+}
+cols_spat_dif_2 <- foreach(i = 1:length(scd_dif_2), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif_2[i], 
+          dat_ref = scd_lims,
+          do_log = F,
+          do_bicol = T)
+  
+}
+cols_spat_dif_3 <- foreach(i = 1:length(scd_dif_3), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif_3[i], 
+          dat_ref = scd_lims,
+          do_log = F,
+          do_bicol = T)
+  
+}
+
+stopCluster(my_clust)
+
+
+pdf(paste0(bas_dir, "res_figs/scd_maps_sim",".pdf"), width = 16, height = 2*4.2)
+
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4,  rep(5, 7),  6,
+                rep(7, 7), 8, rep(9, 7), 10, rep(11, 7), 12),
+              2, 24, byrow = T), widths=c(), heights=c())
+# layout.show(n = 12)
+
+par(family = "serif")
+cex_pch <- 0.60
+
+#Historic
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_sim_hist, cex = cex_pch)
+mtext("a) Historic", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, 365, length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_hist), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#2.0K
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_sim_2p0K, cex = cex_pch)
+mtext("b) 2.0K", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, 365, length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_2p0K), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#3.0K
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_sim_3p0K, cex = cex_pch)
+mtext("c) 3.0K", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, 365, length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_3p0K), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Difference Historic to 2.0K
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_dif_1, cex = cex_pch)
+mtext("d) Diff. 2.0K - Hist.", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(scd_lims[1], -scd_lims[1], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif_1), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Difference Historic to 3.0K
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_dif_2, cex = cex_pch)
+mtext("e) Diff. 3.0K - Hist.", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(scd_lims[1], -scd_lims[1], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif_2), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Difference 2.0K to 3.0K
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[, 1], grid_points_cube_84@coords[, 2], pch = 15,
+       col = cols_spat_dif_3, cex = cex_pch)
+mtext("f) Diff. 3.0K - 2.0K", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(scd_lims[1], -scd_lims[1], length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif_3), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+dev.off()
+
+
+
+#snow_vali----
+
+#Make cluster for parallel computing
+n_cores <- 5 #number of cores used for parallel computing
+my_clust <- makeCluster(n_cores)
+clusterEvalQ(my_clust, pacman::p_load(zoo, zyp, alptempr, raster))
+registerDoParallel(my_clust)
+
+#Snow cover duration MODIS
+
+scf_dlr_dir <- "D:/nrc_user/rottler/SCF_data/snow_dlr/SnowPack_DLR.tar/SnowPack_DLR/" 
+
+file_names <- dir(path = scf_dlr_dir, recursive = T)
+# unique(nchar(file_names))
+# file_names[which(nchar(file_names) %in% c(36, 32, 10))]
+file_names <- file_names[which(nchar(file_names) == nchar(file_names[1]))]
+scf_file <- raster(paste0(scf_dlr_dir , file_names[1]))
+
+basin_lobi_raw <- rgdal::readOGR(dsn = "D:/nrc_user/rottler/basin_data/eu_dem/processed/basins/lobith_catch.shp")
+basin_lobi_raw_84 <- spTransform(basin_lobi_buf, CRS = crswgs84)
+
+basin_lobi_buf <- buffer(basin_lobi_raw, width = 30000)
+basin_lobi <- spTransform(basin_lobi_buf, CRS = crs(scf_file, asText = T))
+
+#get dates from file names
+f_scf_date <- function(file_path, provider = "DLR"){
+  
+  #Extract date from file name
+  if(provider == "DLR"){
+    
+    doy <- as.numeric(substr(file_path, nchar(file_path)-6, nchar(file_path)-4))
+    yea <- substr(file_path, nchar(file_path)-11, nchar(file_path)-8)
+    date <- as.character(as.Date(doy, origin = paste0(yea, "-01-01")))
+    
+  }
+  
+  if(provider == "EURAC"){
+    
+    day <- substr(file_path, nchar(file_path)-12, nchar(file_path)-11)
+    mon <- substr(file_path, nchar(file_path)-14, nchar(file_path)-13)
+    yea <- substr(file_path, nchar(file_path)-18, nchar(file_path)-15)
+    date <- paste0(yea, "-", mon, "-", day)
+    
+  }
+  
+  return(date)
+  
+}
+
+scf_dates <- foreach(i = 1:length(file_names), .combine = 'cbind') %dopar% {
+  
+  f_scf_date(paste0(scf_dlr_dir, file_names[i]))
+  
+}
+
+scf_date <- as.Date(as.character(scf_dates[1, ]), "%Y-%m-%d")
+
+# #select files covering validation period
+# file_names_sel <- file_names[which(scf_date %in% date_vali)]
+file_names_sel <- file_names
+
+#sum up days with snow cover for selected basin (with buffer) and time frame
+f_scd_extr <- function(file_path, snow_val, basin_in, provider){
+  
+  #Read file
+  scf <- raster(file_path)
+  
+  #corp file to basin area (with buffer)
+  scf_cro <- raster::crop(scf, extent(basin_in))
+  scf_sub <- raster::mask(scf_cro, basin_in)
+  
+  #get values and set to 0 if not snow, to 1 if snow
+  scf_val_NA <- values(scf_sub)
+  scf_val_NA[which(scf_val_NA != snow_val)] <- 0
+  scf_val_NA[which(scf_val_NA == snow_val)] <- 1
+  
+  #Extract date from file name
+  if(provider == "DLR"){
+    
+    doy <- as.numeric(substr(file_path, nchar(file_path)-6, nchar(file_path)-4))
+    yea <- substr(file_path, nchar(file_path)-11, nchar(file_path)-8)
+    date <- as.character(as.Date(doy, origin = paste0(yea, "-01-01")))
+    
+  }
+  
+  if(provider == "EURAC"){
+    
+    day <- substr(file_path, nchar(file_path)-12, nchar(file_path)-11)
+    mon <- substr(file_path, nchar(file_path)-14, nchar(file_path)-13)
+    yea <- substr(file_path, nchar(file_path)-18, nchar(file_path)-15)
+    date <- paste0(yea, "-", mon, "-", day)
+    
+  }
+  
+  return(scf_val_NA)
+  
+}
+
+block_size <- 1000
+block_stas <- c(1, seq(block_size+1, length(file_names_sel), by = block_size))
+block_ends <- c(seq(block_size, length(file_names_sel), by = block_size), length(file_names_sel))
+
+for(b in 1:length(block_stas)){
+  
+  file_names_calc <- file_names_sel[block_stas[b]:block_ends[b]]
+  
+  print(paste(Sys.time(),"Spatial analysis: Days with snow cover", "Block:", b, "out of", length(block_stas)))
+  
+  scd_out <- foreach(i = 1:length(file_names_calc), .combine = 'cbind') %dopar% {
+    
+    f_scd_extr(file_path = paste0(scf_dlr_dir, file_names_calc[i]),
+               snow_val = 50,
+               basin_in = basin_lobi,
+               provider = "DLR")
+    
+  }
+  
+  if(b == 1){
+    scd_buf_all <- scd_out
+  }else{
+    scd_buf_all <- cbind(scd_buf_all, scd_out)
+  }
+}
+
+scd_buf_sum <- apply(scd_buf_all, 1, sum_na)
+rm(scd_buf_all) #remove file after calculation as very big
+gc() #colltect some garbage
+
+#fill dummy raster with calculated snow cover fraction values
+scf_buf_crop <- raster::crop(scf_file, extent(basin_lobi))
+scf_buf <- mask(scf_buf_crop, basin_lobi)
+scf_buf@data@values <- scd_buf_sum
+#aggregate to mHM resolution
+scf_buf_aggr <- aggregate(scf_buf, fact = 10, fun = mean, na.rm = TRUE)
+plot(scf_buf, col = viridis(200, direction = -1))
+plot(scf_buf_aggr, col = viridis(200, direction = -1))
+
+#Snow cover duration EOBS simulations
+nc_flux_file <- paste0(run_dir, "output/EOBS/output/mHM_Fluxes_States.nc")
+nc_flux <- nc_open(nc_flux_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_flux, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_flux, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")))
+
+count_date <- length(date)
+
+#Fluxes and states
+snow_cube <- ncvar_get(nc_flux, start = c(1, 1, 1), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+
+sd2sc <- function(val_in, sc_thr = 3){
+  
+  if(is.na(val_in)){
+    val_out <- NA
+  }else{
+    if(val_in > sc_thr){
+      val_out <- 1
+    }else{
+      val_out <- 0
+    }
+    
+  }
+  
+}
+
+date_scd <- scf_date #MODIS data coverage
+
+date_scd_ind <- which(date %in% date_scd)
+
+cells_sel <- which(!is.na(c(snow_cube[, , date_scd_ind[1]])))
+
+for(i in 1:length(date_scd_ind)){
+  
+  print(i)
+  
+  scd_sim_sing <- sapply(c(snow_cube[, , date_scd_ind[i]][cells_sel]), sd2sc)
+  
+  if(i == 1){
+    scd_eob_sum <-  scd_sim_sing
+  }else{
+    scd_eob_sum <-  scd_eob_sum + scd_sim_sing
+  }
+  
+}
+
+scd_eob <- scd_eob_sum / round(length(scf_date)/365)
+
+#Get values MODIS grid points simulated
+grid_points_cube_84 <-  sp::SpatialPoints(data.frame(lon = c(lon), lat = c(lat)), proj4string =  crswgs84)
+scd_dlr_sum <- raster::extract(scf_buf_aggr, grid_points_cube_84[cells_sel])
+scd_dlr <- scd_dlr_sum / (round(length(scf_date)/365))
+
+val2col <- function(val_in, dat_ref, do_log = F, do_bicol = T, col_na = "white"){
+  
+  if(do_log){
+    
+    val_in <- log(val_in)
+    dat_ref <- log(dat_ref)
+    
+  }
+  
+  if(is.na(val_in)){#set NAs to mean to keep script running; later back to NA
+    val_in <- mea_na(dat_ref)
+    set2NA_1 <- T
+  }else{
+    set2NA_1 <- F
+  }
+  
+  if(do_bicol){
+    
+    col_ind <- round((abs(val_in) / max_na(abs(dat_ref))) * 100)
+    
+    if(val_in < 0){
+      my_col  <- colorRampPalette(c("grey80", "lemonchiffon2", "lightgoldenrod2", "gold3", "goldenrod3", "orangered4", "darkred"))(100)
+    }else{
+      my_col  <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+    }
+    
+  }else{
+    col_ind <- round((val_in-min_na(dat_ref)) / (max_na(dat_ref)-min_na(dat_ref)) * 200)  
+    my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+  }
+  
+  
+  if(is.na(col_ind)){
+    set2NA_2 <- T
+    col_ind <- 1 #set to one to keep script running; later set to NA color
+  }else{
+    set2NA_2 = F
+  }
+  
+  if(col_ind == 0){#for minimum and very small values
+    
+    col_ind <- 1
+    
+  }
+  
+  col_out <- my_col[col_ind]
+  
+  if(length(col_out) < 1){
+    
+    col_out <- col_na
+    
+  }
+  
+  if(set2NA_1 | set2NA_2){
+    
+    col_out <- col_na
+    
+  }
+  
+  return(col_out)
+  
+}
+
+#Values to colors simulation
+cols_spat_sim <- foreach(i = 1:length(scd_eob), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_eob[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+
+#Values to colors difference
+scd_dif <- (scd_eob - scd_dlr)
+cols_spat_dif <- foreach(i = 1:length(scd_dif), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dif[i], 
+          dat_ref = scd_dif,
+          do_log = F,
+          do_bicol = T)
+  
+}
+
+#Values to colors observations
+cols_spat_obs <- foreach(i = 1:length(scd_dlr), .combine = 'cbind') %dopar% {
+  
+  val2col(val_in = scd_dlr[i],
+          dat_ref = 0:365,
+          do_bicol = F)
+  
+}
+
+stopCluster(my_clust)
+
+pdf(paste0(bas_dir, "res_figs/scd_maps_vali",".pdf"), width = 16, height = 4.2)
+
+#Plot maps
+layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4, rep(5, 7), 6),
+              1, 24, byrow = T), widths=c(), heights=c())
+# layout.show(n = 7)
+
+par(family = "serif")
+cex_pch <- 0.60
+
+#Map Simulations
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], 
+       pch = 15, col = cols_spat_sim, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("a) EOBS simulations", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, 365, length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_eob), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map Difference
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_dif, cex = cex_pch)
+# plot(basin_base, add = T, lwd = 1.5)
+mtext("b) Difference (a - c)", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+cols_min <- colorRampPalette(c("darkred", "darkorange4", "goldenrod3", "gold3", "lightgoldenrod2", "lemonchiffon2", "grey80"))(100)
+cols_max <- colorRampPalette(c("grey80", "lightcyan3", viridis::viridis(9, direction = 1)[c(4,3,2,1,1)]))(100)
+my_col <- colorRampPalette(c(cols_min, cols_max))(200)
+my_bre <- seq(-max_na(abs(scd_dif)), max_na(abs(scd_dif)), length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dif), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+#Map MODIS
+par(mar = c(0.5, 0.5, 1.0, 0.5))
+plot(basin_lobi_raw_84, border = alpha("black", alpha = 0.0))
+points(grid_points_cube_84@coords[cells_sel, 1], grid_points_cube_84@coords[cells_sel, 2], pch = 15, col = cols_spat_obs, cex = cex_pch)
+# plot(basin_base, add =T, lwd = 1.5)
+mtext("c) MODIS snow cover", side = 3, line = -1.0, cex = 1.7)
+
+par(mar = c(2.0, 0.2, 5.0, 3.0))
+my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+my_bre <- seq(0, 365, length.out = length(my_col)+1)
+alptempr::image_scale(as.matrix(scd_dlr_ann), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+mtext(expression(paste("[", "day ", "year"^"-1", "]")), side = 3, line = 0.8, cex = 1.3)
+box()
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+#snow_tower----
+
+#Snow cover duration EOBS simulations
+nc_flux_file <- paste0(run_dir, "output/EOBS/output/mHM_Fluxes_States.nc")
+nc_flux <- nc_open(nc_flux_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_flux, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_flux, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")))
+
+count_date <- length(date)
+
+#Fluxes and states
+snow_cube <- ncvar_get(nc_flux, start = c(1, 1, 1), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+
+snow_max <- apply(snow_cube, c(1, 2), max_na) #[mm]
+
+snow_max_c <- c(snow_max)
+
+sn_tow_1 <- which(snow_max_c > 2500)
+
+#Plot snow towers
+# sn_tow_1
+st_sel_ind <- c(11324, 11411, 11412)
+
+sel_x_1 <- NULL
+sel_x_2 <- NULL
+sel_x_3 <- NULL
+for(i in 1:ncol(lon)){
+  
+  sel_dummy <- which(lon[, i] == c(lon)[st_sel_ind[1]])
+  sel_x_1 <- c(sel_x_1, sel_dummy)
+  
+  sel_dummy <- which(lon[, i] == c(lon)[st_sel_ind[2]])
+  sel_x_2 <- c(sel_x_2, sel_dummy)
+  
+  sel_dummy <- which(lon[, i] == c(lon)[st_sel_ind[3]])
+  sel_x_3 <- c(sel_x_3, sel_dummy)
+  
+}
+
+sel_y_1 <- NULL
+sel_y_2 <- NULL
+sel_y_3 <- NULL
+for(i in 1:nrow(lon)){
+  
+  sel_dummy <- which(lon[i, ] == c(lon)[st_sel_ind[1]])
+  sel_y_1 <- c(sel_y_1, sel_dummy)
+  
+  sel_dummy <- which(lon[i, ] == c(lon)[st_sel_ind[2]])
+  sel_y_2 <- c(sel_y_2, sel_dummy)
+  
+  sel_dummy <- which(lon[i, ] == c(lon)[st_sel_ind[3]])
+  sel_y_3 <- c(sel_y_3, sel_dummy)
+  
+}
+
+stow_ts_1 <- ncvar_get(nc_flux, start = c(sel_x_1, sel_y_1, 1), 
+                       count = c(1, 1, count_date), varid = "snowpack")
+
+stow_ts_2 <- ncvar_get(nc_flux, start = c(sel_x_2, sel_y_2, 1), 
+                       count = c(1, 1, count_date), varid = "snowpack")
+
+stow_ts_3 <- ncvar_get(nc_flux, start = c(sel_x_3, sel_y_3, 1), 
+                       count = c(1, 1, count_date), varid = "snowpack")
+
+
+pdf(paste0(bas_dir,"res_figs/snow_tower.pdf"), width = 12, height = 6)
+
+par(family = "serif")
+par(mfrow = c(3, 1))
+par(mar = c(2, 4, 3, 1))
+
+plot(date, stow_ts_1, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
+mtext("SWE [mm]", side = 2, line = 2.8)
+mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[1]], 3), "  Lon: ", round(c(lon)[st_sel_ind[1]], 3)),
+      side = 3, line = 0.2, cex = 1.2)
+
+plot(date, stow_ts_2, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
+mtext("SWE [mm]", side = 2, line = 2.8)
+mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[2]], 3), "  Lon: ", round(c(lon)[st_sel_ind[2]], 3)),
+      side = 3, line = 0.2, cex = 1.2)
+
+plot(date, stow_ts_3, type = "l", ylab = "", cex.axis = 1.2, col = "darkblue", lwd = 1.5)
+mtext("SWE [mm]", side = 2, line = 2.8)
+mtext(paste0("Lat: ", round(c(lat)[st_sel_ind[3]], 3), "  Lon: ", round(c(lon)[st_sel_ind[3]], 3)),
+      side = 3, line = 0.2, cex = 1.2)
+
+dev.off()
+
+
+#number of snow towers in GCM-driven simulations
+number_towers <- function(gcm_model, delta_t, rcp, ncores = 5){
+  
+  #select nc_file
+  nc_path_sel <- nc_file_paths[which(grepl(gcm_model, nc_file_paths) &
+                                       grepl(rcp, nc_file_paths))]
+  nc_file_sel <- nc_open(paste0(nc_path_sel, "output/mHM_Fluxes_States.nc"))
+  
+  #get warming period
+  wp_years <- get_warming_period(gcm_model, delta_t, rcp)
+  
+  date_sel <- seq(as.Date(paste0(wp_years[1], "-01-01"), format = "%Y-%m-%d"), 
+                  as.Date(paste0(wp_years[2], "-12-31"), format = "%Y-%m-%d"), by = "day")
+  
+  #date from nc-file
+  date <- as.Date(as.character(nc.get.time.series(nc_file_sel, time.dim.name = "time")))
+  
+  #if simulation time frame does not entirely cover warming period
+  if(date_sel[1] > date[1]){
+    sta_date_ind <- which(format(date) == paste0(wp_years[1], "-01-01"))
+    count_date <- length(date_sel)
+  }else{
+    sta_date_ind <- 1
+    count_date <- length(date_sel) - which(format(date_sel) == date[1]) + 1
+  }
+  
+  #snowpack
+  snow_cube <- ncvar_get(nc_file_sel, start = c(1, 1, sta_date_ind), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+  
+  snow_max <- apply(snow_cube, c(1, 2), max_na) #[mm]
+  
+  snow_max_c <- c(snow_max)
+  
+  sn_tow <- length(which(snow_max_c > 2500))
+  
+  return(sn_tow)
+  
+}
+
+#historical
+tic()
+stow_hist_1 <- number_towers("GFDL-ESM2M",     "historical", "historical")
+stow_hist_2 <- number_towers("HadGEM2-ES",     "historical", "historical")
+stow_hist_3 <- number_towers("IPSL-CM5A-LR",   "historical", "historical")
+stow_hist_4 <- number_towers("MIROC-ESM-CHEM", "historical", "historical")
+stow_hist_5 <- number_towers("NorESM1-M",      "historical", "historical")
+toc()
+
+
+#1.5K warming level
+tic()
+stow_1p5K_1  <- number_towers("HadGEM2-ES",     "1p5", "2p6")
+stow_1p5K_2  <- number_towers("IPSL-CM5A-LR",   "1p5", "2p6")
+stow_1p5K_3  <- number_towers("MIROC-ESM-CHEM", "1p5", "2p6")
+stow_1p5K_4  <- number_towers("NorESM1-M",      "1p5", "2p6")
+stow_1p5K_5  <- number_towers("GFDL-ESM2M",     "1p5", "6p0")
+stow_1p5K_6  <- number_towers("HadGEM2-ES",     "1p5", "6p0")
+stow_1p5K_7  <- number_towers("IPSL-CM5A-LR",   "1p5", "6p0")
+stow_1p5K_8  <- number_towers("MIROC-ESM-CHEM", "1p5", "6p0")
+stow_1p5K_9  <- number_towers("NorESM1-M",      "1p5", "6p0")
+stow_1p5K_10 <- number_towers("GFDL-ESM2M",     "1p5", "8p5")
+stow_1p5K_11 <- number_towers("HadGEM2-ES",     "1p5", "8p5")
+stow_1p5K_12 <- number_towers("IPSL-CM5A-LR",   "1p5", "8p5")
+stow_1p5K_13 <- number_towers("MIROC-ESM-CHEM", "1p5", "8p5")
+stow_1p5K_14 <- number_towers("NorESM1-M",      "1p5", "8p5")
+toc()
+
+
+#2K warming level
+tic()
+stow_2p0K_1  <- number_towers("HadGEM2-ES",     "2p0", "2p6")
+stow_2p0K_2  <- number_towers("IPSL-CM5A-LR",   "2p0", "2p6")
+stow_2p0K_3  <- number_towers("MIROC-ESM-CHEM", "2p0", "2p6")
+stow_2p0K_4  <- number_towers("GFDL-ESM2M",     "2p0", "6p0")
+stow_2p0K_5  <- number_towers("HadGEM2-ES",     "2p0", "6p0")
+stow_2p0K_6  <- number_towers("IPSL-CM5A-LR",   "2p0", "6p0")
+stow_2p0K_7  <- number_towers("MIROC-ESM-CHEM", "2p0", "6p0")
+stow_2p0K_8  <- number_towers("NorESM1-M",      "2p0", "6p0")
+stow_2p0K_9  <- number_towers("GFDL-ESM2M",     "2p0", "8p5")
+stow_2p0K_10 <- number_towers("HadGEM2-ES",     "2p0", "8p5")
+stow_2p0K_11 <- number_towers("IPSL-CM5A-LR",   "2p0", "8p5")
+stow_2p0K_12 <- number_towers("MIROC-ESM-CHEM", "2p0", "8p5")
+stow_2p0K_13 <- number_towers("NorESM1-M",      "2p0", "8p5")
+toc()
+
+
+#3K warming level
+tic()
+stow_3p0K_1 <- number_towers("HadGEM2-ES",     "3p0", "6p0")
+stow_3p0K_2 <- number_towers("IPSL-CM5A-LR",   "3p0", "6p0")
+stow_3p0K_3 <- number_towers("MIROC-ESM-CHEM", "3p0", "6p0")
+stow_3p0K_4 <- number_towers("GFDL-ESM2M",     "3p0", "8p5")
+stow_3p0K_5 <- number_towers("HadGEM2-ES",     "3p0", "8p5")
+stow_3p0K_6 <- number_towers("IPSL-CM5A-LR",   "3p0", "8p5")
+stow_3p0K_7 <- number_towers("MIROC-ESM-CHEM", "3p0", "8p5")
+stow_3p0K_8 <- number_towers("NorESM1-M",      "3p0", "8p5")
+toc()
