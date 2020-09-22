@@ -567,12 +567,13 @@ cols_spat_qis <- foreach(i = 1:length(qis_mea_c), .combine = 'cbind') %dopar% {
 }
 
 
-pdf(paste0(bas_dir,"res_figs/flu_map.pdf"), width = 16, height = 18)
+# pdf(paste0(bas_dir,"res_figs/flu_map.pdf"), width = 16, height = 18)
+pdf(paste0(bas_dir,"res_figs/flu_map_2.pdf"), width = 16*1.25, height = 12)
 
 layout(matrix(c(rep(1, 7), 2, rep(3, 7), 4,  rep(5, 7), 6,
                 rep(7, 7), 8, rep(9, 7), 10, rep (11, 7), 12, 
                 rep(13, 7), 14, rep(15, 7), 16, rep(17, 7), 18),
-              3, 24, byrow = T), widths=c(), heights=c())
+              2, 32, byrow = T), widths=c(), heights=c())
 # layout.show(n=18)
 
 par(family = "serif")
@@ -691,18 +692,18 @@ axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
 mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
 box()
 
-#Plot: Interflow slow
-par(mar = mar_1)
-plot(c(lon), c(lat), pch = 15, col = cols_spat_qis, cex = 1.0, axes = F, ylab = "", xlab = "")
-mtext("i) Interflow slow", side = 3, line = -1.0, cex = 1.5)
-
-par(mar = c(2.0, 0.2, 5.0, 2.9))
-my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
-my_bre <- seq(range(qis_mea_c, na.rm = T)[1], range(qis_mea_c, na.rm = T)[2], length.out = length(my_col)+1)
-alptempr::image_scale(as.matrix(qis_mea_c), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
-axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
-mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
-box()
+# #Plot: Interflow slow
+# par(mar = mar_1)
+# plot(c(lon), c(lat), pch = 15, col = cols_spat_qis, cex = 1.0, axes = F, ylab = "", xlab = "")
+# mtext("i) Interflow slow", side = 3, line = -1.0, cex = 1.5)
+# 
+# par(mar = c(2.0, 0.2, 5.0, 2.9))
+# my_col <- c(colorRampPalette(c(viridis::viridis(20, direction = -1)))(200))
+# my_bre <- seq(range(qis_mea_c, na.rm = T)[1], range(qis_mea_c, na.rm = T)[2], length.out = length(my_col)+1)
+# alptempr::image_scale(as.matrix(qis_mea_c), col = my_col, breaks = my_bre, horiz=F, ylab="", xlab="", yaxt="n", axes=F)
+# axis(4, mgp=c(3, 0.50, 0), tck = -0.1, cex.axis = 1.6)
+# mtext("[mm]", side = 3, line = 0.7, cex = 1.2)
+# box()
 
 dev.off()
 
