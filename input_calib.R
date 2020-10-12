@@ -1085,6 +1085,101 @@ mtext("b) Gauges validation", side = 3, line = -1.0, cex = 1.5)
 
 dev.off()
 
+#Plot map for manuscript
+dem = raster::raster("D:/nrc_user/rottler/basin_data/eu_dem/processed/eu_dem_500.tif")
+
+basin_lobi_dem <- spTransform(basin_lobi_raw, CRS = raster::crs(dem, asText = T))
+basin_koel_dem <- spTransform(basin_koel_raw, CRS = raster::crs(dem, asText = T))
+basin_coch_dem <- spTransform(basin_coch_raw, CRS = raster::crs(dem, asText = T))
+basin_kaub_dem <- spTransform(basin_kaub_raw, CRS = raster::crs(dem, asText = T))
+basin_wuer_dem <- spTransform(basin_wuer_raw, CRS = raster::crs(dem, asText = T))
+basin_worm_dem <- spTransform(basin_worm_raw, CRS = raster::crs(dem, asText = T))
+basin_rock_dem <- spTransform(basin_rock_raw, CRS = raster::crs(dem, asText = T))
+basin_spey_dem <- spTransform(basin_spey_raw, CRS = raster::crs(dem, asText = T))
+basin_base_dem <- spTransform(basin_base_raw, CRS = raster::crs(dem, asText = T))
+river_netw_dem <- spTransform(river_netw_raw, CRS = raster::crs(dem, asText = T))
+
+crswgs84 <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+gauges_84 <-  sp::SpatialPoints(data.frame(lon = grdc_meta$longitude,
+                                           lat = grdc_meta$latitude),
+                                proj4string =  crswgs84)
+gauges    <- sp::spTransform(gauges_84, CRS = raster::crs(dem, asText = T))
+
+#corp DEM sub-basin area
+my_ext <- raster::extent(basin_lobi_dem)
+# my_ext_buf <- my_ext + c(-20000, +150000, -10000, +250000) #xmin, xmax, ymin, ymax
+my_ext_buf <- my_ext + c(-1000, 1000, -1000, 1000) #xmin, xmax, ymin, ymax
+
+my_box <- as(my_ext_buf, 'SpatialPolygons')
+dem_cro_swiss <- raster::crop(dem, raster::extent(my_box))
+dem_sub_swiss <- raster::mask(dem_cro_swiss, my_box)
+
+
+pdf(paste0(bas_dir,"res_figs/map_vali_raw.pdf"), width = 7, height = 9)
+
+par(bg=NA,mar=c(0,0,0,0),oma=c(0,0,0,0))
+par(family = "serif")
+
+col_rhine <- alpha("black", alpha = 0.12)
+col_tribu <- alpha("steelblue4", alpha = 0.5)
+
+raster::image(dem_sub_swiss, axes = F, legend = F,  col = grDevices::colorRampPalette(c("white", "black"))(200), box = F)
+
+raster::plot(basin_lobi_dem, col = col_rhine, border = F, add = T)
+raster::plot(basin_koel_dem, col = col_rhine, border = F, add = T)
+raster::plot(basin_kaub_dem, col = col_rhine, border = F, add = T)
+raster::plot(basin_worm_dem, col = col_rhine, border = F, add = T)
+raster::plot(basin_spey_dem, col = col_rhine, border = F, add = T)
+raster::plot(basin_base_dem, col = col_rhine, border = F, add = T)
+
+raster::plot(basin_coch_dem, col = col_tribu, border = F, add = T)
+raster::plot(basin_wuer_dem, col = col_tribu, border = F, add = T)
+raster::plot(basin_rock_dem, col = col_tribu, border = F, add = T)
+
+raster::plot(river_netw_dem, col = "darkblue", add = T)
+
+raster::plot(gauges[1:9], add = T, pch = 25, cex = 1.9,
+             bg = scales::alpha("grey25", alpha = 1.0))
+raster::plot(gauges[c(3, 5, 7)], add = T, pch = 25, cex = 1.9,
+             bg = scales::alpha("steelblue4", alpha = 1.0))
+
+raster::plot(gauges[1:9], add = T, pch = 19, cex = 0.5)
+
+prettymapr::addscalebar(plotunit = "m", widthhint = 0.25, htin = 0.15, pos = "topright",
+                        padin = c(0.15, 0.15))
+
+dev.off()
+
+
+#Inside map overview
+
+dem_1000 = raster::raster("D:/nrc_user/rottler/basin_data/eu_dem/processed/eu_dem_1000.tif")
+
+png(paste0(bas_dir, "res_figs/map_ins_raw_fut",".png"), width = 1000, height = 1000)
+
+par(bg=NA,mar=c(0,0,0,0),oma=c(0,0,0,0))
+
+#Create polygons for extends overview maps
+boxes <- rbind(c(5.0, 40.0,  5.0, 55.0,  10.0, 55.0,  10.0, 40.0,  5.0, 40.0),
+               c(my_ext@xmin, my_ext@ymin,  my_ext@xmin, my_ext@ymax,  my_ext@xmax, my_ext@ymax,  
+                 my_ext@xmax, my_ext@ymin,  my_ext@xmin, my_ext@ymin))
+
+matrix_1 <- matrix(boxes[1, ], ncol=2, byrow=TRUE)
+matrix_2 <- matrix(boxes[2, ], ncol=2, byrow=TRUE)
+
+ID <- c("box_1", "box_2")
+
+polys <- sp::SpatialPolygons(list(
+  sp::Polygons(list(sp::Polygon(matrix_1)), ID[1]),
+  sp::Polygons(list(sp::Polygon(matrix(boxes[2, ], ncol=2, byrow=TRUE))), ID[2])
+))
+
+
+raster::plot(dem_1000, col = scales::alpha("grey35", alpha = 1.0), axes = F, legend = F, box = F)
+raster::plot(polys[2], col = scales::alpha("grey35", alpha = 1.0), border = "red3", add = T, lwd = 4)
+
+dev.off()
+
 
 #disc_quan----
 

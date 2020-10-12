@@ -1746,6 +1746,8 @@ plot_box(max_prl_doy_hist_coch, max_prl_doy_1p5K_coch, max_prl_doy_2p0K_coch, ma
 plot_box(max_prl_doy_hist_koel, max_prl_doy_1p5K_koel, max_prl_doy_2p0K_koel, max_prl_doy_3p0K_koel,
          y_lab = "", ylims_in = c(1, 365))
 
+med_na(max_prl_mag_hist_coch)
+
 #Gauging station
 cex_header <- 1.7
 par(mar = c(0,0,0,0))
@@ -4523,3 +4525,145 @@ par(new = T)
 plot(prec_sel$coch_pre_liq[ind_sel], type = "h", col = "blue2")
 par(new = T)
 plot(snow_sel$coch_sd_mea[ind_sel], type = "l", col = "orange2")
+
+
+
+#parde----
+
+#Parde-Coefficients
+grdc_data_base <- read_grdc(paste0(grdc_dir, "6935051_Q_Day.Cmd.txt"))
+grdc_data_koel <- read_grdc(paste0(grdc_dir, "6335060_Q_Day.Cmd.txt"))
+grdc_data_coch <- read_grdc(paste0(grdc_dir, "6336050_Q_Day.Cmd.txt"))
+
+#Order data by day 
+data_day_coch <- ord_day(data_in = grdc_data_coch$value,
+                         date = grdc_data_coch$date,
+                         start_y = 1917,
+                         end_y = 2016,
+                         break_day = 274,
+                         do_ma = F,
+                         window_width = 30)
+
+data_day_base <- ord_day(data_in = grdc_data_base$value,
+                         date = grdc_data_base$date,
+                         start_y = 1917,
+                         end_y = 2016,
+                         break_day = 274,
+                         do_ma = F,
+                         window_width = 30)
+
+data_day_koel <- ord_day(data_in = grdc_data_koel$value,
+                         date = grdc_data_koel$date,
+                         start_y = 1917,
+                         end_y = 2016,
+                         break_day = 274,
+                         do_ma = F,
+                         window_width = 30)
+
+yea_mea_base <- apply(data_day_base, 2, mea_na)
+yea_mea_koel <- apply(data_day_koel, 2, mea_na)
+yea_mea_coch <- apply(data_day_coch, 2, mea_na)
+
+month_ind <- c(rep(1, 31), rep(2, 30), rep(3, 31), rep(4, 31), rep(5, 28), 
+               rep(6, 31), rep(7, 30), rep(8, 31), rep(9, 30), rep(10, 31), 
+               rep(11, 31), rep(12, 30))#hydrological year: 1 = October
+
+mon_mea_base <- aggregate(yea_mea_base, by = list(months = month_ind), FUN = mea_na)
+mon_mea_koel <- aggregate(yea_mea_koel, by = list(months = month_ind), FUN = mea_na)
+mon_mea_coch <- aggregate(yea_mea_coch, by = list(months = month_ind), FUN = mea_na)
+
+parde_ind_base <- mon_mea_base$x / mea_na(yea_mea_base)
+parde_ind_koel <- mon_mea_koel$x / mea_na(yea_mea_koel)
+parde_ind_coch <- mon_mea_coch$x / mea_na(yea_mea_coch)
+
+pdf(paste0(bas_dir,"res_figs/parde_dis.pdf"), width = 8, height = 3)
+
+ylims <- range(c(parde_ind_coch, parde_ind_base, parde_ind_koel))
+
+x_axis_lab <- 1:12
+x_axis_tic <- (1:13)-0.5
+col_coch <- "steelblue4" 
+col_base <- "darkred"
+col_koel <- "black"
+
+par(family = "serif")
+par(mar = c(1.8, 2.6, 1.5, 0.2))
+
+plot(parde_ind_coch, type = "n", axes = F, ylim = ylims, ylab = "", xlab = "")
+abline(v = c(x_axis_tic), lty = "dashed", col = "grey55", lwd = 0.8)
+lines(parde_ind_base, col = col_base, lwd = 2.2)
+lines(parde_ind_koel, col = col_koel, lwd = 2.2)
+lines(parde_ind_coch, col = col_coch, lwd = 2.2)
+points(parde_ind_coch, col = col_coch, pch = 19, cex = 0.8)
+points(parde_ind_base, col = col_base, pch = 19, cex = 0.8)
+points(parde_ind_koel, col = col_koel, pch = 19, cex = 0.8)
+axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
+     col="black", col.axis="black", mgp=c(3, 0.35, 0), cex.axis = 1.2)#plot labels
+mtext("Pardé-coefficient", side = 2, line = 1.3, cex = 1.4, adj = 0.5)
+mtext("Runoff seasonality", side = 3, line = 0.3, cex = 1.6, adj = 0.0)
+legend("topright", c("Cochem", "Cologne", "Basel"), pch = 19, ncol = 3, bg = "white",
+       col = c(col_coch, col_koel, col_base))
+box()
+
+dev.off()
+
+
+#regi_illus----
+
+pdf(paste0(bas_dir,"res_figs/regi_illus.pdf"), width = 8, height = 3.5)
+
+#Positions ticks and labels for x-axis
+x_axis_lab <- c(15,46,74,105,135,166,196,227,258,288,319,349)
+x_axis_tic <- c(15,46,74,105,135,166,196,227,258,288,319,349,379)-14
+
+par(oma=c(0,0,0,0))
+par(mar = c(1.5, 0.5, 2.0, 0.5))
+par(family = "serif")
+
+col_niv <- "darkred" 
+col_plu <- "steelblue4"
+
+plot(1:200, 1:200, type="n", ylim = c(0, 0.9), xlim = c(1, 365), axes=F, xaxs="i",yaxs="i")
+
+axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+     col="black", col.axis="black", tck=-0.04)#plot ticks
+axis(1, at = x_axis_lab, c("O","N","D","J","F","M","A","M","J","J","A","S"), tick = FALSE,
+     col = "black", col.axis = "black", mgp = c(3, 0.5, 0), cex.axis = 1.5)
+#pluvial
+x   <- seq(1, 210, length=1000)
+y   <- dnorm(x, mean = 109, sd = 34)
+lines(x, y*69, type="l", lty="dashed", col = col_plu, lwd=2.3)
+lines(x, y*55, type="l", lty="solid", col = col_plu, lwd=2.3)
+#nival
+x   <- seq(92+75,230+75,length=1000)
+y   <- dnorm(x, mean=155+75, sd=22)
+lines(x, y*35, type="l", lty="dashed", col = col_niv, lwd=2.3)
+x   <- seq(88+118,225+118,length=1000)
+y   <- dnorm(x, mean=150+118, sd=22)
+lines(x, y*35, type="l", lty="solid", col = col_niv, lwd=2.3)
+#overlap
+x   <- seq(85+67,155+71,length=1000)
+y   <- dnorm(x, mean=122+63, sd=13)
+polygon(x, y*1.9, col="black")  
+#arrows
+shape::Arrows(x0=210+58, x1=168+62, y0=0.68, y1=0.68, lwd=2, col=col_niv)#nival
+shape::Arrows(x0=109, x1=109, y0=0.67, y1=0.76, lwd=2, col=col_plu)#pluvial
+#Question marks
+text(140, 0.76, "?", cex=2, col=col_plu)
+text(188+61, 0.76, "?", cex=2, col=col_niv)
+#Text
+text(42, 0.62, "pluvial", cex=2, col=col_plu)
+text(305, 0.62, "nival", cex=2, col=col_niv)
+text(140, 0.08, "overlap?", cex=2, col="black")
+mtext("Idealized seasonal distribution of extreme discharge", side = 3, line = 0.3, cex = 1.6, adj = 0.0)
+#Legend
+legend("topright", legend = c("present", "future"), lty = c("solid","dashed"),
+       bty = "n", cex=1.4)
+# mtext("Idealized seasonal distribution extreme discharges", side = 3, cex=1.5, line = 0.2)
+
+box()
+
+dev.off()
