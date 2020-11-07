@@ -1,7 +1,7 @@
 ###
 
-#mHM simulations Part II: mHM simulations future scenarios RCP2.6, RCP6.0 and RCP8.5
-#Erwin Rottler, UniversityI of Potsdam, Summer 2020
+#mHM simulations Part III: mHM simulations future scenarios RCP2.6, RCP6.0 and RCP8.5
+#Erwin Rottler, UniversityI of Potsdam, Summer/Autumn 2020
 
 ###
 

@@ -1,6 +1,7 @@
 ###
 
 #mHM model output analysis - functions
+#Erwin Rottler, University of Potsdam
 
 ###
 
