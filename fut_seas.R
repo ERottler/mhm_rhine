@@ -347,7 +347,7 @@ elevs_koel <- foreach(i = 1:length(grid_points_koel_dem), .combine = 'c') %dopar
 stopCluster(my_clust)
 
 #Function to extract time series from nc-files
-flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
+flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 2){
   
   #select nc_file
   nc_path_sel <- nc_file_paths[which(grepl(gcm_model, nc_file_paths) &
@@ -382,6 +382,9 @@ flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
   #effective precipitation
   pef_cube <- ncvar_get(nc_file_sel, start = c(1, 1, sta_date_ind), 
                         count = c(nrow(lon), ncol(lon), count_date), varid = "preEffect")
+  #actual evapotranspiration
+  aev_cube <- ncvar_get(nc_file_sel, start = c(1, 1, sta_date_ind), 
+                        count = c(nrow(lon), ncol(lon), count_date), varid = "aET")
   
   n_cores <- ncores #number of cores used for parallel computing
   
@@ -412,6 +415,16 @@ flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
     pef_cube[index_col_koel[i], index_row_koel[i], ]
   }
   
+  aev_base <- foreach(i = 1:length(index_col_base), .combine = 'cbind') %dopar% {
+    aev_cube[index_col_base[i], index_row_base[i], ]
+  }
+  aev_coch <- foreach(i = 1:length(index_col_coch), .combine = 'cbind') %dopar% {
+    aev_cube[index_col_coch[i], index_row_coch[i], ]
+  }
+  aev_koel <- foreach(i = 1:length(index_col_koel), .combine = 'cbind') %dopar% {
+    aev_cube[index_col_koel[i], index_row_koel[i], ]
+  }
+  
   stopCluster(my_clust)
   
   #Values on basin scale
@@ -420,18 +433,21 @@ flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
   base_sd_mea_dif[which(base_sd_mea_dif > 0)] <- NA
   base_me_mea <- base_sd_mea_dif * -1 #melt positive values
   base_ep_mea <- apply(epn_base, 1, mea_na)
+  base_ae_mea <- apply(aev_base, 1, mea_na)
   
   coch_sd_mea <- apply(sno_coch, 1, mea_na)
   coch_sd_mea_dif <- c(NA, diff(coch_sd_mea))
   coch_sd_mea_dif[which(coch_sd_mea_dif > 0)] <- NA
   coch_me_mea <- coch_sd_mea_dif * -1 #melt positive values
   coch_ep_mea <- apply(epn_coch, 1, mea_na)
+  coch_ae_mea <- apply(aev_coch, 1, mea_na)
   
   koel_sd_mea <- apply(sno_koel, 1, mea_na)
   koel_sd_mea_dif <- c(NA, diff(koel_sd_mea))
   koel_sd_mea_dif[which(koel_sd_mea_dif > 0)] <- NA
   koel_me_mea <- koel_sd_mea_dif * -1 #melt positive values
   koel_ep_mea <- apply(epn_koel, 1, mea_na)
+  koel_ae_mea <- apply(aev_koel, 1, mea_na)
   
   base_melt_ma <- rollapply(data = base_me_mea, width = 14,
                             FUN = sum_na, align = "right", fill = NA)
@@ -449,6 +465,14 @@ flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
   coch_lpre_ma <- rollapply(data = coch_lpre, width = 5,
                             FUN = sum_na, align = "right", fill = NA)
   koel_lpre_ma <- rollapply(data = koel_lpre, width = 5,
+                            FUN = sum_na, align = "right", fill = NA)
+  
+  #Moving window actual evapotranspiration
+  base_aeva_ma <- rollapply(data = base_ae_mea, width = 14,
+                            FUN = sum_na, align = "right", fill = NA)
+  coch_aeva_ma <- rollapply(data = coch_ae_mea, width = 14,
+                            FUN = sum_na, align = "right", fill = NA)
+  koel_aeva_ma <- rollapply(data = koel_ae_mea, width = 14,
                             FUN = sum_na, align = "right", fill = NA)
   
   #fraction snowmelt contribution
@@ -499,12 +523,16 @@ flux_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
                          koel_frac = koel_frac,
                          base_mel_ele = mel_ele_base,
                          coch_mel_ele = mel_ele_coch,
-                         koel_mel_ele = mel_ele_koel)  
+                         koel_mel_ele = mel_ele_koel,
+                         base_aev_ma = base_aeva_ma,
+                         coch_aev_ma = coch_aeva_ma,
+                         koel_aev_ma = koel_aeva_ma
+                         )  
   
   return(flux_out)
   
 }
-prec_from_nc <- function(gcm_model, delta_t, rcp, ncores = 5){
+prec_from_nc <- function(gcm_model, delta_t, rcp, ncores = 1){
   
   #select nc_file
   nc_path_sel <- nc_file_paths[which(grepl(gcm_model, nc_file_paths) &
@@ -1019,6 +1047,19 @@ max_prl_mag_hist_koel <- c(pmax_hist_1[, 11],  pmax_hist_2[, 11],  pmax_hist_3[,
 max_prl_doy_hist_koel <- c(pmax_hist_1[, 12],  pmax_hist_2[, 12],  pmax_hist_3[, 12],
                            pmax_hist_4[, 12],  pmax_hist_5[, 12])
 
+max_aev_mag_hist_base <- c(fmax_hist_1[, 25],  fmax_hist_2[, 25],  fmax_hist_3[, 25],
+                           fmax_hist_4[, 25],  fmax_hist_5[, 25])
+max_aev_doy_hist_base <- c(fmax_hist_1[, 26],  fmax_hist_2[, 26],  fmax_hist_3[, 26],
+                           fmax_hist_4[, 26],  fmax_hist_5[, 26])
+max_aev_mag_hist_coch <- c(fmax_hist_1[, 27],  fmax_hist_2[, 27],  fmax_hist_3[, 27],
+                           fmax_hist_4[, 27],  fmax_hist_5[, 27])
+max_aev_doy_hist_coch <- c(fmax_hist_1[, 28],  fmax_hist_2[, 28],  fmax_hist_3[, 27],
+                           fmax_hist_4[, 28],  fmax_hist_5[, 28])
+max_aev_mag_hist_koel <- c(fmax_hist_1[, 29],  fmax_hist_2[, 29],  fmax_hist_3[, 29],
+                           fmax_hist_4[, 29],  fmax_hist_5[, 29])
+max_aev_doy_hist_koel <- c(fmax_hist_1[, 30],  fmax_hist_2[, 30],  fmax_hist_3[, 30],
+                           fmax_hist_4[, 30],  fmax_hist_5[, 30])
+
 #Put together 1.5K warming level
 max_dis_mag_1p5K_koel <- c(dmax_1p5K_1[, 1],  dmax_1p5K_2[, 1],  dmax_1p5K_3[, 1],
                            dmax_1p5K_4[, 1],  dmax_1p5K_5[, 1],  dmax_1p5K_6[, 1],
@@ -1158,6 +1199,37 @@ max_prl_doy_1p5K_koel <- c(pmax_1p5K_1[, 12],  pmax_1p5K_2[, 12],  pmax_1p5K_3[,
                            pmax_1p5K_7[, 12],  pmax_1p5K_8[, 12],  pmax_1p5K_9[, 12], 
                            pmax_1p5K_10[, 12], pmax_1p5K_11[, 12], pmax_1p5K_12[, 12], 
                            pmax_1p5K_13[, 12], pmax_1p5K_14[, 12])
+
+max_aev_mag_1p5K_base <- c(fmax_1p5K_1[, 25],  fmax_1p5K_2[, 25],  fmax_1p5K_3[, 25],
+                           fmax_1p5K_4[, 25],  fmax_1p5K_5[, 25],  fmax_1p5K_6[, 25],
+                           fmax_1p5K_7[, 25],  fmax_1p5K_8[, 25],  fmax_1p5K_9[, 25], 
+                           fmax_1p5K_10[, 25], fmax_1p5K_11[, 25], fmax_1p5K_12[, 25], 
+                           fmax_1p5K_13[, 25], fmax_1p5K_14[, 25])
+max_aev_doy_1p5K_base <- c(fmax_1p5K_1[, 26],  fmax_1p5K_2[, 26],  fmax_1p5K_3[, 26],
+                           fmax_1p5K_4[, 26],  fmax_1p5K_5[, 26],  fmax_1p5K_6[, 26],
+                           fmax_1p5K_7[, 26],  fmax_1p5K_8[, 26],  fmax_1p5K_9[, 26], 
+                           fmax_1p5K_10[, 26], fmax_1p5K_11[, 26], fmax_1p5K_12[, 26], 
+                           fmax_1p5K_13[, 26], fmax_1p5K_14[, 26])
+max_aev_mag_1p5K_coch <- c(fmax_1p5K_1[, 27],  fmax_1p5K_2[, 27],  fmax_1p5K_3[, 27],
+                           fmax_1p5K_4[, 27],  fmax_1p5K_5[, 27],  fmax_1p5K_6[, 27],
+                           fmax_1p5K_7[, 27],  fmax_1p5K_8[, 27],  fmax_1p5K_9[, 27], 
+                           fmax_1p5K_10[, 27], fmax_1p5K_11[, 27], fmax_1p5K_12[, 27], 
+                           fmax_1p5K_13[, 27], fmax_1p5K_14[, 27])
+max_aev_doy_1p5K_coch <- c(fmax_1p5K_1[, 28],  fmax_1p5K_2[, 28],  fmax_1p5K_3[, 28],
+                           fmax_1p5K_4[, 28],  fmax_1p5K_5[, 28],  fmax_1p5K_6[, 28],
+                           fmax_1p5K_7[, 28],  fmax_1p5K_8[, 28],  fmax_1p5K_9[, 28], 
+                           fmax_1p5K_10[, 28], fmax_1p5K_11[, 28], fmax_1p5K_12[, 28], 
+                           fmax_1p5K_13[, 28], fmax_1p5K_14[, 28])
+max_aev_mag_1p5K_koel <- c(fmax_1p5K_1[, 29],  fmax_1p5K_2[, 29],  fmax_1p5K_3[, 29],
+                           fmax_1p5K_4[, 29],  fmax_1p5K_5[, 29],  fmax_1p5K_6[, 29],
+                           fmax_1p5K_7[, 29],  fmax_1p5K_8[, 29],  fmax_1p5K_9[, 29], 
+                           fmax_1p5K_10[, 29], fmax_1p5K_11[, 29], fmax_1p5K_12[, 29], 
+                           fmax_1p5K_13[, 29], fmax_1p5K_14[, 29])
+max_aev_doy_1p5K_koel <- c(fmax_1p5K_1[, 30],  fmax_1p5K_2[, 30],  fmax_1p5K_3[, 30],
+                           fmax_1p5K_4[, 30],  fmax_1p5K_5[, 30],  fmax_1p5K_6[, 30],
+                           fmax_1p5K_7[, 30],  fmax_1p5K_8[, 30],  fmax_1p5K_9[, 30], 
+                           fmax_1p5K_10[, 30], fmax_1p5K_11[, 30], fmax_1p5K_12[, 30], 
+                           fmax_1p5K_13[, 30], fmax_1p5K_14[, 30])
 
 #Put together 2.0K warming level
 max_dis_mag_2p0K_koel <- c(dmax_2p0K_1[, 1],  dmax_2p0K_2[, 1],  dmax_2p0K_3[, 1],
@@ -1299,6 +1371,37 @@ max_prl_doy_2p0K_koel <- c(pmax_2p0K_1[, 12],  pmax_2p0K_2[, 12],  pmax_2p0K_3[,
                            pmax_2p0K_10[, 12], pmax_2p0K_11[, 12], pmax_2p0K_12[, 12], 
                            pmax_2p0K_13[, 12])
 
+max_aev_mag_2p0K_base <- c(fmax_2p0K_1[, 25],  fmax_2p0K_2[, 25],  fmax_2p0K_3[, 25],
+                           fmax_2p0K_4[, 25],  fmax_2p0K_5[, 25],  fmax_2p0K_6[, 25],
+                           fmax_2p0K_7[, 25],  fmax_2p0K_8[, 25],  fmax_2p0K_9[, 25], 
+                           fmax_2p0K_10[, 25], fmax_2p0K_11[, 25], fmax_2p0K_12[, 25], 
+                           fmax_2p0K_13[, 25])
+max_aev_doy_2p0K_base <- c(fmax_2p0K_1[, 26],  fmax_2p0K_2[, 26],  fmax_2p0K_3[, 26],
+                           fmax_2p0K_4[, 26],  fmax_2p0K_5[, 26],  fmax_2p0K_6[, 26],
+                           fmax_2p0K_7[, 26],  fmax_2p0K_8[, 26],  fmax_2p0K_9[, 26], 
+                           fmax_2p0K_10[, 26], fmax_2p0K_11[, 26], fmax_2p0K_12[, 26], 
+                           fmax_2p0K_13[, 26])
+max_aev_mag_2p0K_coch <- c(fmax_2p0K_1[, 27],  fmax_2p0K_2[, 27],  fmax_2p0K_3[, 27],
+                           fmax_2p0K_4[, 27],  fmax_2p0K_5[, 27],  fmax_2p0K_6[, 27],
+                           fmax_2p0K_7[, 27],  fmax_2p0K_8[, 27],  fmax_2p0K_9[, 27], 
+                           fmax_2p0K_10[, 27], fmax_2p0K_11[, 27], fmax_2p0K_12[, 27], 
+                           fmax_2p0K_13[, 27])
+max_aev_doy_2p0K_coch <- c(fmax_2p0K_1[, 28],  fmax_2p0K_2[, 28],  fmax_2p0K_3[, 28],
+                           fmax_2p0K_4[, 28],  fmax_2p0K_5[, 28],  fmax_2p0K_6[, 28],
+                           fmax_2p0K_7[, 28],  fmax_2p0K_8[, 28],  fmax_2p0K_9[, 28], 
+                           fmax_2p0K_10[, 28], fmax_2p0K_11[, 28], fmax_2p0K_12[, 28], 
+                           fmax_2p0K_13[, 28])
+max_aev_mag_2p0K_koel <- c(fmax_2p0K_1[, 29],  fmax_2p0K_2[, 29],  fmax_2p0K_3[, 29],
+                           fmax_2p0K_4[, 29],  fmax_2p0K_5[, 29],  fmax_2p0K_6[, 29],
+                           fmax_2p0K_7[, 29],  fmax_2p0K_8[, 29],  fmax_2p0K_9[, 29], 
+                           fmax_2p0K_10[, 29], fmax_2p0K_11[, 29], fmax_2p0K_12[, 29], 
+                           fmax_2p0K_13[, 29])
+max_aev_doy_2p0K_koel <- c(fmax_2p0K_1[, 30],  fmax_2p0K_2[, 30],  fmax_2p0K_3[, 30],
+                           fmax_2p0K_4[, 30],  fmax_2p0K_5[, 30],  fmax_2p0K_6[, 30],
+                           fmax_2p0K_7[, 30],  fmax_2p0K_8[, 30],  fmax_2p0K_9[, 30], 
+                           fmax_2p0K_10[, 30], fmax_2p0K_11[, 30], fmax_2p0K_12[, 30], 
+                           fmax_2p0K_13[, 30])
+
 #Put together 3.0K warming level
 max_dis_mag_3p0K_koel <- c(dmax_3p0K_1[, 1],  dmax_3p0K_2[, 1],  dmax_3p0K_3[, 1],
                            dmax_3p0K_4[, 1],  dmax_3p0K_5[, 1],  dmax_3p0K_6[, 1],
@@ -1385,9 +1488,34 @@ max_prl_doy_3p0K_koel <- c(pmax_3p0K_1[, 12],  pmax_3p0K_2[, 12],  pmax_3p0K_3[,
                            pmax_3p0K_4[, 12],  pmax_3p0K_5[, 12],  pmax_3p0K_6[, 12],
                            pmax_3p0K_7[, 12],  pmax_3p0K_8[, 12])
 
+max_aev_mag_3p0K_base <- c(fmax_3p0K_1[, 25],  fmax_3p0K_2[, 25],  fmax_3p0K_3[, 25],
+                           fmax_3p0K_4[, 25],  fmax_3p0K_5[, 25],  fmax_3p0K_6[, 25],
+                           fmax_3p0K_7[, 25],  fmax_3p0K_8[, 25])
+max_aev_doy_3p0K_base <- c(fmax_3p0K_1[, 26],  fmax_3p0K_2[, 26],  fmax_3p0K_3[, 26],
+                           fmax_3p0K_4[, 26],  fmax_3p0K_5[, 26],  fmax_3p0K_6[, 26],
+                           fmax_3p0K_7[, 26],  fmax_3p0K_8[, 26])
+max_aev_mag_3p0K_coch <- c(fmax_3p0K_1[, 27],  fmax_3p0K_2[, 27],  fmax_3p0K_3[, 27],
+                           fmax_3p0K_4[, 27],  fmax_3p0K_5[, 27],  fmax_3p0K_6[, 27],
+                           fmax_3p0K_7[, 27],  fmax_3p0K_8[, 27])
+max_aev_doy_3p0K_coch <- c(fmax_3p0K_1[, 28],  fmax_3p0K_2[, 28],  fmax_3p0K_3[, 28],
+                           fmax_3p0K_4[, 28],  fmax_3p0K_5[, 28],  fmax_3p0K_6[, 28],
+                           fmax_3p0K_7[, 28],  fmax_3p0K_8[, 28])
+max_aev_mag_3p0K_koel <- c(fmax_3p0K_1[, 29],  fmax_3p0K_2[, 29],  fmax_3p0K_3[, 29],
+                           fmax_3p0K_4[, 29],  fmax_3p0K_5[, 29],  fmax_3p0K_6[, 29],
+                           fmax_3p0K_7[, 29],  fmax_3p0K_8[, 29])
+max_aev_doy_3p0K_koel <- c(fmax_3p0K_1[, 30],  fmax_3p0K_2[, 30],  fmax_3p0K_3[, 30],
+                           fmax_3p0K_4[, 30],  fmax_3p0K_5[, 30],  fmax_3p0K_6[, 30],
+                           fmax_3p0K_7[, 30],  fmax_3p0K_8[, 30])
+
+col_hist <- "steelblue4"
+col_1p5K <- "grey25"
+col_2p0K <- "orange3"
+col_3p0K <- "darkred"
+
 #Plot-function boxplots
 plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, ylims_in = c(0, 1),
-                     y_lab = "", do_legend = F, legend_pos = "topleft"){
+                     y_lab = "", do_legend = F, legend_pos = "topleft", main_header = "", 
+                     pos_main = 0.0){
 
   if(calc_ylims){
     ylims <- c(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
@@ -1407,8 +1535,8 @@ plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, yli
                        max_3p0K = range(max_3p0K, na.rm = T))
   
   boxplot(max_df, boxfill = NA, border = NA, axes = F, ylim = ylims)
-  axis(2, mgp=c(3, 0.35, 0), tck = -0.015, cex.axis = 2.0)
-  mtext(y_lab, side = 2, line = 2.3, cex = 1.3)
+  axis(2, mgp=c(3, 0.55, 0), tck = -0.017, cex.axis = 2.5)
+  mtext(y_lab, side = 2, line = 3.1, cex = 1.8)
   grid(nx = 0, ny = 6, col = "grey55", lwd = 0.5)
   if(do_legend){
     legend(legend_pos, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
@@ -1418,17 +1546,18 @@ plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, yli
   box()
   
   boxplot(max_hist, ylim = ylims, col = col_hist, axes = F, xaxt = "n", add = TRUE, 
-          at = 1, boxwex = 1.4, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          at = 1, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
           outpch = 19)
   boxplot(max_1p5K, ylim = ylims, col = col_1p5K, axes = F, xaxt = "n", add = TRUE, 
-          at = 2, boxwex = 1.4, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          at = 2, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
           outpch = 19)
   boxplot(max_2p0K, ylim = ylims, col = col_2p0K, axes = F, xaxt = "n", add = TRUE, 
-          at = 3, boxwex = 1.4, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          at = 3, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
           outpch = 19)
   boxplot(max_3p0K, ylim = ylims, col = col_3p0K, axes = F, xaxt = "n", add = TRUE, 
-          at = 4, boxwex = 1.4, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          at = 4, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
           outpch = 19)
+  mtext(main_header, side = 3, line = 0.5, adj = pos_main, cex = 2.2)
   
 }
 
@@ -1436,9 +1565,9 @@ plot_box <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, calc_ylims = F, yli
 plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 50, y_lab = ""){
   
   breaks <- seq(min_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
-                max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)), 
+                max_na(c(max_hist, max_1p5K, max_2p0K, max_3p0K)),
                 length.out = n_breaks)
-  
+  # breaks <- seq(0,365, length.out = n_breaks)
   
   ylims <- c(0, max_na(c(hist(max_hist, breaks = breaks, plot = F)$density, 
                          hist(max_1p5K, breaks = breaks, plot = F)$density,
@@ -1455,7 +1584,13 @@ plot_hist <- function(max_hist, max_1p5K, max_2p0K, max_3p0K, n_breaks = 50, y_l
        ylab = "", xlab = "", main = "", ylim = ylims, yaxs = "i", xaxs = "i")
   hist(max_3p0K, freq = F, col = col_3p0K, axes = F, breaks = breaks, 
        ylab = "", xlab = "", main = "", ylim = ylims, yaxs = "i", xaxs = "i")
-  axis(1, mgp=c(3, 0.85, 0), tck = -0.065, cex.axis = 2.0)
+  axis(1, mgp=c(3, 1.10, 0), tck = -0.08, cex.axis = 2.5)
+  # x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
+  # x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
+  # axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
+  #      col = "black", col.axis = "black", tck = -0.1)#plot ticks
+  # axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
+  #      col="black", col.axis="black", mgp=c(3, 0.55, 0), cex.axis = 2.3)#plot labels
   
   cex_header <- 1.3
   par(mar = c(0,0,0,0))
@@ -1470,40 +1605,40 @@ pdf(paste0(bas_dir,"res_figs/max_dis_fut_raw.pdf"), width = 16, height = 12)
 
 par(family = "serif")
 
-layout(matrix(c(37, 37, 37, 37,
-                38, 1, 2, 3,
-                38, 1, 2, 3,
-                38, 1, 2, 3,
-                38, 1, 2, 3,
-                38, 1, 2, 3,
-                38, 4, 9, 14,
-                38, 5, 10, 15,
-                38, 6, 11, 16,
-                38, 7, 12, 17,
-                38, 8, 13, 18,
-                38, 19, 20, 21,
-                38, 19, 20, 21,
-                38, 19, 20, 21,
-                38, 19, 20, 21,
-                38, 19, 20, 21,
-                38, 22, 27, 32,
-                38, 23, 28, 33,
-                38, 24, 29, 34,
-                38, 25, 30, 35,
-                38, 26, 31, 36),
-              21, 4, byrow = T), widths=c(0.1, rep(1, 3)), heights=c(0.5, rep(1, 9), 1.5, rep(1, 9), 0.5))
+layout(matrix(c(37, 1, 2, 3,
+                37, 1, 2, 3,
+                37, 1, 2, 3,
+                37, 1, 2, 3,
+                37, 1, 2, 3,
+                37, 4, 9, 14,
+                37, 5, 10, 15,
+                37, 6, 11, 16,
+                37, 7, 12, 17,
+                37, 8, 13, 18,
+                37, 19, 20, 21,
+                37, 19, 20, 21,
+                37, 19, 20, 21,
+                37, 19, 20, 21,
+                37, 19, 20, 21,
+                37, 22, 27, 32,
+                37, 23, 28, 33,
+                37, 24, 29, 34,
+                37, 25, 30, 35,
+                37, 26, 31, 36),
+              20, 4, byrow = T), widths=c(0.1, rep(1, 3)), heights=c(rep(1.1, 4), rep(1, 5), 2.5, rep(1.1, 4), rep(1, 5), 0.5))
 # layout.show(n = 20)
 
-par(mar = c(1.9, 3.0, 0.8, 0.5))
+par(mar = c(1.9, 3.0, 3.0, 0.5))
 
 plot_box(max_dis_mag_hist_base, max_dis_mag_1p5K_base, max_dis_mag_2p0K_base, max_dis_mag_3p0K_base,
-         y_lab = "", calc_ylims = T, do_legend = T)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "a) Basel magnitudes")
 
 plot_box(max_dis_mag_hist_coch, max_dis_mag_1p5K_coch, max_dis_mag_2p0K_coch, max_dis_mag_3p0K_coch,
-         y_lab = "", calc_ylims = T, do_legend = F)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "b) Cochem magnitudes")
 
 plot_box(max_dis_mag_hist_koel, max_dis_mag_1p5K_koel, max_dis_mag_2p0K_koel, max_dis_mag_3p0K_koel,
-         y_lab = "", calc_ylims = T, do_legend = F)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "c) Cologne magnitudes")
+
 
 par(mar =c(0.6, 3.0, 0.6, 0.5))
 
@@ -1518,16 +1653,17 @@ plot_hist(max_dis_mag_hist_koel, max_dis_mag_1p5K_koel, max_dis_mag_2p0K_koel, m
 
 
 
-par(mar = c(1.9, 3.0, 0.8, 0.5))
+par(mar = c(1.9, 3.0, 3.0, 0.5))
 
 plot_box(max_dis_doy_hist_base, max_dis_doy_1p5K_base, max_dis_doy_2p0K_base, max_dis_doy_3p0K_base,
-         y_lab = "", calc_ylims = T, do_legend = F)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "d) Basel timing")
 
 plot_box(max_dis_doy_hist_coch, max_dis_doy_1p5K_coch, max_dis_doy_2p0K_coch, max_dis_doy_3p0K_coch,
-         y_lab = "", calc_ylims = T, do_legend = F)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "e) Cochem timing")
 
 plot_box(max_dis_doy_hist_koel, max_dis_doy_1p5K_koel, max_dis_doy_2p0K_koel, max_dis_doy_3p0K_koel,
-         y_lab = "", calc_ylims = T, do_legend = F)
+         y_lab = "", calc_ylims = T, do_legend = F, main_header = "f) Cologne timing")
+
 
 par(mar =c(0.6, 3.0, 0.6, 0.5))
 
@@ -1540,21 +1676,13 @@ plot_hist(max_dis_doy_hist_coch, max_dis_doy_1p5K_coch, max_dis_doy_2p0K_coch, m
 plot_hist(max_dis_doy_hist_koel, max_dis_doy_1p5K_koel, max_dis_doy_2p0K_koel, max_dis_doy_3p0K_koel,
           y_lab = "")
 
-#Gauging station
-cex_header <- 1.7
+
 par(mar = c(0,0,0,0))
-
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("a) Basel",
-      side = 3, line = -2.55, cex = cex_header+0.2, adj = 0.191)
-mtext("b) Cochem",
-      side = 3, line = -2.55, cex = cex_header+0.2, adj = 0.525)
-mtext("c) Cologne",
-      side = 3, line = -2.55, cex = cex_header+0.2, adj = 0.875)
-
-plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("1. Discharge magnitude [m³/s]",  side = 2, line = -2.5, cex = cex_header, adj = 0.85, outer = T)
-mtext("2. Discharge timing [DOY]",  side = 2, line = -2.5, cex = cex_header, adj = 0.15, outer = T)
+mtext(expression(paste("Discharge magnitude [m"^"3", "s"^"-1","]")), 
+      side = 2, line = -3.2, cex = 2.1, adj = 0.92, outer = T)
+mtext(expression(paste("Discharge timing [DOY]")),                                     
+      side = 2, line = -3.2, cex = 2.1, adj = 0.11, outer = T)
 
 dev.off()
 
@@ -1563,79 +1691,94 @@ dev.off()
 
 
 #Plot annual maxima additional features
-pdf(paste0(bas_dir,"res_figs/max_add_fut.pdf"), width = 10, height = 10)
+pdf(paste0(bas_dir,"res_figs/max_add_fut_raw.pdf"), width = 12, height = 14)
 
 par(family = "serif")
 
-layout(matrix(c(11, 11, 11,
-                12, 1, 2,
-                12, 3, 4,
-                12, 5, 6,
-                12, 7, 8,
-                12, 9, 10),
-              6, 3, byrow = T), widths=c(0.12, 1, 1), heights=c(0.15, rep(1, 5)))
+layout(matrix(c(13, 13, 13,
+                14, 1, 2,
+                14, 3, 4,
+                14, 5, 6,
+                14, 7, 8,
+                14, 9, 10,
+                14, 11, 12),
+              7, 3, byrow = T), widths=c(0.12, 1, 1), heights=c(0.100, rep(1, 6)))
 # layout.show(n = 12)
 
-par(mar = c(1.5, 3.0, 0.8, 0.5))
+par(mar = c(1.5, 3.0, 2.5, 0.5))
 
 #Melt fraction
 plot_box(max_dis_fra_hist_base, max_dis_fra_1p5K_base, max_dis_fra_2p0K_base, max_dis_fra_3p0K_base,
-         y_lab = "[-]", do_legend = T, legend_pos = "topright")
+         y_lab = "[-]", do_legend = F, legend_pos = "topright", main_header = "(a)")
 
 plot_box(max_dis_fra_hist_coch, max_dis_fra_1p5K_coch, max_dis_fra_2p0K_coch, max_dis_fra_3p0K_coch,
-         y_lab = "")
+         y_lab = "", main_header = "(b)", pos_main = 1.0)
 
 #Melt magnitude
 plot_box(max_mel_mag_hist_base, max_mel_mag_1p5K_base, max_mel_mag_2p0K_base, max_mel_mag_3p0K_base,
-         y_lab = "[mm]", calc_ylims = T)
+         y_lab = "[mm]", calc_ylims = T, main_header = "(c)")
 
 plot_box(max_mel_mag_hist_coch, max_mel_mag_1p5K_coch, max_mel_mag_2p0K_coch, max_mel_mag_3p0K_coch,
-         y_lab = "", calc_ylims = T)
+         y_lab = "", calc_ylims = T, main_header = "(d)", pos_main = 1.0)
 
 #Melt timing
 plot_box(max_mel_doy_hist_base, max_mel_doy_1p5K_base, max_mel_doy_2p0K_base, max_mel_doy_3p0K_base,
-         y_lab = "[DOY]", ylims_in = c(1, 365))
+         y_lab = "[DOY]", ylims_in = c(1, 365), main_header = "(e)")
 
 plot_box(max_mel_doy_hist_coch, max_mel_doy_1p5K_coch, max_mel_doy_2p0K_coch, max_mel_doy_3p0K_coch,
-         y_lab = "", ylims_in = c(1, 365))
+         y_lab = "", ylims_in = c(1, 365), main_header = "(f)", pos_main = 1.0)
 
 #Precipitation total magnitude
 plot_box(max_prt_mag_hist_base, max_prt_mag_1p5K_base, max_prt_mag_2p0K_base, max_prt_mag_3p0K_base,
-         y_lab = "[mm]", calc_ylims = T)
+         y_lab = "[mm]", calc_ylims = T, main_header = "(g)")
 
 plot_box(max_prt_mag_hist_coch, max_prt_mag_1p5K_coch, max_prt_mag_2p0K_coch, max_prt_mag_3p0K_coch,
-         y_lab = "", calc_ylims = T)
+         y_lab = "", calc_ylims = T, main_header = "(h)", pos_main = 1.0)
 
 #Precipitation liquid magnitude
 plot_box(max_prl_mag_hist_base, max_prl_mag_1p5K_base, max_prl_mag_2p0K_base, max_prl_mag_3p0K_base,
-         y_lab = "[mm]", calc_ylims = T)
+         y_lab = "[mm]", calc_ylims = T, main_header = "(i)")
 
 plot_box(max_prl_mag_hist_coch, max_prl_mag_1p5K_coch, max_prl_mag_2p0K_coch, max_prl_mag_3p0K_coch,
-         y_lab = "", calc_ylims = T)
+         y_lab = "", calc_ylims = T, main_header = "(j)", pos_main = 1.0)
+
+#Actual evapotranspiration magnitude
+plot_box(max_aev_mag_hist_base, max_aev_mag_1p5K_base, max_aev_mag_2p0K_base, max_aev_mag_3p0K_base,
+         y_lab = "[mm]", calc_ylims = T, main_header = "(k)")
+
+plot_box(max_aev_mag_hist_coch, max_aev_mag_1p5K_coch, max_aev_mag_2p0K_coch, max_aev_mag_3p0K_coch,
+         y_lab = "", calc_ylims = T, main_header = "(l)", pos_main = 1.0)
 
 #Gauging station
-cex_header <- 1.7
+cex_header <- 2.2
 par(mar = c(0,0,0,0))
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("a) Basel",
-      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.28)
-mtext("b) Cochem",
-      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.81)
+mtext("Basel",
+      side = 3, line = -3.5, cex = cex_header+0.0, adj = 0.22)
+mtext("Cochem",
+      side = 3, line = -3.5, cex = cex_header+0.0, adj = 0.885)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("1. Melt fract.",  side = 2, line = -2.2, cex = cex_header, adj = 0.94, outer = T)
-mtext("2. Melt mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.70, outer = T)
-mtext("3. Melt tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.490, outer = T)
-mtext("4. Prec. tot.",  side = 2, line = -2.2, cex = cex_header, adj = 0.27, outer = T)
-mtext("5. Prec. liq.",  side = 2, line = -2.2, cex = cex_header, adj = 0.04, outer = T)
+mtext("Melt fract.",  side = 2, line = -2.2, cex = cex_header, adj = 0.935, outer = T)
+mtext("Melt mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.76, outer = T)
+mtext("Melt tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.58, outer = T)
+mtext("Prec. tot.",  side = 2, line = -2.2, cex = cex_header, adj = 0.395, outer = T)
+mtext("Prec. liq.",  side = 2, line = -2.2, cex = cex_header, adj = 0.215, outer = T)
+mtext("Act. ET",  side = 2, line = -2.2, cex = cex_header, adj = 0.045, outer = T)
 
 dev.off()
 
 
+1 - (med_na(max_aev_mag_hist_base) / med_na(max_aev_mag_3p0K_base))
+1 - (med_na(max_aev_mag_hist_coch) / med_na(max_aev_mag_3p0K_coch))
 
 
+length(which(max_aev_fra_3p0K_coch > 0.20)) / length(max_ave_fra_3p0K_coch) - 
+length(which(max_dis_fra_hist_coch > 0.20)) / length(max_ave_fra_hist_coch)
 
+
+med_na(max_prl_mag_hist_base)
 
 
 pdf(paste0(bas_dir,"res_figs/max_box_fut.pdf"), width = 16, height = 22)
@@ -1976,6 +2119,12 @@ annu_flu <- function(flux_in){
                           end_y = end_y,
                           break_day = 274)
   
+  aev_base_day <- ord_day(data_in = flux_in$base_aev_ma,
+                          date = date,
+                          start_y = start_y,
+                          end_y = end_y,
+                          break_day = 274)
+  
   mel_coch_day <- ord_day(data_in = flux_in$coch_melt_ma,
                           date = date,
                           start_y = start_y,
@@ -1995,6 +2144,12 @@ annu_flu <- function(flux_in){
                           break_day = 274)
   
   ele_coch_day <- ord_day(data_in = flux_in$coch_mel_ele,
+                          date = date,
+                          start_y = start_y,
+                          end_y = end_y,
+                          break_day = 274)
+  
+  aev_coch_day <- ord_day(data_in = flux_in$coch_aev_ma,
                           date = date,
                           start_y = start_y,
                           end_y = end_y,
@@ -2024,6 +2179,12 @@ annu_flu <- function(flux_in){
                           end_y = end_y,
                           break_day = 274)
   
+  aev_koel_day <- ord_day(data_in = flux_in$koel_aev_ma,
+                          date = date,
+                          start_y = start_y,
+                          end_y = end_y,
+                          break_day = 274)
+  
   mel_base_mea <- apply(mel_base_day, 2, mea_na)
   mel_coch_mea <- apply(mel_coch_day, 2, mea_na)
   mel_koel_mea <- apply(mel_koel_day, 2, mea_na)
@@ -2036,6 +2197,9 @@ annu_flu <- function(flux_in){
   ele_base_mea <- apply(ele_base_day, 2, mea_na)
   ele_coch_mea <- apply(ele_coch_day, 2, mea_na)
   ele_koel_mea <- apply(ele_koel_day, 2, mea_na)
+  aev_base_mea <- apply(aev_base_day, 2, mea_na)
+  aev_coch_mea <- apply(aev_coch_day, 2, mea_na)
+  aev_koel_mea <- apply(aev_koel_day, 2, mea_na)
   
   fra_mea_out <- data.frame(mel_base_mea = mel_base_mea, 
                             mel_coch_mea = mel_coch_mea,
@@ -2048,7 +2212,10 @@ annu_flu <- function(flux_in){
                             fra_koel_mea = fra_koel_mea,
                             ele_base_mea = ele_base_mea,
                             ele_coch_mea = ele_coch_mea,
-                            ele_koel_mea = ele_koel_mea)
+                            ele_koel_mea = ele_koel_mea,
+                            aev_base_mea = aev_base_mea,
+                            aev_coch_mea = aev_coch_mea,
+                            aev_koel_mea = aev_koel_mea)
   
   return(fra_mea_out)
   
@@ -2222,6 +2389,13 @@ ann_ele_hist_coch_all <- cbind(ann_flu_hist_1$ele_coch_mea, ann_flu_hist_2$ele_c
                                ann_flu_hist_4$ele_coch_mea, ann_flu_hist_5$ele_coch_mea)
 ann_ele_hist_koel_all <- cbind(ann_flu_hist_1$ele_koel_mea, ann_flu_hist_2$ele_koel_mea, ann_flu_hist_3$ele_koel_mea,
                                ann_flu_hist_4$ele_koel_mea, ann_flu_hist_5$ele_koel_mea)
+ann_aev_hist_base_all <- cbind(ann_flu_hist_1$aev_base_mea, ann_flu_hist_2$aev_base_mea, ann_flu_hist_3$aev_base_mea,
+                               ann_flu_hist_4$aev_base_mea, ann_flu_hist_5$aev_base_mea)
+ann_aev_hist_coch_all <- cbind(ann_flu_hist_1$aev_coch_mea, ann_flu_hist_2$aev_coch_mea, ann_flu_hist_3$aev_coch_mea,
+                               ann_flu_hist_4$aev_coch_mea, ann_flu_hist_5$aev_coch_mea)
+ann_aev_hist_koel_all <- cbind(ann_flu_hist_1$aev_koel_mea, ann_flu_hist_2$aev_koel_mea, ann_flu_hist_3$aev_koel_mea,
+                               ann_flu_hist_4$aev_koel_mea, ann_flu_hist_5$aev_koel_mea)
+
 
 ann_prt_hist_base_all <- cbind(ann_pre_hist_1$base_pre_tot, ann_pre_hist_2$base_pre_tot, ann_pre_hist_3$base_pre_tot,
                                ann_pre_hist_4$base_pre_tot, ann_pre_hist_5$base_pre_tot)
@@ -2261,6 +2435,9 @@ ann_fra_hist_koel <- apply(ann_fra_hist_koel_all, 1, mea_na)
 ann_ele_hist_base <- apply(ann_ele_hist_base_all, 1, mea_na)
 ann_ele_hist_coch <- apply(ann_ele_hist_coch_all, 1, mea_na)
 ann_ele_hist_koel <- apply(ann_ele_hist_koel_all, 1, mea_na)
+ann_aev_hist_base <- apply(ann_aev_hist_base_all, 1, mea_na)
+ann_aev_hist_coch <- apply(ann_aev_hist_coch_all, 1, mea_na)
+ann_aev_hist_koel <- apply(ann_aev_hist_koel_all, 1, mea_na)
 
 ann_prt_hist_base <- apply(ann_prt_hist_base_all, 1, mea_na)
 ann_prt_hist_coch <- apply(ann_prt_hist_coch_all, 1, mea_na)
@@ -2382,6 +2559,22 @@ ann_ele_1p5K_koel_all <- cbind(ann_flu_1p5K_1$ele_koel_mea,  ann_flu_1p5K_2$ele_
                                ann_flu_1p5K_7$ele_koel_mea,  ann_flu_1p5K_8$ele_koel_mea,  ann_flu_1p5K_9$ele_koel_mea,
                                ann_flu_1p5K_10$ele_koel_mea, ann_flu_1p5K_11$ele_koel_mea, ann_flu_1p5K_12$ele_koel_mea,
                                ann_flu_1p5K_13$ele_koel_mea, ann_flu_1p5K_14$ele_koel_mea)
+ann_aev_1p5K_base_all <- cbind(ann_flu_1p5K_1$aev_base_mea,  ann_flu_1p5K_2$aev_base_mea,  ann_flu_1p5K_3$aev_base_mea,
+                               ann_flu_1p5K_4$aev_base_mea,  ann_flu_1p5K_5$aev_base_mea,  ann_flu_1p5K_6$aev_base_mea,
+                               ann_flu_1p5K_7$aev_base_mea,  ann_flu_1p5K_8$aev_base_mea,  ann_flu_1p5K_9$aev_base_mea,
+                               ann_flu_1p5K_10$aev_base_mea, ann_flu_1p5K_11$aev_base_mea, ann_flu_1p5K_12$aev_base_mea,
+                               ann_flu_1p5K_13$aev_base_mea, ann_flu_1p5K_14$aev_base_mea)
+ann_aev_1p5K_coch_all <- cbind(ann_flu_1p5K_1$aev_coch_mea,  ann_flu_1p5K_2$aev_coch_mea,  ann_flu_1p5K_3$aev_coch_mea,
+                               ann_flu_1p5K_4$aev_coch_mea,  ann_flu_1p5K_5$aev_coch_mea,  ann_flu_1p5K_6$aev_coch_mea,
+                               ann_flu_1p5K_7$aev_coch_mea,  ann_flu_1p5K_8$aev_coch_mea,  ann_flu_1p5K_9$aev_coch_mea,
+                               ann_flu_1p5K_10$aev_coch_mea, ann_flu_1p5K_11$aev_coch_mea, ann_flu_1p5K_12$aev_coch_mea,
+                               ann_flu_1p5K_13$aev_coch_mea, ann_flu_1p5K_14$aev_coch_mea)
+ann_aev_1p5K_koel_all <- cbind(ann_flu_1p5K_1$aev_koel_mea,  ann_flu_1p5K_2$aev_koel_mea,  ann_flu_1p5K_3$aev_koel_mea,
+                               ann_flu_1p5K_4$aev_koel_mea,  ann_flu_1p5K_5$aev_koel_mea,  ann_flu_1p5K_6$aev_koel_mea,
+                               ann_flu_1p5K_7$aev_koel_mea,  ann_flu_1p5K_8$aev_koel_mea,  ann_flu_1p5K_9$aev_koel_mea,
+                               ann_flu_1p5K_10$aev_koel_mea, ann_flu_1p5K_11$aev_koel_mea, ann_flu_1p5K_12$aev_koel_mea,
+                               ann_flu_1p5K_13$aev_koel_mea, ann_flu_1p5K_14$aev_koel_mea)
+
 
 ann_prt_1p5K_base_all <- cbind(ann_pre_1p5K_1$base_pre_tot,  ann_pre_1p5K_2$base_pre_tot,  ann_pre_1p5K_3$base_pre_tot,
                                ann_pre_1p5K_4$base_pre_tot,  ann_pre_1p5K_5$base_pre_tot,  ann_pre_1p5K_6$base_pre_tot,
@@ -2457,6 +2650,9 @@ ann_fra_1p5K_koel <- apply(ann_fra_1p5K_koel_all, 1, mea_na)
 ann_ele_1p5K_base <- apply(ann_ele_1p5K_base_all, 1, mea_na)
 ann_ele_1p5K_coch <- apply(ann_ele_1p5K_coch_all, 1, mea_na)
 ann_ele_1p5K_koel <- apply(ann_ele_1p5K_koel_all, 1, mea_na)
+ann_aev_1p5K_base <- apply(ann_aev_1p5K_base_all, 1, mea_na)
+ann_aev_1p5K_coch <- apply(ann_aev_1p5K_coch_all, 1, mea_na)
+ann_aev_1p5K_koel <- apply(ann_aev_1p5K_koel_all, 1, mea_na)
 
 ann_prt_1p5K_base <- apply(ann_prt_1p5K_base_all, 1, mea_na)
 ann_prt_1p5K_coch <- apply(ann_prt_1p5K_coch_all, 1, mea_na)
@@ -2575,6 +2771,21 @@ ann_ele_2p0K_koel_all <- cbind(ann_flu_2p0K_1$ele_koel_mea,  ann_flu_2p0K_2$ele_
                                ann_flu_2p0K_7$ele_koel_mea,  ann_flu_2p0K_8$ele_koel_mea,  ann_flu_2p0K_9$ele_koel_mea,
                                ann_flu_2p0K_10$ele_koel_mea, ann_flu_2p0K_11$ele_koel_mea, ann_flu_2p0K_12$ele_koel_mea,
                                ann_flu_2p0K_13$ele_koel_mea)
+ann_aev_2p0K_base_all <- cbind(ann_flu_2p0K_1$aev_base_mea,  ann_flu_2p0K_2$aev_base_mea,  ann_flu_2p0K_3$aev_base_mea,
+                               ann_flu_2p0K_4$aev_base_mea,  ann_flu_2p0K_5$aev_base_mea,  ann_flu_2p0K_6$aev_base_mea,
+                               ann_flu_2p0K_7$aev_base_mea,  ann_flu_2p0K_8$aev_base_mea,  ann_flu_2p0K_9$aev_base_mea,
+                               ann_flu_2p0K_10$aev_base_mea, ann_flu_2p0K_11$aev_base_mea, ann_flu_2p0K_12$aev_base_mea,
+                               ann_flu_2p0K_13$aev_base_mea)
+ann_aev_2p0K_coch_all <- cbind(ann_flu_2p0K_1$aev_coch_mea,  ann_flu_2p0K_2$aev_coch_mea,  ann_flu_2p0K_3$aev_coch_mea,
+                               ann_flu_2p0K_4$aev_coch_mea,  ann_flu_2p0K_5$aev_coch_mea,  ann_flu_2p0K_6$aev_coch_mea,
+                               ann_flu_2p0K_7$aev_coch_mea,  ann_flu_2p0K_8$aev_coch_mea,  ann_flu_2p0K_9$aev_coch_mea,
+                               ann_flu_2p0K_10$aev_coch_mea, ann_flu_2p0K_11$aev_coch_mea, ann_flu_2p0K_12$aev_coch_mea,
+                               ann_flu_2p0K_13$aev_coch_mea)
+ann_aev_2p0K_koel_all <- cbind(ann_flu_2p0K_1$aev_koel_mea,  ann_flu_2p0K_2$aev_koel_mea,  ann_flu_2p0K_3$aev_koel_mea,
+                               ann_flu_2p0K_4$aev_koel_mea,  ann_flu_2p0K_5$aev_koel_mea,  ann_flu_2p0K_6$aev_koel_mea,
+                               ann_flu_2p0K_7$aev_koel_mea,  ann_flu_2p0K_8$aev_koel_mea,  ann_flu_2p0K_9$aev_koel_mea,
+                               ann_flu_2p0K_10$aev_koel_mea, ann_flu_2p0K_11$aev_koel_mea, ann_flu_2p0K_12$aev_koel_mea,
+                               ann_flu_2p0K_13$aev_koel_mea)
 
 ann_prt_2p0K_base_all <- cbind(ann_pre_2p0K_1$base_pre_tot,  ann_pre_2p0K_2$base_pre_tot,  ann_pre_2p0K_3$base_pre_tot,
                                ann_pre_2p0K_4$base_pre_tot,  ann_pre_2p0K_5$base_pre_tot,  ann_pre_2p0K_6$base_pre_tot,
@@ -2650,6 +2861,9 @@ ann_fra_2p0K_koel <- apply(ann_fra_2p0K_koel_all, 1, mea_na)
 ann_ele_2p0K_base <- apply(ann_ele_2p0K_base_all, 1, mea_na)
 ann_ele_2p0K_coch <- apply(ann_ele_2p0K_coch_all, 1, mea_na)
 ann_ele_2p0K_koel <- apply(ann_ele_2p0K_koel_all, 1, mea_na)
+ann_aev_2p0K_base <- apply(ann_aev_2p0K_base_all, 1, mea_na)
+ann_aev_2p0K_coch <- apply(ann_aev_2p0K_coch_all, 1, mea_na)
+ann_aev_2p0K_koel <- apply(ann_aev_2p0K_koel_all, 1, mea_na)
 
 ann_prt_2p0K_base <- apply(ann_prt_2p0K_base_all, 1, mea_na)
 ann_prt_2p0K_coch <- apply(ann_prt_2p0K_coch_all, 1, mea_na)
@@ -2729,6 +2943,15 @@ ann_ele_3p0K_coch_all <- cbind(ann_flu_3p0K_1$ele_coch_mea,  ann_flu_3p0K_2$ele_
 ann_ele_3p0K_koel_all <- cbind(ann_flu_3p0K_1$ele_koel_mea,  ann_flu_3p0K_2$ele_koel_mea,  ann_flu_3p0K_3$ele_koel_mea,
                                ann_flu_3p0K_4$ele_koel_mea,  ann_flu_3p0K_5$ele_koel_mea,  ann_flu_3p0K_6$ele_koel_mea,
                                ann_flu_3p0K_7$ele_koel_mea,  ann_flu_3p0K_8$ele_koel_mea)
+ann_aev_3p0K_base_all <- cbind(ann_flu_3p0K_1$aev_base_mea,  ann_flu_3p0K_2$aev_base_mea,  ann_flu_3p0K_3$aev_base_mea,
+                               ann_flu_3p0K_4$aev_base_mea,  ann_flu_3p0K_5$aev_base_mea,  ann_flu_3p0K_6$aev_base_mea,
+                               ann_flu_3p0K_7$aev_base_mea,  ann_flu_3p0K_8$aev_base_mea)
+ann_aev_3p0K_coch_all <- cbind(ann_flu_3p0K_1$aev_coch_mea,  ann_flu_3p0K_2$aev_coch_mea,  ann_flu_3p0K_3$aev_coch_mea,
+                               ann_flu_3p0K_4$aev_coch_mea,  ann_flu_3p0K_5$aev_coch_mea,  ann_flu_3p0K_6$aev_coch_mea,
+                               ann_flu_3p0K_7$aev_coch_mea,  ann_flu_3p0K_8$aev_coch_mea)
+ann_aev_3p0K_koel_all <- cbind(ann_flu_3p0K_1$aev_koel_mea,  ann_flu_3p0K_2$aev_koel_mea,  ann_flu_3p0K_3$aev_koel_mea,
+                               ann_flu_3p0K_4$aev_koel_mea,  ann_flu_3p0K_5$aev_koel_mea,  ann_flu_3p0K_6$aev_koel_mea,
+                               ann_flu_3p0K_7$aev_koel_mea,  ann_flu_3p0K_8$aev_koel_mea)
 
 ann_prt_3p0K_base_all <- cbind(ann_pre_3p0K_1$base_pre_tot,  ann_pre_3p0K_2$base_pre_tot,  ann_pre_3p0K_3$base_pre_tot,
                                ann_pre_3p0K_4$base_pre_tot,  ann_pre_3p0K_5$base_pre_tot,  ann_pre_3p0K_6$base_pre_tot,
@@ -2780,6 +3003,9 @@ ann_fra_3p0K_koel <- apply(ann_fra_3p0K_koel_all, 1, mea_na)
 ann_ele_3p0K_base <- apply(ann_ele_3p0K_base_all, 1, mea_na)
 ann_ele_3p0K_coch <- apply(ann_ele_3p0K_coch_all, 1, mea_na)
 ann_ele_3p0K_koel <- apply(ann_ele_3p0K_koel_all, 1, mea_na)
+ann_aev_3p0K_base <- apply(ann_aev_3p0K_base_all, 1, mea_na)
+ann_aev_3p0K_coch <- apply(ann_aev_3p0K_coch_all, 1, mea_na)
+ann_aev_3p0K_koel <- apply(ann_aev_3p0K_koel_all, 1, mea_na)
 
 ann_prt_3p0K_base <- apply(ann_prt_3p0K_base_all, 1, mea_na)
 ann_prt_3p0K_coch <- apply(ann_prt_3p0K_coch_all, 1, mea_na)
@@ -2799,7 +3025,7 @@ ann_dis_3p0K_koel <- apply(ann_dis_3p0K_koel_all, 1, mea_na)
 #Functiont to plot annual cycles
 ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all,
                        data_hist_mea, data_1p5K_mea, data_2p0K_mea, data_3p0K_mea, 
-                       main = "", do_legend = F,
+                       main = "", do_legend = F, main_pos = 0.0,
                        y_lab = "", do_y_lab = F){
   
   col_hist <- "steelblue4"
@@ -2809,8 +3035,8 @@ ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_al
   alpha_points <- 0.06
   alpha_points_mea <- 0.6
   cex_points <- 0.6
-  cex_x_label <- 1.6
-  cex_main <- 1.7
+  cex_x_label <- 1.9
+  cex_main <- 1.65
   
   ylims <- c(min_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)),
              max_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)))
@@ -2839,16 +3065,16 @@ ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_al
   axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
        col = "black", col.axis = "black", tck = -0.05)#plot ticks
   axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
-       col="black", col.axis="black", mgp=c(3, 0.40, 0), cex.axis = cex_x_label)#plot labels
-  axis(2, mgp=c(3, 0.29, 0), tck = -0.015, cex.axis = 1.8)
-  mtext(main, side = 3, line = 0.3, cex = cex_main, adj = 0.0)
+       col="black", col.axis="black", mgp=c(3, 0.55, 0), cex.axis = cex_x_label)#plot labels
+  axis(2, mgp=c(3, 0.33, 0), tck = -0.015, cex.axis = 2.0)
+  mtext(main, side = 3, line = 0.4, cex = cex_main, adj = 0.0)
   if(do_y_lab){
     mtext(y_lab, side = 3, line = 1.8, cex = 1.3)
   }
   
   if(do_legend){
-    legend("topright", c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
-           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.6,
+    legend("topright", c("Hist.", "1.5 °C", "2.0 °C", "3.0 °C"), pch = 19, 
+           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.9,
            box.lwd = 0.2, box.col = "black", bg = "white")
   }
   box()
@@ -2856,67 +3082,85 @@ ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_al
 }
 
 
-
-
 #Plot annual cycles export
-pdf(paste0(bas_dir,"res_figs/ann_cyc_fut3.pdf"), width = 16, height = 6)
+pdf(paste0(bas_dir,"res_figs/ann_cyc_fut3.pdf"), width = 12, height = 8)
 # tiff(paste0(bas_dir, "res_figs/ann_cyc_fut3",".tiff"), width = 10.0, height = 6.0,
 #      units = "in", res = 300)
 
 par(family = "serif")
-par(mar = c(1.8, 3.0, 1.0, 1.0))
+par(mar = c(1.5, 3.0, 2.5, 1.0))
 
-layout(matrix(c(7, 7, 7, 7,
-                8, 1, 2, 3,
-                8, 4, 5, 6),
-              3, 4, byrow = T), widths=c(0.1, 1, 1, 1), heights=c(0.15, rep(1, 2)))
-# layout.show(n = 8)
+layout(matrix(c(7,  7, 7,
+                8, 1, 2,
+                8, 3, 4,
+                8, 5, 6
+                ),
+              4, 3, byrow = T), widths=c(0.05, 1, 1), heights=c(0.06, 1, 1, 1))
 
 
-#Protective effect
+#Protective effect Basel
 ann_cycl_2(ann_eff_hist_base_all, ann_eff_1p5K_base_all, 
            ann_eff_2p0K_base_all, ann_eff_3p0K_base_all,
            ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
-           y_lab = "", do_y_lab = T, do_legend = T) 
+           y_lab = "", do_y_lab = T, do_legend = T, main = "(a)") 
 
-#Melt fraction
+#Protective effect Cochem
+ann_cycl_2(ann_eff_hist_coch_all, ann_eff_1p5K_coch_all, 
+           ann_eff_2p0K_coch_all, ann_eff_3p0K_coch_all,
+           ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch,
+           do_legend = T, main = "(b)")
+
+#Melt fraction Basel
 ann_cycl_2(ann_fra_hist_base_all, ann_fra_1p5K_base_all, 
            ann_fra_2p0K_base_all, ann_fra_3p0K_base_all,
            ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
-           y_lab = "", do_y_lab = T) 
+           y_lab = "", do_y_lab = T, main = "(c)") 
 
-#Snowmelt elevation
+#Melt fraction Cochem
+ann_cycl_2(ann_fra_hist_coch_all, ann_fra_1p5K_coch_all, 
+           ann_fra_2p0K_coch_all, ann_fra_3p0K_coch_all,
+           ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch,
+           main = "(d)")
+
+#Snowmelt elevation Basel
 ann_cycl_2(ann_ele_hist_base_all, ann_ele_1p5K_base_all, 
            ann_ele_2p0K_base_all, ann_ele_3p0K_base_all,
            ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
-           y_lab = "", do_y_lab = T) 
+           y_lab = "", do_y_lab = T, main = "(e)") 
 
-ann_cycl_2(ann_eff_hist_coch_all, ann_eff_1p5K_coch_all, 
-           ann_eff_2p0K_coch_all, ann_eff_3p0K_coch_all,
-           ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch)
-
-ann_cycl_2(ann_fra_hist_coch_all, ann_fra_1p5K_coch_all, 
-           ann_fra_2p0K_coch_all, ann_fra_3p0K_coch_all,
-           ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch)
-
+#Snowmelt elevation Cochem
 ann_cycl_2(ann_ele_hist_coch_all, ann_ele_1p5K_coch_all, 
            ann_ele_2p0K_coch_all, ann_ele_3p0K_coch_all,
-           ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch)
+           ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch,
+           main = "(f)")
 
+# #Actual evapotranspiration Basel
+# ann_cycl_2(ann_aev_hist_base_all, ann_aev_1p5K_base_all, 
+#            ann_aev_2p0K_base_all, ann_aev_3p0K_base_all,
+#            ann_aev_hist_base, ann_aev_1p5K_base, ann_aev_2p0K_base, ann_aev_3p0K_base,
+#            y_lab = "", do_y_lab = T, main = "(g)") 
+# 
+# #Actual evapotranspiration Cochem
+# ann_cycl_2(ann_aev_hist_coch_all, ann_aev_1p5K_coch_all, 
+#            ann_aev_2p0K_coch_all, ann_aev_3p0K_coch_all,
+#            ann_aev_hist_coch, ann_aev_1p5K_coch, ann_aev_2p0K_coch, ann_aev_3p0K_coch,
+#            y_lab = "", do_y_lab = T, main = "(h)") 
+
+#Gauging station
 cex_header <- 1.7
 par(mar = c(0,0,0,0))
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("1. Protective effect [-]",  side = 3, line = -2.4, cex = cex_header, adj = 0.14, outer = T)
-mtext("2. Melt fraction [-]",  side = 3, line = -2.4, cex = cex_header, adj = 0.52, outer = T)
-mtext("3. Melt elevation [m]",  side = 3, line = -2.4, cex = cex_header, adj = 0.90, outer = T)
+mtext("Basel",
+      side = 3, line = -3.35, cex = cex_header+0.2, adj = 0.27)
+mtext("Cochem",
+      side = 3, line = -3.35, cex = cex_header+0.2, adj = 0.78)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("a) Basel",
-      side = 2, line = -2.9, cex = cex_header+0.2, adj = 0.83)
-mtext("b) Cochem",
-      side = 2, line = -2.9, cex = cex_header+0.2, adj = 0.17)
-
+mtext("Prec. solid [-]",  side = 2, line = -2.2, cex = cex_header, adj = 0.880, outer = T)
+mtext("Melt frac. [-]",   side = 2, line = -2.2, cex = cex_header, adj = 0.470, outer = T)
+mtext("Melt elev. [m]",   side = 2, line = -2.2, cex = cex_header, adj = 0.072, outer = T)
+# mtext("Act. ET [mm]",     side = 2, line = -2.2, cex = cex_header, adj = 0.045, outer = T)
 
 dev.off()
 
@@ -4117,6 +4361,13 @@ max_mel_mon_hist_coch <- rbind(fmax_mon_hist_1[, 13:24], fmax_mon_hist_2[, 13:24
 max_mel_mon_hist_base <- rbind(fmax_mon_hist_1[, 1:12], fmax_mon_hist_2[, 1:12], fmax_mon_hist_3[, 1:12],
                                fmax_mon_hist_4[, 1:12], fmax_mon_hist_5[, 1:12])
 
+max_aev_mon_hist_koel <- rbind(fmax_mon_hist_1[, 169:180], fmax_mon_hist_2[, 169:180], fmax_mon_hist_3[, 169:180],
+                               fmax_mon_hist_4[, 169:180], fmax_mon_hist_5[, 169:180])
+max_aev_mon_hist_coch <- rbind(fmax_mon_hist_1[, 157:168], fmax_mon_hist_2[, 157:168], fmax_mon_hist_3[, 13:24],
+                               fmax_mon_hist_4[, 157:168], fmax_mon_hist_5[, 157:168])
+max_aev_mon_hist_base <- rbind(fmax_mon_hist_1[, 145:156], fmax_mon_hist_2[, 145:156], fmax_mon_hist_3[, 1:12],
+                               fmax_mon_hist_4[, 145:156], fmax_mon_hist_5[, 145:156])
+
 max_prt_mon_hist_koel <- rbind(pmax_mon_hist_1[, 25:36], pmax_mon_hist_2[, 25:36], pmax_mon_hist_3[, 25:36],
                                pmax_mon_hist_4[, 25:36], pmax_mon_hist_5[, 25:36])
 max_prt_mon_hist_coch <- rbind(pmax_mon_hist_1[, 13:24], pmax_mon_hist_2[, 13:24], pmax_mon_hist_3[, 13:24],
@@ -4163,6 +4414,22 @@ max_mel_mon_1p5K_base <- rbind(fmax_mon_1p5K_1[, 1:12], fmax_mon_1p5K_2[, 1:12],
                                fmax_mon_1p5K_7[, 1:12], fmax_mon_1p5K_8[, 1:12], fmax_mon_1p5K_9[, 1:12],
                                fmax_mon_1p5K_10[, 1:12], fmax_mon_1p5K_11[, 1:12], fmax_mon_1p5K_12[, 1:12],
                                fmax_mon_1p5K_13[, 1:12], fmax_mon_1p5K_14[, 1:12])
+
+max_aev_mon_1p5K_koel <- rbind(fmax_mon_1p5K_1[, 169:180], fmax_mon_1p5K_2[, 169:180], fmax_mon_1p5K_3[, 169:180],
+                               fmax_mon_1p5K_4[, 169:180], fmax_mon_1p5K_5[, 169:180], fmax_mon_1p5K_6[, 169:180],
+                               fmax_mon_1p5K_7[, 169:180], fmax_mon_1p5K_8[, 169:180], fmax_mon_1p5K_9[, 169:180],
+                               fmax_mon_1p5K_10[, 169:180], fmax_mon_1p5K_11[, 169:180], fmax_mon_1p5K_12[, 169:180],
+                               fmax_mon_1p5K_13[, 169:180], fmax_mon_1p5K_14[, 169:180])
+max_aev_mon_1p5K_coch <- rbind(fmax_mon_1p5K_1[, 157:168], fmax_mon_1p5K_2[, 157:168], fmax_mon_1p5K_3[, 157:168],
+                               fmax_mon_1p5K_4[, 157:168], fmax_mon_1p5K_5[, 157:168], fmax_mon_1p5K_6[, 157:168],
+                               fmax_mon_1p5K_7[, 157:168], fmax_mon_1p5K_8[, 157:168], fmax_mon_1p5K_9[, 157:168],
+                               fmax_mon_1p5K_10[, 157:168], fmax_mon_1p5K_11[, 157:168], fmax_mon_1p5K_12[, 157:168],
+                               fmax_mon_1p5K_13[, 157:168], fmax_mon_1p5K_14[, 157:168])
+max_aev_mon_1p5K_base <- rbind(fmax_mon_1p5K_1[, 145:156], fmax_mon_1p5K_2[, 145:156], fmax_mon_1p5K_3[, 145:156],
+                               fmax_mon_1p5K_4[, 145:156], fmax_mon_1p5K_5[, 145:156], fmax_mon_1p5K_6[, 145:156],
+                               fmax_mon_1p5K_7[, 145:156], fmax_mon_1p5K_8[, 145:156], fmax_mon_1p5K_9[, 145:156],
+                               fmax_mon_1p5K_10[, 145:156], fmax_mon_1p5K_11[, 145:156], fmax_mon_1p5K_12[, 145:156],
+                               fmax_mon_1p5K_13[, 145:156], fmax_mon_1p5K_14[, 145:156])
 
 max_prt_mon_1p5K_koel <- rbind(pmax_mon_1p5K_1[, 25:36], pmax_mon_1p5K_2[, 25:36], pmax_mon_1p5K_3[, 25:36],
                                pmax_mon_1p5K_4[, 25:36], pmax_mon_1p5K_5[, 25:36], pmax_mon_1p5K_6[, 25:36],
@@ -4229,6 +4496,22 @@ max_mel_mon_2p0K_base <- rbind(fmax_mon_2p0K_1[, 1:12], fmax_mon_2p0K_2[, 1:12],
                                fmax_mon_2p0K_10[, 1:12], fmax_mon_2p0K_11[, 1:12], fmax_mon_2p0K_12[, 1:12],
                                fmax_mon_2p0K_13[, 1:12])
 
+max_aev_mon_2p0K_koel <- rbind(fmax_mon_2p0K_1[, 169:180], fmax_mon_2p0K_2[, 169:180], fmax_mon_2p0K_3[, 169:180],
+                               fmax_mon_2p0K_4[, 169:180], fmax_mon_2p0K_5[, 169:180], fmax_mon_2p0K_6[, 169:180],
+                               fmax_mon_2p0K_7[, 169:180], fmax_mon_2p0K_8[, 169:180], fmax_mon_2p0K_9[, 169:180],
+                               fmax_mon_2p0K_10[, 169:180], fmax_mon_2p0K_11[, 169:180], fmax_mon_2p0K_12[, 169:180],
+                               fmax_mon_2p0K_13[, 169:180])
+max_aev_mon_2p0K_coch <- rbind(fmax_mon_2p0K_1[, 157:168], fmax_mon_2p0K_2[, 157:168], fmax_mon_2p0K_3[, 157:168],
+                               fmax_mon_2p0K_4[, 157:168], fmax_mon_2p0K_5[, 157:168], fmax_mon_2p0K_6[, 157:168],
+                               fmax_mon_2p0K_7[, 157:168], fmax_mon_2p0K_8[, 157:168], fmax_mon_2p0K_9[, 157:168],
+                               fmax_mon_2p0K_10[, 157:168], fmax_mon_2p0K_11[, 157:168], fmax_mon_2p0K_12[, 157:168],
+                               fmax_mon_2p0K_13[, 157:168])
+max_aev_mon_2p0K_base <- rbind(fmax_mon_2p0K_1[, 145:156], fmax_mon_2p0K_2[, 145:156], fmax_mon_2p0K_3[, 145:156],
+                               fmax_mon_2p0K_4[, 145:156], fmax_mon_2p0K_5[, 145:156], fmax_mon_2p0K_6[, 145:156],
+                               fmax_mon_2p0K_7[, 145:156], fmax_mon_2p0K_8[, 145:156], fmax_mon_2p0K_9[, 145:156],
+                               fmax_mon_2p0K_10[, 145:156], fmax_mon_2p0K_11[, 145:156], fmax_mon_2p0K_12[, 145:156],
+                               fmax_mon_2p0K_13[, 145:156])
+
 max_prt_mon_2p0K_koel <- rbind(pmax_mon_2p0K_1[, 25:36], pmax_mon_2p0K_2[, 25:36], pmax_mon_2p0K_3[, 25:36],
                                pmax_mon_2p0K_4[, 25:36], pmax_mon_2p0K_5[, 25:36], pmax_mon_2p0K_6[, 25:36],
                                pmax_mon_2p0K_7[, 25:36], pmax_mon_2p0K_8[, 25:36], pmax_mon_2p0K_9[, 25:36],
@@ -4282,6 +4565,16 @@ max_mel_mon_3p0K_base <- rbind(fmax_mon_3p0K_1[, 1:12], fmax_mon_3p0K_2[, 1:12],
                                fmax_mon_3p0K_4[, 1:12], fmax_mon_3p0K_5[, 1:12], fmax_mon_3p0K_6[, 1:12],
                                fmax_mon_3p0K_7[, 1:12], fmax_mon_3p0K_8[, 1:12])
 
+max_aev_mon_3p0K_koel <- rbind(fmax_mon_3p0K_1[, 169:180], fmax_mon_3p0K_2[, 169:180], fmax_mon_3p0K_3[, 169:180],
+                               fmax_mon_3p0K_4[, 169:180], fmax_mon_3p0K_5[, 169:180], fmax_mon_3p0K_6[, 169:180],
+                               fmax_mon_3p0K_7[, 169:180], fmax_mon_3p0K_8[, 169:180])
+max_aev_mon_3p0K_coch <- rbind(fmax_mon_3p0K_1[, 157:168], fmax_mon_3p0K_2[, 157:168], fmax_mon_3p0K_3[, 157:168],
+                               fmax_mon_3p0K_4[, 157:168], fmax_mon_3p0K_5[, 157:168], fmax_mon_3p0K_6[, 157:168],
+                               fmax_mon_3p0K_7[, 157:168], fmax_mon_3p0K_8[, 157:168])
+max_aev_mon_3p0K_base <- rbind(fmax_mon_3p0K_1[, 145:156], fmax_mon_3p0K_2[, 145:156], fmax_mon_3p0K_3[, 145:156],
+                               fmax_mon_3p0K_4[, 145:156], fmax_mon_3p0K_5[, 145:156], fmax_mon_3p0K_6[, 145:156],
+                               fmax_mon_3p0K_7[, 145:156], fmax_mon_3p0K_8[, 145:156])
+
 max_prt_mon_3p0K_koel <- rbind(pmax_mon_3p0K_1[, 25:36], pmax_mon_3p0K_2[, 25:36], pmax_mon_3p0K_3[, 25:36],
                                pmax_mon_3p0K_4[, 25:36], pmax_mon_3p0K_5[, 25:36], pmax_mon_3p0K_6[, 25:36],
                                pmax_mon_3p0K_7[, 25:36], pmax_mon_3p0K_8[, 25:36])
@@ -4303,7 +4596,7 @@ max_prl_mon_3p0K_base <- rbind(pmax_mon_3p0K_1[, 37:48], pmax_mon_3p0K_2[, 37:48
                                pmax_mon_3p0K_7[, 37:48], pmax_mon_3p0K_8[, 37:48])
 
 plot_month_max <- function(max_hist_mon, max_1p5K_mon, max_2p0K_mon, max_3p0K_mon,
-                           ylims = c(0, 100), ylab = "", cex_axs = 1.6, cex_lab = 1.5,
+                           ylims = c(0, 100), ylab = "", cex_axs = 1.9, cex_lab = 1.6, cex_legend = 1.8,
                            main = "", cex_main = 1.8, do_legend = F, legend_pos = "topright"){
   
   col_hist <- "steelblue4"
@@ -4325,14 +4618,14 @@ plot_month_max <- function(max_hist_mon, max_1p5K_mon, max_2p0K_mon, max_3p0K_mo
           outline = F, notch = T, axes = F, whisklty = 0, staplelty = 0)
   boxplot(max_3p0K_mon, at = seq(4, 60, 5), add = T, col = col_3p0K,
           outline = F, notch = T, axes = F, whisklty = 0, staplelty = 0)
-  axis(2, mgp=c(3, 0.35, 0), tck = -0.015, cex.axis = cex_axs)
-  axis(1, labels = x_labs, at = x_ats, mgp=c(3, 0.42, 0), tck = -0.0, cex.axis = cex_axs)
-  axis(1, labels = F, at = seq(5, 55, 5), tck = -0.045)
-  mtext(main, side = 3, line = 0.25, adj = 0, cex = cex_main)
+  axis(2, mgp=c(3, 0.39, 0), tck = -0.015, cex.axis = cex_axs)
+  axis(1, labels = x_labs, at = x_ats, mgp=c(3, 0.59, 0), tck = -0.0, cex.axis = cex_axs)
+  axis(1, labels = F, at = seq(5, 59, 5), tck = -0.040)
+  mtext(main, side = 3, line = 0.35, adj = 0, cex = cex_main)
   mtext(ylab, side = 2, line = 2.2, cex = cex_lab)
   if(do_legend){
-    legend(legend_pos, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
-           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.5,
+    legend(legend_pos, c("Hist.", "1.5 °C", "2.0 °C", "3.0 °C"), pch = 19, 
+           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = cex_legend,
            box.lwd = 0.0, box.col = "black", bg = "white", ncol = 2)
   }
   box()
@@ -4340,10 +4633,10 @@ plot_month_max <- function(max_hist_mon, max_1p5K_mon, max_2p0K_mon, max_3p0K_mo
 }
 
 #Plot: Monthly maxima discharge
-pdf(paste0(bas_dir,"res_figs/mon_dis_fut.pdf"), width = 8, height = 8)
+pdf(paste0(bas_dir,"res_figs/mon_dis_fut.pdf"), width = 8, height = 9)
 
 par(family = "serif")
-par(mar = c(1.5, 4.8, 3.0, 1.0))
+par(mar = c(1.8, 4.8, 3.0, 1.0))
 
 layout(matrix(c(1, 2, 3),
               3, 1, byrow = T), widths=c(), heights=c())
@@ -4352,11 +4645,12 @@ layout(matrix(c(1, 2, 3),
 plot_month_max(max_dis_mon_hist_base, max_dis_mon_1p5K_base, 
                max_dis_mon_2p0K_base, max_dis_mon_3p0K_base, ylims = c(800, 2800),
                main = "a) Basel", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-               do_legend = T)
+               do_legend = F)
 
 plot_month_max(max_dis_mon_hist_coch, max_dis_mon_1p5K_coch, 
                max_dis_mon_2p0K_coch, max_dis_mon_3p0K_coch, ylims = c(80, 1600),
-               main = "b) Cochem", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")))
+               main = "b) Cochem", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
+               do_legend = T, cex_legend = 2.0)
 
 plot_month_max(max_dis_mon_hist_koel, max_dis_mon_1p5K_koel, 
                max_dis_mon_2p0K_koel, max_dis_mon_3p0K_koel, ylims = c(1300, 6600),
@@ -4368,57 +4662,69 @@ dev.off()
 
 
 #Plot: Monthly maxima discharge
-pdf(paste0(bas_dir,"res_figs/mon_add_fut.pdf"), width = 16, height = 8)
+pdf(paste0(bas_dir,"res_figs/mon_add_fut.pdf"), width = 16, height = 14)
 
 par(family = "serif")
-par(mar = c(1.5, 3.0, 1.5, 1.0))
+par(mar = c(1.5, 3.0, 3.0, 1.0))
 
-layout(matrix(c(7, 7, 7,
-                8, 1, 2,
-                8, 3, 4,
-                8, 5, 6),
-              4, 3, byrow = T), widths=c(0.05, 1, 1), heights=c(0.1, 1, 1, 1))
+layout(matrix(c(9,  9, 9,
+                10, 1, 2,
+                10, 3, 4,
+                10, 5, 6,
+                10, 7, 8),
+              5, 3, byrow = T), widths=c(0.05, 1, 1), heights=c(0.05, 1, 1, 1, 1))
 # layout.show(n = 8)
-my_cex_axs = 1.8
+my_cex_axs = 1.9
 
 plot_month_max(max_mel_mon_hist_base, max_mel_mon_1p5K_base, 
                max_mel_mon_2p0K_base, max_mel_mon_3p0K_base, ylims = c(0, 45),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5, do_legend = T)
+               main = "(a)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.6, 
+               do_legend = T, cex_legend = 2.0)
 
 plot_month_max(max_mel_mon_hist_coch, max_mel_mon_1p5K_coch, 
                max_mel_mon_2p0K_coch, max_mel_mon_3p0K_coch, ylims = c(0, 45),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               main = "(b)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.6, 
+               do_legend = T, cex_legend = 2.0)
 
 plot_month_max(max_prl_mon_hist_base, max_prl_mon_1p5K_base, 
                max_prl_mon_2p0K_base, max_prl_mon_3p0K_base, ylims = c(5, 30),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               main = "(c)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
 
 plot_month_max(max_prl_mon_hist_coch, max_prl_mon_1p5K_coch, 
                max_prl_mon_2p0K_coch, max_prl_mon_3p0K_coch, ylims = c(5, 18),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               main = "(d)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
 
 plot_month_max(max_prt_mon_hist_base, max_prt_mon_1p5K_base, 
                max_prt_mon_2p0K_base, max_prt_mon_3p0K_base, ylims = c(5, 30),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               main = "(e)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
 
 plot_month_max(max_prt_mon_hist_coch, max_prt_mon_1p5K_coch, 
                max_prt_mon_2p0K_coch, max_prt_mon_3p0K_coch, ylims = c(5, 18),
-               main = "", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               main = "(f)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+
+plot_month_max(max_aev_mon_hist_base, max_aev_mon_1p5K_base, 
+               max_aev_mon_2p0K_base, max_aev_mon_3p0K_base, ylims = c(5, 55),
+               main = "(g)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+
+plot_month_max(max_aev_mon_hist_coch, max_aev_mon_1p5K_coch, 
+               max_aev_mon_2p0K_coch, max_aev_mon_3p0K_coch, ylims = c(5, 55),
+               main = "(h)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
 
 #Gauging station
 cex_header <- 1.7
 par(mar = c(0,0,0,0))
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("a) Basel",
-      side = 3, line = -2.55, cex = cex_header+0.2, adj = 0.25)
-mtext("b) Cochem",
-      side = 3, line = -2.55, cex = cex_header+0.2, adj = 0.80)
+mtext("Basel",
+      side = 3, line = -3.95, cex = cex_header+0.2, adj = 0.25)
+mtext("Cochem",
+      side = 3, line = -3.95, cex = cex_header+0.2, adj = 0.80)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("1. Snowmelt [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.90, outer = T)
-mtext("2. Prec. liq. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.45, outer = T)
-mtext("3. Prec. tot. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.05, outer = T)
+mtext("Snowmelt [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.900, outer = T)
+mtext("Prec. liq. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.625, outer = T)
+mtext("Prec. tot. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.342, outer = T)
+mtext("Act. evap. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.075, outer = T)
 
 dev.off()
 
@@ -4576,7 +4882,7 @@ parde_ind_base <- mon_mea_base$x / mea_na(yea_mea_base)
 parde_ind_koel <- mon_mea_koel$x / mea_na(yea_mea_koel)
 parde_ind_coch <- mon_mea_coch$x / mea_na(yea_mea_coch)
 
-pdf(paste0(bas_dir,"res_figs/parde_dis.pdf"), width = 8, height = 3)
+pdf(paste0(bas_dir,"res_figs/parde_dis.pdf"), width = 8, height = 4)
 
 ylims <- range(c(parde_ind_coch, parde_ind_base, parde_ind_koel))
 
@@ -4587,25 +4893,25 @@ col_base <- "darkred"
 col_koel <- "black"
 
 par(family = "serif")
-par(mar = c(1.8, 2.6, 1.5, 0.2))
+par(mar = c(1.8, 3.2, 2.0, 0.2))
 
 plot(parde_ind_coch, type = "n", axes = F, ylim = ylims, ylab = "", xlab = "")
 abline(v = c(x_axis_tic), lty = "dashed", col = "grey55", lwd = 0.8)
-lines(parde_ind_base, col = col_base, lwd = 2.2)
-lines(parde_ind_koel, col = col_koel, lwd = 2.2)
-lines(parde_ind_coch, col = col_coch, lwd = 2.2)
-points(parde_ind_coch, col = col_coch, pch = 19, cex = 0.8)
-points(parde_ind_base, col = col_base, pch = 19, cex = 0.8)
-points(parde_ind_koel, col = col_koel, pch = 19, cex = 0.8)
-axis(2, mgp=c(3, 0.15, 0), tck = -0.02, cex.axis = 1.2)
+lines(parde_ind_base, col = col_base, lwd = 2.3)
+lines(parde_ind_koel, col = col_koel, lwd = 2.3)
+lines(parde_ind_coch, col = col_coch, lwd = 2.3)
+points(parde_ind_coch, col = col_coch, pch = 19, cex = 0.9)
+points(parde_ind_base, col = col_base, pch = 19, cex = 0.9)
+points(parde_ind_koel, col = col_koel, pch = 19, cex = 0.9)
+axis(2, mgp=c(3, 0.25, 0), tck = -0.02, cex.axis = 1.4)
 axis(1, at = x_axis_tic, c("","","","","","","","","","","","",""), tick = TRUE,
-     col = "black", col.axis = "black", tck = -0.08)#plot ticks
+     col = "black", col.axis = "black", tck = -0.06)#plot ticks
 axis(1, at = x_axis_lab, c("O", "N", "D", "J","F","M","A","M","J","J","A","S"), tick = FALSE,
-     col="black", col.axis="black", mgp=c(3, 0.35, 0), cex.axis = 1.2)#plot labels
-mtext("Pardé-coefficient", side = 2, line = 1.3, cex = 1.4, adj = 0.5)
-mtext("Runoff seasonality", side = 3, line = 0.3, cex = 1.6, adj = 0.0)
+     col="black", col.axis="black", mgp=c(3, 0.35, 0), cex.axis = 1.4)#plot labels
+mtext("Pardé-coefficient", side = 2, line = 1.8, cex = 1.8, adj = 0.5)
+mtext("Runoff seasonality", side = 3, line = 0.3, cex = 1.8, adj = 0.0)
 legend("topright", c("Cochem", "Cologne", "Basel"), pch = 19, ncol = 3, bg = "white",
-       col = c(col_coch, col_koel, col_base))
+       col = c(col_coch, col_koel, col_base), cex = 1.5)
 box()
 
 dev.off()
@@ -4658,7 +4964,7 @@ text(188+61, 0.76, "?", cex=2, col=col_niv)
 text(42, 0.62, "pluvial", cex=2, col=col_plu)
 text(305, 0.62, "nival", cex=2, col=col_niv)
 text(140, 0.08, "overlap?", cex=2, col="black")
-mtext("Idealized seasonal distribution of extreme discharge", side = 3, line = 0.3, cex = 1.6, adj = 0.0)
+mtext("Idealized seasonal distribution of extreme discharge", side = 3, line = 0.3, cex = 1.8, adj = 0.0)
 #Legend
 legend("topright", legend = c("present", "future"), lty = c("solid","dashed"),
        bty = "n", cex=1.4)
@@ -4667,3 +4973,400 @@ legend("topright", legend = c("present", "future"), lty = c("solid","dashed"),
 box()
 
 dev.off()
+
+
+#runoff_contri----
+
+nc_disc_file <- paste0("D:/nrc_user/rottler/mhm_run/6435060/output/EOBS/", 
+                       "output/mRM_Fluxes_States.nc")
+nc_disc <- nc_open(nc_disc_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_disc, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_disc, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_disc, time.dim.name = "time")))
+
+sta_date_ind <- which(format(date) == "1954-01-02")
+count_date <- length(date) - sta_date_ind
+
+disc_cube <- ncvar_get(nc_disc, start = c(1, 1, 1), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "Qrouted")
+
+disc_mea <- apply(disc_cube, c(1,2), mea_na)
+
+
+nc_flux_file <- paste0(run_dir, "output/EOBS/output/mHM_Fluxes_States.nc")
+nc_flux <- nc_open(nc_flux_file)
+
+#get lat/lon/time of .nc meteo data
+lon <- ncdf4::ncvar_get(nc_flux, varid = "lon")
+lat <- ncdf4::ncvar_get(nc_flux, varid = "lat")
+date <- as.Date(as.character(nc.get.time.series(nc_flux, time.dim.name = "time")))
+
+sta_date_ind <- which(format(date) == "1954-01-02")
+count_date <- length(date) - sta_date_ind
+
+snow_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+somo_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "SM_Lall")
+pref_cube <- ncvar_get(nc_flux, start = c(1, 1, sta_date_ind), 
+                       count = c(nrow(lon), ncol(lon), count_date), varid = "preEffect")
+
+
+gcm_model = "GFDL-ESM2M"
+delta_t = "historical"
+rcp = "historical"
+
+comp_from_nc <- function(gcm_model, delta_t, rcp){
+  
+  #select discharge file
+  nc_path_disc <- nc_file_disc_paths[which(grepl(gcm_model, nc_file_disc_paths) &
+                                            grepl(rcp, nc_file_disc_paths))]
+  
+  #open nc-file
+  nc_file_disc <- ncdf4::nc_open(nc_path_disc)
+  
+  #get warming period
+  wp_years <- get_warming_period(gcm_model, delta_t, rcp)
+  
+  date_sel <- seq(as.Date(paste0(wp_years[1], "-01-01"), format = "%Y-%m-%d"), 
+                  as.Date(paste0(wp_years[2], "-12-31"), format = "%Y-%m-%d"), by = "day")
+  
+  #date from nc-file
+  date <- as.Date(as.character(nc.get.time.series(nc_file_disc, time.dim.name = "time")))
+  
+  #if simulation time frame does not entirely cover warming period
+  if(date_sel[1] > date[1]){
+    sta_date_ind <- which(format(date) == paste0(wp_years[1], "-01-01"))
+    count_date <- length(date_sel)
+  }else{
+    sta_date_ind <- 1
+    count_date <- length(date_sel) - which(format(date_sel) == date[1]) + 1
+  }
+  
+  disc_cube_in <- ncvar_get(nc_disc, start = c(1, 1, 1), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "Qrouted")
+  
+  disc_mea_in <- apply(disc_cube, c(1,2), mea_na)
+  
+  #select flux file
+  nc_path_flux <- nc_file_paths[which(grepl(gcm_model, nc_file_paths) &
+                                       grepl(rcp, nc_file_paths))]
+  nc_file_flux <- nc_open(paste0(nc_path_flux, "output/mHM_Fluxes_States.nc"))
+  
+  snow_cube_in <- ncvar_get(nc_file_flux, start = c(1, 1, sta_date_ind), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "snowpack")
+  somo_cube_in <- ncvar_get(nc_file_flux, start = c(1, 1, sta_date_ind), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "SM_Lall")
+  pref_cube_in <- ncvar_get(nc_file_flux, start = c(1, 1, sta_date_ind), 
+                         count = c(nrow(lon), ncol(lon), count_date), varid = "preEffect")
+  
+  #snow fraction cube, i.e. fraction of snowmelt of total runoff
+  sfra_cube <- disc_cube_in
+  sfra_cube[ , , ] <- NA
+  sfra_cube[ , , 1] <- 0.1 #initial value 0.1 for entire grid
+  sfra_dim <- dim(sfra_cube)
+  
+  #Update mixing ration rainfall, snowmelt and routed discharge
+  for(t in 2:1000){#sfra_dim[3]){#time steps
+    print(t)
+    #select time slices and add NA buffer around (tow columns/rows)
+    sno0_sel <- snow_cube_in[ , , t]
+    snon_sel <- snow_cube_in[ , , t-1]
+    disc_sel <- disc_cube_in[ , , t-1]
+    somo_sel <- somo_cube_in[ , , t-1]
+    pref_sel <- pref_cube_in[ , , t]
+    sfr0_sel <- sfra_cube[ , , t]
+    sfrn_sel <- sfra_cube[ , , t-1]
+    
+    NA_col <- rep(NA, nrow(sno0_sel))
+    sno0_sel <- cbind(NA_col, NA_col, sno0_sel, NA_col, NA_col)
+    snon_sel <- cbind(NA_col, NA_col, snon_sel, NA_col, NA_col)
+    disc_sel <- cbind(NA_col, NA_col, disc_sel, NA_col, NA_col)
+    somo_sel <- cbind(NA_col, NA_col, somo_sel, NA_col, NA_col)
+    pref_sel <- cbind(NA_col, NA_col, pref_sel, NA_col, NA_col)
+    sfr0_sel <- cbind(NA_col, NA_col, sfr0_sel, NA_col, NA_col)
+    sfrn_sel <- cbind(NA_col, NA_col, sfrn_sel, NA_col, NA_col)
+    disc_mea <- cbind(NA_col, NA_col, disc_mea_in, NA_col, NA_col)
+    
+    NA_row <- rep(NA, ncol(sno0_sel))
+    sno0_sel <- rbind(NA_row, NA_row, sno0_sel, NA_row, NA_row)
+    snon_sel <- rbind(NA_row, NA_row, snon_sel, NA_row, NA_row)
+    disc_sel <- rbind(NA_row, NA_row, disc_sel, NA_row, NA_row)
+    somo_sel <- rbind(NA_row, NA_row, somo_sel, NA_row, NA_row)
+    pref_sel <- rbind(NA_row, NA_row, pref_sel, NA_row, NA_row)
+    sfr0_sel <- rbind(NA_row, NA_row, sfr0_sel, NA_row, NA_row)
+    sfrn_sel <- rbind(NA_row, NA_row, sfrn_sel, NA_row, NA_row)
+    disc_mea <- rbind(NA_row, NA_row, disc_mea, NA_row, NA_row)
+    
+    for(r in 3:(nrow(disc_sel)-2)){#rows inner matrix
+      for(c in 3:(ncol(disc_sel)-2)){#columns inner matrix
+        
+        #Input snowmelt
+        snowme_in <- sno0_sel[r, c] - snon_sel[r, c] #change snowpack height
+        if(!is.na(snowme_in) & snowme_in >= 0){
+          snowme_in <- 0}else{
+            snowme_in <- snowme_in*-1 #melt input positive
+          }
+        
+        #Input precipitation
+        precip_in <- pref_sel[r, c] - snowme_in #effective precipitation is precipitation + snowmelt
+        
+        #Update mixing ratio precipitation/snowmelt input
+        soil_depth <- 2000*0.20 #pore volumne in two soil column
+        soil_water <- somo_sel[r, c] * soil_depth
+        water_cell <- snowme_in + precip_in + soil_water
+        if(!is.na(snowme_in) & !is.na(precip_in)){
+          
+          if((snowme_in + precip_in) > 0){
+            snow_frac_in <- snowme_in / (snowme_in + precip_in)
+          }else{
+            snow_frac_in <- 0
+          }
+          
+        }else{
+          snow_frac_in <- NA
+        }
+
+        
+        
+        sfr0_sel[r, c] <- sfrn_sel[r, c] * (soil_water / water_cell) + 
+                          snow_frac_in * ((snowme_in + precip_in) / water_cell)
+        
+        #Update mixing ratio routed discharge
+        #Assumption: cell always drains into neighbouring cell with highest mean annual discharge
+        
+        #Check cell 'North'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r-1, c+0])){
+
+          if(disc_mea[r, c] > disc_mea[r-1, c+0]){
+
+            if(all(disc_mea[r, c] > disc_mea[r-2, c+0] &
+                   disc_mea[r, c] > disc_mea[r-2, c+1] &
+                   disc_mea[r, c] > disc_mea[r-1, c+1] &
+                   disc_mea[r, c] > disc_mea[r+0, c+1] &
+                   disc_mea[r, c] > disc_mea[r+1, c-1] &
+                   disc_mea[r, c] > disc_mea[r-1, c-1] &
+                   disc_mea[r, c] > disc_mea[r-2, c-1], na.rm = T)){
+
+              disc_mm <- disc_sel[r-1, c+0]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r+0, c+0] * (water_cell/total_water) +
+                sfrn_sel[r-1, c+0] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+        }
+
+        #Check cell 'North-East'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r-1, c+1])){
+
+          if(disc_mea[r, c] > disc_mea[r-1, c+1]){
+
+            if(all(disc_mea[r, c] > disc_mea[r-1, c+0] &
+                   disc_mea[r, c] > disc_mea[r-2, c+0] &
+                   disc_mea[r, c] > disc_mea[r-2, c+1] &
+                   disc_mea[r, c] > disc_mea[r-2, c+2] &
+                   disc_mea[r, c] > disc_mea[r-1, c+2] &
+                   disc_mea[r, c] > disc_mea[r+0, c+2] &
+                   disc_mea[r, c] > disc_mea[r+0, c+1], na.rm = T)){
+
+              disc_mm <- disc_sel[r-1, c+1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r-1, c+1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+        }
+
+        #Check cell 'East'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r+0, c+1])){
+
+          if(disc_mea[r, c] > disc_mea[r+0, c+1]){
+
+            if(all(disc_mea[r, c] > disc_mea[r-1, c+0] &
+                   disc_mea[r, c] > disc_mea[r-1, c+1] &
+                   disc_mea[r, c] > disc_mea[r-1, c+2] &
+                   disc_mea[r, c] > disc_mea[r+0, c+2] &
+                   disc_mea[r, c] > disc_mea[r+1, c+2] &
+                   disc_mea[r, c] > disc_mea[r+1, c+1] &
+                   disc_mea[r, c] > disc_mea[r+1, c+0], na.rm = T)){
+
+              disc_mm <- disc_sel[r+0, c+1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r+0, c+1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+        }
+
+        #Check cell 'South-East'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r+1, c+1])){
+
+          if(disc_mea[r, c] > disc_mea[r+1, c+1]){
+
+            if(all(disc_mea[r, c] > disc_mea[r+0, c+1] &
+                   disc_mea[r, c] > disc_mea[r+0, c+2] &
+                   disc_mea[r, c] > disc_mea[r+1, c+2] &
+                   disc_mea[r, c] > disc_mea[r+2, c+2] &
+                   disc_mea[r, c] > disc_mea[r+2, c+1] &
+                   disc_mea[r, c] > disc_mea[r+2, c+0] &
+                   disc_mea[r, c] > disc_mea[r+1, c+0], na.rm = T)){
+
+              disc_mm <- disc_sel[r+1, c+1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r+1, c+1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+
+        }
+
+        #Check cell 'South'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r+1, c+0])){
+
+          if(disc_mea[r+0, c+0] > disc_mea[r+1, c+0]){
+
+            if(all(disc_mea[r, c] > disc_mea[r+0, c+1] &
+                   disc_mea[r, c] > disc_mea[r+1, c+1] &
+                   disc_mea[r, c] > disc_mea[r+2, c+1] &
+                   disc_mea[r, c] > disc_mea[r+2, c+0] &
+                   disc_mea[r, c] > disc_mea[r+2, c-1] &
+                   disc_mea[r, c] > disc_mea[r+1, c-1] &
+                   disc_mea[r, c] > disc_mea[r+0, c+1], na.rm = T)){
+
+              disc_mm <- disc_sel[r+1, c+0]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                                sfrn_sel[r+1, c+0] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+
+        }
+
+        #Check cell 'South-West'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r+1, c-1])){
+
+          if(disc_mea[r, c] > disc_mea[r+1, c-1]){
+
+            if(all(disc_mea[r, c] > disc_mea[r+1, c+0] &
+                   disc_mea[r, c] > disc_mea[r+2, c+0] &
+                   disc_mea[r, c] > disc_mea[r+2, c-1] &
+                   disc_mea[r, c] > disc_mea[r+2, c-2] &
+                   disc_mea[r, c] > disc_mea[r+1, c-2] &
+                   disc_mea[r, c] > disc_mea[r+0, c-2] &
+                   disc_mea[r, c] > disc_mea[r+0, c-1], na.rm = T)){
+
+              disc_mm <- disc_sel[r+1, c-1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r+1, c-1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+
+        }
+
+        #Check cell 'West'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r+0, c-1])){
+
+          if(disc_mea[r, c] > disc_mea[r+0, c-1]){#only continue if mean discharge larger
+
+            if(all(disc_mea[r, c] > disc_mea[r-1, c+0] &
+                   disc_mea[r, c] > disc_mea[r-1, c-1] &
+                   disc_mea[r, c] > disc_mea[r-1, c-2] &
+                   disc_mea[r, c] > disc_mea[r+0, c-2] &
+                   disc_mea[r, c] > disc_mea[r+1, c-2] &
+                   disc_mea[r, c] > disc_mea[r+1, c-1] &
+                   disc_mea[r, c] > disc_mea[r+1, c+0], na.rm =T)){
+
+              disc_mm <- disc_sel[r+0, c-1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r+0, c-1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+
+        }
+
+        #Check cell 'North-West'
+        if(!is.na(disc_mea[r+0, c+0]) & !is.na(disc_mea[r-1, c-1])){
+
+          if(disc_mea[r, c] > disc_mea[r-1, c-1]){#only continue if mean discharge larger
+
+            if(all(disc_mea[r, c] > disc_mea[r+0, c-1] &
+                   disc_mea[r, c] > disc_mea[r+0, c-2] &
+                   disc_mea[r, c] > disc_mea[r-1, c-2] &
+                   disc_mea[r, c] > disc_mea[r-2, c-2] &
+                   disc_mea[r, c] > disc_mea[r-2, c-1] &
+                   disc_mea[r, c] > disc_mea[r-2, c+0] &
+                   disc_mea[r, c] > disc_mea[r-1, c+0], na.rm = T)){
+
+              disc_mm <- disc_sel[r-1, c-1]*3600*1000/25000000
+
+              total_water <- water_cell + disc_mm
+              sfr0_sel[r, c] <- sfr0_sel[r, c] * (water_cell/total_water) +
+                sfrn_sel[r-1, c-1] * (disc_mm/total_water)
+
+              #update water in cell
+              water_cell <- total_water
+
+            }
+          }
+
+        }
+        
+      }
+    }
+    
+    #Update snow fraction cube
+    sfr0_sel <- sfr0_sel[-c(1, 2, nrow(sfr0_sel)-1, nrow(sfr0_sel)), 
+                         -c(1, 2, ncol(sfr0_sel)-1, ncol(sfr0_sel))] #remove NA buffer
+    sfra_cube[ , , t] <- sfr0_sel
+    
+  }
+  
+  return(sfra_cube)
+
+}
+
+
+test <- sfra_cube[32, 100, ]
+plot(test[1:1000])
+
+sfr0_sel[34, 102] 
+

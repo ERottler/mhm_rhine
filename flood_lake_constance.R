@@ -2,18 +2,22 @@
 
 #Influence of Lake Constance on flood wave propagation
 #Erwin Rottler, University of Potsdam
+#Autumn 2020
 
 ###
 
+#directories
 bas_dir <- "U:/rhine_fut/R/"
 grdc_dir <- "D:/nrc_user/rottler/GRDC_DAY/"
 data_dir <- "D:/nrc_user/rottler/"
 
+#read GRDC discharge data
 disc_diep <- meltimr::read_grdc(paste0(grdc_dir, "6935500_Q_Day.Cmd.txt"))
 disc_neuh <- meltimr::read_grdc(paste0(grdc_dir, "6935055_Q_Day.Cmd.txt"))
 disc_reki <- meltimr::read_grdc(paste0(grdc_dir, "6935054_Q_Day.Cmd.txt"))
 disc_base <- meltimr::read_grdc(paste0(grdc_dir, "6935051_Q_Day.Cmd.txt"))
 
+#Order data by day/year
 diep_day <- meltimr::ord_day(data_in = disc_diep$value,
                              date = disc_diep$date,
                              start_y = 1919,
@@ -38,6 +42,7 @@ base_day <- meltimr::ord_day(data_in = disc_base$value,
                              end_y = 2016,
                              break_day = 0)
 
+#Plot time series
 pdf(paste0(bas_dir,"res_figs/infl_const.pdf"), width = 8, height = 11)
 
 comp_disc_plot <- function(year_sel){
@@ -94,8 +99,10 @@ dev.off()
 
 #map_over----
 
+#read dem
 dem = raster::raster(paste0(data_dir, "basin_data/eu_dem/processed/eu_dem_500.tif"))
 
+#read rivers and lakes
 rivers <- rgdal::readOGR(dsn = paste0(data_dir, "basin_data/eu_hydro/wise_rivers_lakes/Large_rivers.shp"))
 tribus <- rgdal::readOGR(dsn = paste0(data_dir, "basin_data/eu_hydro/wise_rivers_lakes/Other_large_rivers_and_tributaries.shp"))
 lakes  <- rgdal::readOGR(dsn = paste0(data_dir, "basin_data/eu_hydro/wise_rivers_lakes/Large_lakes.shp"))
@@ -103,6 +110,7 @@ lakes  <- rgdal::readOGR(dsn = paste0(data_dir, "basin_data/eu_hydro/wise_rivers
 rhin_riv <- rivers[rivers@data$NAME == "Rhine",]
 bodensee <- lakes[which(lakes@data$WPLKNM == "BODENSEE" ),]
 
+#River basins from BAFU
 basins <-  rgdal::readOGR(dsn = paste0(data_dir, "basin_data/EZG_Schweiz_BAFU/ezg_kombiniert.shp"), encoding = "UTF8")
 
 basin_base <- sp::spTransform(basins[basins@data$Ort == "Basel, Rheinhalle",], CRS = raster::crs(dem, asText = T))
@@ -128,6 +136,7 @@ my_box <- as(my_ext_buf, 'SpatialPolygons')
 dem_cro_swiss <- raster::crop(dem, raster::extent(my_box))
 dem_sub_swiss <- raster::mask(dem_cro_swiss, my_box)
 
+#Plot map with gauges and basins
 pdf(paste0(bas_dir,"res_figs/map_over.pdf"), width = 10, height = 6)
 
 par(bg=NA,mar=c(0,0,0,0),oma=c(0,0,0,0))
@@ -163,26 +172,4 @@ prettymapr::addscalebar(plotunit = "m", widthhint = 0.2, htin = 0.15, pos = "top
 
 dev.off()
 
-
-
-
-
-
-
-
-f_doy_max <- function(data_in){
-  
-  doy_max <- which(data_in == meltimr::max_na(data_in))[1]
-  
-  return(doy_max)
-  
-}
-
-
-diep_doy <- apply(diep_day, 1, f_doy_max)
-neuh_doy <- apply(neuh_day, 1, f_doy_max)
-
-plot(diep_doy - neuh_doy)
-abline(h = 0)
-hist(diep_doy-neuh_doy, nclass =20)
 
