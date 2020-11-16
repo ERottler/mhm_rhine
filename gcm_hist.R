@@ -54,11 +54,11 @@ worm_file <- paste0(grdc_dir, "6335180_Q_Day.Cmd.txt")
 rock_file <- paste0(grdc_dir, "6335600_Q_Day.Cmd.txt")
 spey_file <- paste0(grdc_dir, "6335170_Q_Day.Cmd.txt")
 base_file <- paste0(grdc_dir, "6935051_Q_Day.Cmd.txt")
-unte_file <- paste0(grdc_dir, "6935300_Q_Day.Cmd.txt")
-reki_file <- paste0(grdc_dir, "6935054_Q_Day.Cmd.txt")
+# unte_file <- paste0(grdc_dir, "6935300_Q_Day.Cmd.txt")
+# reki_file <- paste0(grdc_dir, "6935054_Q_Day.Cmd.txt")
 
 file_paths <- c(lobi_file, koel_file, coch_file, kaub_file, wuer_file, worm_file,
-                rock_file, spey_file, base_file, unte_file, reki_file)
+                rock_file, spey_file, base_file)
 
 grdc_meta <- NULL
 
@@ -101,8 +101,6 @@ disc_worm_full <- read_grdc(worm_file)
 disc_rock_full <- read_grdc(rock_file)
 disc_spey_full <- read_grdc(spey_file)
 disc_base_full <- read_grdc(base_file)
-disc_unte_full <- read_grdc(unte_file)
-disc_reki_full <- read_grdc(reki_file)
 
 disc_lobi <- disc_lobi_full[which(disc_lobi_full$date %in% date_simu), ]
 disc_koel <- disc_koel_full[which(disc_koel_full$date %in% date_simu), ]
@@ -113,8 +111,6 @@ disc_worm <- disc_worm_full[which(disc_worm_full$date %in% date_simu), ]
 disc_rock <- disc_rock_full[which(disc_rock_full$date %in% date_simu), ]
 disc_spey <- disc_spey_full[which(disc_spey_full$date %in% date_simu), ]
 disc_base <- disc_base_full[which(disc_base_full$date %in% date_simu), ]
-disc_unte <- disc_unte_full[which(disc_unte_full$date %in% date_simu), ]
-disc_reki <- disc_reki_full[which(disc_reki_full$date %in% date_simu), ]
 
 #get_sim_disc----
 
@@ -187,13 +183,9 @@ disc_from_nc <- function(nc_disc, date_sel = date_simu, varID = "Qrouted"){
                          count = c(1, 1, count_date), varid = "Qrouted")
   simu_base <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[9], cols_sel_gaugs[9], 1), 
                          count = c(1, 1, count_date), varid = "Qrouted")
-  simu_unte <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[10], cols_sel_gaugs[10], 1), 
-                         count = c(1, 1, count_date), varid = "Qrouted")
-  simu_reki <- ncvar_get(nc_disc, start = c(rows_sel_gaugs[11], cols_sel_gaugs[11], 1), 
-                         count = c(1, 1, count_date), varid = "Qrouted")
   
   disc_sim_full <- cbind(simu_lobi, simu_koel, simu_coch, simu_kaub, simu_wuer, simu_worm, simu_rock, 
-                    simu_spey, simu_base, simu_unte, simu_reki)
+                         simu_spey, simu_base)
   
   disc_sim <- disc_sim_full[which(date %in% date_sel), ]
   
@@ -242,90 +234,123 @@ f_ann_q90 <- function(data_in, date = date_simu, start_y = 1951, end_y = 2000, b
   return(disc_q90)
   
 }
+f_ann_doy <- function(data_in, date = date_simu, start_y = 1951, end_y = 2000, break_day = 274){
+  
+  disc_day <- meltimr::ord_day(data_in = data_in,
+                               date = date,
+                               start_y = start_y,
+                               end_y = end_y,
+                               break_day = break_day)
+  
+  doy_max <- function(data_in){
+    
+    min_na(which(data_in == max_na(data_in)))
+    
+  }
+  
+  disc_doy <- apply(disc_day, 1, doy_max)
+  
+  return(disc_doy)
+  
+}
 
 #Observations/Measurements from GRDC
 disc_mea_max <- cbind(f_ann_max(disc_lobi$value), f_ann_max(disc_koel$value), f_ann_max(disc_coch$value),
                       f_ann_max(disc_kaub$value), f_ann_max(disc_wuer$value), f_ann_max(disc_worm$value),
-                      f_ann_max(disc_rock$value), f_ann_max(disc_spey$value), f_ann_max(disc_base$value), 
-                      f_ann_max(disc_unte$value), f_ann_max(disc_reki$value))
+                      f_ann_max(disc_rock$value), f_ann_max(disc_spey$value), f_ann_max(disc_base$value))
 
 disc_mea_q90 <- cbind(f_ann_q90(disc_lobi$value), f_ann_q90(disc_koel$value), f_ann_q90(disc_coch$value),
                       f_ann_q90(disc_kaub$value), f_ann_q90(disc_wuer$value), f_ann_q90(disc_worm$value),
-                      f_ann_q90(disc_rock$value), f_ann_q90(disc_spey$value), f_ann_q90(disc_base$value), 
-                      f_ann_q90(disc_unte$value), f_ann_q90(disc_reki$value))
+                      f_ann_q90(disc_rock$value), f_ann_q90(disc_spey$value), f_ann_q90(disc_base$value))
+
+disc_mea_doy <- cbind(f_ann_doy(disc_lobi$value), f_ann_doy(disc_koel$value), f_ann_doy(disc_coch$value),
+                      f_ann_doy(disc_kaub$value), f_ann_doy(disc_wuer$value), f_ann_doy(disc_worm$value),
+                      f_ann_doy(disc_rock$value), f_ann_doy(disc_spey$value), f_ann_doy(disc_base$value))
 
 #Simulations based on observations
 disc_obs_max <- cbind(f_ann_max(disc_obs$simu_lobi), f_ann_max(disc_obs$simu_koel), f_ann_max(disc_obs$simu_coch),
                       f_ann_max(disc_obs$simu_kaub), f_ann_max(disc_obs$simu_wuer), f_ann_max(disc_obs$simu_worm),
-                      f_ann_max(disc_obs$simu_rock), f_ann_max(disc_obs$simu_spey), f_ann_max(disc_obs$simu_base), 
-                      f_ann_max(disc_obs$simu_unte), f_ann_max(disc_obs$simu_reki))
+                      f_ann_max(disc_obs$simu_rock), f_ann_max(disc_obs$simu_spey), f_ann_max(disc_obs$simu_base))
 
 disc_obs_q90 <- cbind(f_ann_q90(disc_obs$simu_lobi), f_ann_q90(disc_obs$simu_koel), f_ann_q90(disc_obs$simu_coch),
                       f_ann_q90(disc_obs$simu_kaub), f_ann_q90(disc_obs$simu_wuer), f_ann_q90(disc_obs$simu_worm),
-                      f_ann_q90(disc_obs$simu_rock), f_ann_q90(disc_obs$simu_spey), f_ann_q90(disc_obs$simu_base), 
-                      f_ann_q90(disc_obs$simu_unte), f_ann_q90(disc_obs$simu_reki))
+                      f_ann_q90(disc_obs$simu_rock), f_ann_q90(disc_obs$simu_spey), f_ann_q90(disc_obs$simu_base))
+
+disc_obs_doy <- cbind(f_ann_doy(disc_obs$simu_lobi), f_ann_doy(disc_obs$simu_koel), f_ann_doy(disc_obs$simu_coch),
+                      f_ann_doy(disc_obs$simu_kaub), f_ann_doy(disc_obs$simu_wuer), f_ann_doy(disc_obs$simu_worm),
+                      f_ann_doy(disc_obs$simu_rock), f_ann_doy(disc_obs$simu_spey), f_ann_doy(disc_obs$simu_base))
 
 #Simulations based on cm1
 disc_cm1_max <- cbind(f_ann_max(disc_cm1$simu_lobi), f_ann_max(disc_cm1$simu_koel), f_ann_max(disc_cm1$simu_coch),
                       f_ann_max(disc_cm1$simu_kaub), f_ann_max(disc_cm1$simu_wuer), f_ann_max(disc_cm1$simu_worm),
-                      f_ann_max(disc_cm1$simu_rock), f_ann_max(disc_cm1$simu_spey), f_ann_max(disc_cm1$simu_base), 
-                      f_ann_max(disc_cm1$simu_unte), f_ann_max(disc_cm1$simu_reki))
+                      f_ann_max(disc_cm1$simu_rock), f_ann_max(disc_cm1$simu_spey), f_ann_max(disc_cm1$simu_base))
 
 disc_cm1_q90 <- cbind(f_ann_q90(disc_cm1$simu_lobi), f_ann_q90(disc_cm1$simu_koel), f_ann_q90(disc_cm1$simu_coch),
                       f_ann_q90(disc_cm1$simu_kaub), f_ann_q90(disc_cm1$simu_wuer), f_ann_q90(disc_cm1$simu_worm),
-                      f_ann_q90(disc_cm1$simu_rock), f_ann_q90(disc_cm1$simu_spey), f_ann_q90(disc_cm1$simu_base), 
-                      f_ann_q90(disc_cm1$simu_unte), f_ann_q90(disc_cm1$simu_reki))
+                      f_ann_q90(disc_cm1$simu_rock), f_ann_q90(disc_cm1$simu_spey), f_ann_q90(disc_cm1$simu_base))
+
+disc_cm1_doy <- cbind(f_ann_doy(disc_cm1$simu_lobi), f_ann_doy(disc_cm1$simu_koel), f_ann_doy(disc_cm1$simu_coch),
+                      f_ann_doy(disc_cm1$simu_kaub), f_ann_doy(disc_cm1$simu_wuer), f_ann_doy(disc_cm1$simu_worm),
+                      f_ann_doy(disc_cm1$simu_rock), f_ann_doy(disc_cm1$simu_spey), f_ann_doy(disc_cm1$simu_base))
 
 #Simulations based on cm2
 disc_cm2_max <- cbind(f_ann_max(disc_cm2$simu_lobi), f_ann_max(disc_cm2$simu_koel), f_ann_max(disc_cm2$simu_coch),
                       f_ann_max(disc_cm2$simu_kaub), f_ann_max(disc_cm2$simu_wuer), f_ann_max(disc_cm2$simu_worm),
-                      f_ann_max(disc_cm2$simu_rock), f_ann_max(disc_cm2$simu_spey), f_ann_max(disc_cm2$simu_base), 
-                      f_ann_max(disc_cm2$simu_unte), f_ann_max(disc_cm2$simu_reki))
+                      f_ann_max(disc_cm2$simu_rock), f_ann_max(disc_cm2$simu_spey), f_ann_max(disc_cm2$simu_base))
 
 disc_cm2_q90 <- cbind(f_ann_q90(disc_cm2$simu_lobi), f_ann_q90(disc_cm2$simu_koel), f_ann_q90(disc_cm2$simu_coch),
                       f_ann_q90(disc_cm2$simu_kaub), f_ann_q90(disc_cm2$simu_wuer), f_ann_q90(disc_cm2$simu_worm),
-                      f_ann_q90(disc_cm2$simu_rock), f_ann_q90(disc_cm2$simu_spey), f_ann_q90(disc_cm2$simu_base), 
-                      f_ann_q90(disc_cm2$simu_unte), f_ann_q90(disc_cm2$simu_reki))
+                      f_ann_q90(disc_cm2$simu_rock), f_ann_q90(disc_cm2$simu_spey), f_ann_q90(disc_cm2$simu_base))
+
+disc_cm2_doy <- cbind(f_ann_doy(disc_cm2$simu_lobi), f_ann_doy(disc_cm2$simu_koel), f_ann_doy(disc_cm2$simu_coch),
+                      f_ann_doy(disc_cm2$simu_kaub), f_ann_doy(disc_cm2$simu_wuer), f_ann_doy(disc_cm2$simu_worm),
+                      f_ann_doy(disc_cm2$simu_rock), f_ann_doy(disc_cm2$simu_spey), f_ann_doy(disc_cm2$simu_base))
 
 #Simulations based on cm3
 disc_cm3_max <- cbind(f_ann_max(disc_cm3$simu_lobi), f_ann_max(disc_cm3$simu_koel), f_ann_max(disc_cm3$simu_coch),
                       f_ann_max(disc_cm3$simu_kaub), f_ann_max(disc_cm3$simu_wuer), f_ann_max(disc_cm3$simu_worm),
-                      f_ann_max(disc_cm3$simu_rock), f_ann_max(disc_cm3$simu_spey), f_ann_max(disc_cm3$simu_base), 
-                      f_ann_max(disc_cm3$simu_unte), f_ann_max(disc_cm3$simu_reki))
+                      f_ann_max(disc_cm3$simu_rock), f_ann_max(disc_cm3$simu_spey), f_ann_max(disc_cm3$simu_base))
 
 disc_cm3_q90 <- cbind(f_ann_q90(disc_cm3$simu_lobi), f_ann_q90(disc_cm3$simu_koel), f_ann_q90(disc_cm3$simu_coch),
                       f_ann_q90(disc_cm3$simu_kaub), f_ann_q90(disc_cm3$simu_wuer), f_ann_q90(disc_cm3$simu_worm),
-                      f_ann_q90(disc_cm3$simu_rock), f_ann_q90(disc_cm3$simu_spey), f_ann_q90(disc_cm3$simu_base), 
-                      f_ann_q90(disc_cm3$simu_unte), f_ann_q90(disc_cm3$simu_reki))
+                      f_ann_q90(disc_cm3$simu_rock), f_ann_q90(disc_cm3$simu_spey), f_ann_q90(disc_cm3$simu_base))
+
+disc_cm3_doy <- cbind(f_ann_doy(disc_cm3$simu_lobi), f_ann_doy(disc_cm3$simu_koel), f_ann_doy(disc_cm3$simu_coch),
+                      f_ann_doy(disc_cm3$simu_kaub), f_ann_doy(disc_cm3$simu_wuer), f_ann_doy(disc_cm3$simu_worm),
+                      f_ann_doy(disc_cm3$simu_rock), f_ann_doy(disc_cm3$simu_spey), f_ann_doy(disc_cm3$simu_base))
 
 #Simulations based on cm4
 disc_cm4_max <- cbind(f_ann_max(disc_cm4$simu_lobi), f_ann_max(disc_cm4$simu_koel), f_ann_max(disc_cm4$simu_coch),
                       f_ann_max(disc_cm4$simu_kaub), f_ann_max(disc_cm4$simu_wuer), f_ann_max(disc_cm4$simu_worm),
-                      f_ann_max(disc_cm4$simu_rock), f_ann_max(disc_cm4$simu_spey), f_ann_max(disc_cm4$simu_base), 
-                      f_ann_max(disc_cm4$simu_unte), f_ann_max(disc_cm4$simu_reki))
+                      f_ann_max(disc_cm4$simu_rock), f_ann_max(disc_cm4$simu_spey), f_ann_max(disc_cm4$simu_base))
 
 disc_cm4_q90 <- cbind(f_ann_q90(disc_cm4$simu_lobi), f_ann_q90(disc_cm4$simu_koel), f_ann_q90(disc_cm4$simu_coch),
                       f_ann_q90(disc_cm4$simu_kaub), f_ann_q90(disc_cm4$simu_wuer), f_ann_q90(disc_cm4$simu_worm),
-                      f_ann_q90(disc_cm4$simu_rock), f_ann_q90(disc_cm4$simu_spey), f_ann_q90(disc_cm4$simu_base), 
-                      f_ann_q90(disc_cm4$simu_unte), f_ann_q90(disc_cm4$simu_reki))
+                      f_ann_q90(disc_cm4$simu_rock), f_ann_q90(disc_cm4$simu_spey), f_ann_q90(disc_cm4$simu_base))
+
+disc_cm4_doy <- cbind(f_ann_doy(disc_cm4$simu_lobi), f_ann_doy(disc_cm4$simu_koel), f_ann_doy(disc_cm4$simu_coch),
+                      f_ann_doy(disc_cm4$simu_kaub), f_ann_doy(disc_cm4$simu_wuer), f_ann_doy(disc_cm4$simu_worm),
+                      f_ann_doy(disc_cm4$simu_rock), f_ann_doy(disc_cm4$simu_spey), f_ann_doy(disc_cm4$simu_base))
 
 #Simulations based on cm5
 disc_cm5_max <- cbind(f_ann_max(disc_cm5$simu_lobi), f_ann_max(disc_cm5$simu_koel), f_ann_max(disc_cm5$simu_coch),
                       f_ann_max(disc_cm5$simu_kaub), f_ann_max(disc_cm5$simu_wuer), f_ann_max(disc_cm5$simu_worm),
-                      f_ann_max(disc_cm5$simu_rock), f_ann_max(disc_cm5$simu_spey), f_ann_max(disc_cm5$simu_base), 
-                      f_ann_max(disc_cm5$simu_unte), f_ann_max(disc_cm5$simu_reki))
+                      f_ann_max(disc_cm5$simu_rock), f_ann_max(disc_cm5$simu_spey), f_ann_max(disc_cm5$simu_base))
 
 disc_cm5_q90 <- cbind(f_ann_q90(disc_cm5$simu_lobi), f_ann_q90(disc_cm5$simu_koel), f_ann_q90(disc_cm5$simu_coch),
                       f_ann_q90(disc_cm5$simu_kaub), f_ann_q90(disc_cm5$simu_wuer), f_ann_q90(disc_cm5$simu_worm),
-                      f_ann_q90(disc_cm5$simu_rock), f_ann_q90(disc_cm5$simu_spey), f_ann_q90(disc_cm5$simu_base), 
-                      f_ann_q90(disc_cm5$simu_unte), f_ann_q90(disc_cm5$simu_reki))
+                      f_ann_q90(disc_cm5$simu_rock), f_ann_q90(disc_cm5$simu_spey), f_ann_q90(disc_cm5$simu_base))
+
+disc_cm5_doy <- cbind(f_ann_doy(disc_cm5$simu_lobi), f_ann_doy(disc_cm5$simu_koel), f_ann_doy(disc_cm5$simu_coch),
+                      f_ann_doy(disc_cm5$simu_kaub), f_ann_doy(disc_cm5$simu_wuer), f_ann_doy(disc_cm5$simu_worm),
+                      f_ann_doy(disc_cm5$simu_rock), f_ann_doy(disc_cm5$simu_spey), f_ann_doy(disc_cm5$simu_base))
 
 lims_max <- c(1, max_na(c(disc_mea_max, disc_obs_max, disc_cm1_max, disc_cm1_max, disc_cm2_max, 
                           disc_cm3_max, disc_cm4_max, disc_cm5_max)))
 lims_q90 <- c(1, max_na(c(disc_mea_q90, disc_obs_q90, disc_cm1_q90, disc_cm1_q90, disc_cm2_q90, 
                           disc_cm3_q90, disc_cm4_q90, disc_cm5_q90)))
 
-#plot_eval----
+#plot_magnitudes----
 
 pdf(paste0(bas_dir,"res_figs/eval_hist.pdf"), width = 16, height = 6)
 
@@ -597,6 +622,177 @@ dev.off()
 
 
 
+
+
+
+
+
+#plot_timing----
+
+plot_doy <- function(doy_mea, doy_obs, doy_cm1, doy_cm2, doy_cm3, doy_cm4, doy_cm5, 
+                     calc_ylims = F, ylims = c(0, 365),
+                     y_lab = "", do_legend = F, legend_pos = "topleft", main_header = "", 
+                     pos_main = 0.0){
+
+  
+  col_mea <- "steelblue4"
+  col_obs <- "darkred"
+  col_clm <- "grey25"
+  
+  doy_df <- data.frame(doy_mea = range(doy_mea, na.rm = T),
+                       doy_obs = range(doy_obs, na.rm = T),
+                       doy_cm1 = range(doy_cm1, na.rm = T),
+                       doy_cm2 = range(doy_cm2, na.rm = T),
+                       doy_cm3 = range(doy_cm3, na.rm = T),
+                       doy_cm4 = range(doy_cm4, na.rm = T),
+                       doy_cm5 = range(doy_cm5, na.rm = T))
+  
+  boxplot(doy_df, boxfill = NA, border = NA, axes = F, ylim = ylims)
+  axis(2, mgp=c(3, 0.55, 0), tck = -0.017, cex.axis = 2.5)
+  mtext(y_lab, side = 2, line = 3.1, cex = 1.8)
+  grid(nx = 0, ny = 6, col = "grey55", lwd = 0.5)
+  if(do_legend){
+    legend(legend_pos, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
+           col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.3,
+           box.lwd = 0.0, box.col = "black", bg = "white")
+  }
+  box()
+  
+  boxplot(doy_mea, ylim = ylims, col = col_mea, axes = F, xaxt = "n", add = TRUE, 
+          at = 1, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_obs, ylim = ylims, col = col_obs, axes = F, xaxt = "n", add = TRUE, 
+          at = 2, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_cm1, ylim = ylims, col = col_clm, axes = F, xaxt = "n", add = TRUE, 
+          at = 3, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_cm2, ylim = ylims, col = col_clm, axes = F, xaxt = "n", add = TRUE, 
+          at = 4, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_cm3, ylim = ylims, col = col_clm, axes = F, xaxt = "n", add = TRUE, 
+          at = 5, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_cm4, ylim = ylims, col = col_clm, axes = F, xaxt = "n", add = TRUE, 
+          at = 6, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  boxplot(doy_cm5, ylim = ylims, col = col_clm, axes = F, xaxt = "n", add = TRUE, 
+          at = 7, boxwex = 1.5, whisklwd = 2, staplelwd = 2, whisklty = 1, notch = T,
+          outpch = 19)
+  
+  
+  mtext(main_header, side = 3, line = 0.5, adj = pos_main, cex = 2.2)
+  
+}
+
+plot_doy(doy_mea = disc_mea_doy[, 1], doy_obs = disc_obs_doy[, 1], doy_cm1 = disc_cm1_doy[, 1], 
+         doy_cm2 = disc_cm2_doy[, 1], doy_cm3 = disc_cm3_doy[, 1], 
+         doy_cm4 = disc_cm4_doy[, 1], doy_cm5 = disc_cm5_doy[, 1])
+
+plot_doy(doy_mea = disc_mea_doy[, 2], doy_obs = disc_obs_doy[, 2], doy_cm1 = disc_cm1_doy[, 2], 
+         doy_cm2 = disc_cm2_doy[, 2], doy_cm3 = disc_cm3_doy[, 2], 
+         doy_cm4 = disc_cm4_doy[, 2], doy_cm5 = disc_cm5_doy[, 2])
+
+plot_doy(doy_mea = disc_mea_doy[, 3], doy_obs = disc_obs_doy[, 3], doy_cm1 = disc_cm1_doy[, 3], 
+         doy_cm2 = disc_cm2_doy[, 3], doy_cm3 = disc_cm3_doy[, 3], 
+         doy_cm4 = disc_cm4_doy[, 3], doy_cm5 = disc_cm5_doy[, 3])
+
+plot_doy(doy_mea = disc_mea_doy[, 4], doy_obs = disc_obs_doy[, 4], doy_cm1 = disc_cm1_doy[, 4], 
+         doy_cm2 = disc_cm2_doy[, 4], doy_cm3 = disc_cm3_doy[, 4], 
+         doy_cm4 = disc_cm4_doy[, 4], doy_cm5 = disc_cm5_doy[, 4])
+
+plot_doy(doy_mea = disc_mea_doy[, 5], doy_obs = disc_obs_doy[, 5], doy_cm1 = disc_cm1_doy[, 5], 
+         doy_cm2 = disc_cm2_doy[, 5], doy_cm3 = disc_cm3_doy[, 5], 
+         doy_cm4 = disc_cm4_doy[, 5], doy_cm5 = disc_cm5_doy[, 5])
+
+plot_doy(doy_mea = disc_mea_doy[, 6], doy_obs = disc_obs_doy[, 6], doy_cm1 = disc_cm1_doy[, 6], 
+         doy_cm2 = disc_cm2_doy[, 6], doy_cm3 = disc_cm3_doy[, 6], 
+         doy_cm4 = disc_cm4_doy[, 6], doy_cm5 = disc_cm5_doy[, 6])
+
+plot_doy(doy_mea = disc_mea_doy[, 7], doy_obs = disc_obs_doy[, 7], doy_cm1 = disc_cm1_doy[, 7], 
+         doy_cm2 = disc_cm2_doy[, 7], doy_cm3 = disc_cm3_doy[, 7], 
+         doy_cm4 = disc_cm4_doy[, 7], doy_cm5 = disc_cm5_doy[, 7])
+
+plot_doy(doy_mea = disc_mea_doy[, 8], doy_obs = disc_obs_doy[, 8], doy_cm1 = disc_cm1_doy[, 8], 
+         doy_cm2 = disc_cm2_doy[, 8], doy_cm3 = disc_cm3_doy[, 8], 
+         doy_cm4 = disc_cm4_doy[, 8], doy_cm5 = disc_cm5_doy[, 8])
+
+plot_doy(doy_mea = disc_mea_doy[, 9], doy_obs = disc_obs_doy[, 9], doy_cm1 = disc_cm1_doy[, 9], 
+         doy_cm2 = disc_cm2_doy[, 9], doy_cm3 = disc_cm3_doy[, 9], 
+         doy_cm4 = disc_cm4_doy[, 9], doy_cm5 = disc_cm5_doy[, 9])
+
+
+
+#monthly_quantiles----
+
+perc_month <- function(data_in){
+  
+  disc_day <- ord_day(data_in = data_in,
+                      date = date_simu,
+                      start_y = 1951,
+                      end_y = 2000,
+                      break_day = 274)
+  
+  jan_cols <- 1:31
+  feb_cols <- 32:59
+  mar_cols <- 60:90
+  apr_cols <- 91:120
+  may_cols <- 121:151
+  jun_cols <- 152:181
+  jul_cols <- 182:212
+  aug_cols <- 213:243
+  sep_cols <- 244:273
+  oct_cols <- 274:304
+  nov_cols <- 305:334
+  dec_cols <- 335:365
+  
+  month_cols <- list(jan_cols, feb_cols, mar_cols, apr_cols, may_cols, jun_cols, jul_cols, aug_cols, sep_cols, oct_cols, nov_cols, dec_cols)
+  perc_sel <- 0.90
+  
+  qmon <- rep(NA, 12)
+  
+  for(i in 1:12){
+    qmon[i] <- stats::quantile(disc_day[ , month_cols[[i]]], probs = perc_sel, 
+                                        type = 8, na.rm = T)
+  }
+  
+  return(qmon)
+  
+}
+
+qmon_cm1 <- apply(disc_cm1, 2, perc_month)
+qmon_cm2 <- apply(disc_cm2, 2, perc_month)
+qmon_cm3 <- apply(disc_cm3, 2, perc_month)
+qmon_cm4 <- apply(disc_cm4, 2, perc_month)
+qmon_cm5 <- apply(disc_cm5, 2, perc_month)
+qmon_eob <- apply(disc_obs, 2, perc_month)
+qmon_obs <- cbind(perc_month(disc_lobi$value), perc_month(disc_koel$value), perc_month(disc_coch$value),
+                  perc_month(disc_kaub$value), perc_month(disc_wuer$value), perc_month(disc_worm$value),
+                  perc_month(disc_rock$value), perc_month(disc_spey$value), perc_month(disc_base$value))
+
+for(i in 1:9){
+  
+  col_sel <- i
+  ylims <- range(qmon_obs[, col_sel], qmon_eob[, col_sel], qmon_cm1[, col_sel], qmon_cm2[, col_sel], 
+                 qmon_cm3[, col_sel], qmon_cm4[, col_sel], qmon_cm5[, col_sel])
+  
+  plot(qmon_obs[, col_sel], type = "n", ylim = ylims, main = i)
+  lines(qmon_obs[, col_sel], col = "red3", lwd = 2)
+  lines(qmon_eob[, col_sel], col = "blue3", lwd = 2)
+  lines(qmon_cm1[, col_sel], col = "grey55")
+  lines(qmon_cm2[, col_sel], col = "grey55")
+  lines(qmon_cm3[, col_sel], col = "grey55")
+  lines(qmon_cm4[, col_sel], col = "grey55")
+  lines(qmon_cm5[, col_sel], col = "grey55")
+  points(qmon_obs[, col_sel], col = "red3", pch = 19)
+  points(qmon_eob[, col_sel], col = "blue3", pch = 19)
+  points(qmon_cm1[, col_sel], col = "grey55", pch = 19)
+  points(qmon_cm2[, col_sel], col = "grey55", pch = 19)
+  points(qmon_cm3[, col_sel], col = "grey55", pch = 19)
+  points(qmon_cm4[, col_sel], col = "grey55", pch = 19)
+  points(qmon_cm5[, col_sel], col = "grey55", pch = 19)
+  
+}
 
 
 
