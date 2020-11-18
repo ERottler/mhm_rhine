@@ -345,21 +345,34 @@ disc_cm5_doy <- cbind(f_ann_doy(disc_cm5$simu_lobi), f_ann_doy(disc_cm5$simu_koe
                       f_ann_doy(disc_cm5$simu_kaub), f_ann_doy(disc_cm5$simu_wuer), f_ann_doy(disc_cm5$simu_worm),
                       f_ann_doy(disc_cm5$simu_rock), f_ann_doy(disc_cm5$simu_spey), f_ann_doy(disc_cm5$simu_base))
 
-lims_max <- c(1, max_na(c(disc_mea_max, disc_obs_max, disc_cm1_max, disc_cm1_max, disc_cm2_max, 
+lims_max <- c(10, max_na(c(disc_mea_max, disc_obs_max, disc_cm1_max, disc_cm1_max, disc_cm2_max, 
                           disc_cm3_max, disc_cm4_max, disc_cm5_max)))
-lims_q90 <- c(1, max_na(c(disc_mea_q90, disc_obs_q90, disc_cm1_q90, disc_cm1_q90, disc_cm2_q90, 
+lims_q90 <- c(10, max_na(c(disc_mea_q90, disc_obs_q90, disc_cm1_q90, disc_cm1_q90, disc_cm2_q90, 
                           disc_cm3_q90, disc_cm4_q90, disc_cm5_q90)))
 
 #plot_magnitudes----
 
-pdf(paste0(bas_dir,"res_figs/eval_hist.pdf"), width = 16, height = 6)
+pdf(paste0(bas_dir,"res_figs/eval_hist_mag.pdf"), width = 16, height = 8)
+
+layout(matrix(c(9, 9, 9, 9,
+                1, 2, 3, 4,
+                10, 10, 10, 10,
+                5, 6, 7, 8),
+              4, 4, byrow = T), widths=c(), heights=c(0.15, 1, 0.15, 1))
 
 par(family = "serif")
-par(mar = c(3.5, 3.5, 2.5, 0.5))
-par(mfrow = c(2, 4))
-cex_points <- 1.4
-
-#Meased vs. EOBS Q90 all stations
+par(mar = c(4.2, 4.2, 2.5, 1.0))
+cex_points <- 1.9
+cex_main <- 1.7
+main_line <- 0.4
+cex_axis <- 1.8
+cex_label <- 1.7
+x_axs_dist <- 0.5
+axs_tic <- 0.012
+x_lab_line <- 2.8
+y_lab_line <- 1.9
+  
+#All stations: Q90 Measured  vs. EOBS
 alpha_sel <- c(0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
                0.4, 0.4, 0.4, 0.4, 0.4)
 cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black",
@@ -368,24 +381,28 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], 
          col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("All gauges validation"), pch = 19, 
-       col = c("black"), cex = 1.0,
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("a) Q90 Observed vs. EOBS", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[EOBS], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
+legend("topleft", c("All gauges"), pch = 19, 
+       col = c("black"), cex = 1.8,
        box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
-#Meased vs. EOBS MAX all stations
+#All stations: MAX Measured vs. EOBS
 alpha_sel <- c(0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
                0.4, 0.4, 0.4, 0.4, 0.4)
 cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black",
@@ -394,76 +411,25 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], 
          col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("MAX Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("All gauges validation"), pch = 19, 
-       col = c("black"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("b) MAX Observed vs. EOBS", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[EOBS], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
 box()
 
-#Meased vs. EOBS Q90 selected stations
-alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
-               0.0, 0.0, 0.4, 0.0, 0.0)
-cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
-                            "black", "black", "darkred", "black", "black"), 
-                          alpha = alpha_sel)
-
-plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
-     ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(disc_mea_q90)){
-  
-  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], 
-         col = alpha("black", alpha = 0), cex = cex_points)
-  
-}
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
-       col = c("black", "darkred", "steelblue4"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
-box()
-
-#Meased vs. EOBS Max selected stations
-alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
-               0.0, 0.0, 0.4, 0.0, 0.0)
-cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
-                            "black", "black", "darkred", "black", "black"), 
-                          alpha = alpha_sel)
-
-plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
-     ylab = "", xlab = "", axes = FALSE)
-for(i in 1:ncol(disc_mea_max)){
-  
-  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], 
-         col = alpha("black", alpha = 0), cex = cex_points)
-  
-}
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("Q90 Measured vs. EOBS", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
-       col = c("black", "darkred", "steelblue4"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
-box()
-
-#Measured vs. GCMs Q90
+#All stations: Q90 Measured vs. GCMs
 alpha_sel <- c(0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
                0.4, 0.4, 0.4, 0.4, 0.4)
 cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black",
@@ -472,6 +438,9 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], 
@@ -486,22 +455,16 @@ for(i in 1:ncol(disc_mea_q90)){
          col = alpha("black", alpha = 0), cex = cex_points)
 
 }
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("Q90 Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("All gauges validation"), pch = 19, 
-       col = c("black"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
-legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
-                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
-       col = c("black"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("c) Q90 Observed vs. GCMs", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[GCM], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
 box()
 
-#Measured vs. GCMs MAX
+#All stations: MAX Measured vs. GCMs
 alpha_sel <- c(0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
                0.4, 0.4, 0.4, 0.4, 0.4)
 cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black",
@@ -510,6 +473,9 @@ cols_sel <- scales::alpha(c("black", "black", "black", "black", "black", "black"
 
 plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], 
@@ -524,22 +490,73 @@ for(i in 1:ncol(disc_mea_max)){
          col = alpha("black", alpha = 0), cex = cex_points)
   
 }
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("d) MAX Observed vs. GCMs", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[GCM], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
+box()
+
+#Selected stations: Q90 Measured vs. EOBS
+alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
+               0.0, 0.0, 0.4, 0.0, 0.0)
+cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
+                            "black", "black", "darkred", "black", "black"), 
+                          alpha = alpha_sel)
+
+plot(disc_mea_q90[, 1], disc_obs_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
+     ylab = "", xlab = "", axes = FALSE)
 abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("MAX Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("All gauges validation"), pch = 19, 
-       col = c("black"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
-legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
-                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
-       col = c("black"), cex = 1.0,
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+for(i in 1:ncol(disc_mea_q90)){
+  
+  points(disc_mea_q90[, i], disc_obs_q90[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  
+}
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("e) Q90 Observed vs. EOBS", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[EOBS], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
+legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
+       col = c("black", "darkred", "steelblue4"), cex = 1.8,
        box.lwd = 0.0, box.col = "black", bg = "white")
 box()
 
-#Measured vs. GCMs selected Q90
+#Selected stations: MAX Measured vs. EOBS
+alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
+               0.0, 0.0, 0.4, 0.0, 0.0)
+cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
+                            "black", "black", "darkred", "black", "black"), 
+                          alpha = alpha_sel)
+
+plot(disc_mea_max[, 1], disc_obs_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
+     ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+for(i in 1:ncol(disc_mea_max)){
+  
+  points(disc_mea_max[, i], disc_obs_max[, i], pch = 21, bg = cols_sel[i], 
+         col = alpha("black", alpha = 0), cex = cex_points)
+  
+}
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("f) MAX Observed vs. EOBS", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[EOBS], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
+box()
+
+#Selected stations: Q90 Measured vs. GCMs
 alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
                0.0, 0.0, 0.4, 0.0, 0.0)
 cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
@@ -548,6 +565,9 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
 
 plot(disc_mea_q90[, 1], disc_mea_q90[, 1], type = "n", log = "xy", ylim = lims_q90, xlim = lims_q90, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_q90)){
   
   points(disc_mea_q90[, i], disc_cm1_q90[, i], pch = 21, bg = cols_sel[i], 
@@ -562,22 +582,16 @@ for(i in 1:ncol(disc_mea_q90)){
          col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("Q90 Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
-       col = c("black", "darkred", "steelblue4"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
-legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
-                        "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
-       col = c("black"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("g) Q90 Observed vs. GCMs", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[GCM], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
 box()
 
-#Measured vs. GCMs selected MAX
+#Selectes stations: MAX Measured vs. GCMs
 alpha_sel <- c(0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 
                0.0, 0.0, 0.4, 0.0, 0.0)
 cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4", "black",
@@ -586,6 +600,9 @@ cols_sel <- scales::alpha(c("black", "black", "steelblue4", "black", "steelblue4
 
 plot(disc_mea_max[, 1], disc_mea_max[, 1], type = "n", log = "xy", ylim = lims_max, xlim = lims_max, 
      ylab = "", xlab = "", axes = FALSE)
+abline(a = 0, b = 1)
+abline(h = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
+abline(v = c(50, 500, 5000), lty = "dashed", col = "grey75", lwd = 0.7)
 for(i in 1:ncol(disc_mea_max)){
   
   points(disc_mea_max[, i], disc_cm1_max[, i], pch = 21, bg = cols_sel[i], 
@@ -600,20 +617,26 @@ for(i in 1:ncol(disc_mea_max)){
          col = alpha("black", alpha = 0), cex = cex_points)
   
 }
-abline(a = 0, b = 1)
-axis(1, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-axis(2, mgp=c(3, 0.19, 0), tck = -0.015, cex.axis = 1.3)
-mtext("MAX Measured vs. GCMs", side = 3, line = 0.5, cex = 1.3)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 1, line = 1.8, cex = 1.1)
-mtext(expression(paste("Discharge [m"^"3", "s"^"-1","]")), side = 2, line = 1.4, cex = 1.1)
-legend("topleft", c("Cologne", "Basel", "Cochem"), pch = 19, 
-       col = c("black", "darkred", "steelblue4"), cex = 1.0,
-       box.lwd = 0.0, box.col = "black", bg = "white")
+axis(1, mgp=c(3, x_axs_dist, 0), tck = -axs_tic, cex.axis = cex_axis)
+axis(2, mgp=c(3, 0.19, 0), tck = -axs_tic, cex.axis = cex_axis)
+mtext("h) MAX Observed vs. GCMs", side = 3, line = main_line, cex = cex_main, adj = 0)
+mtext(expression(paste("Q"[observed], " [m"^"3", "s"^"-1","]")), side = 1, 
+      line = x_lab_line, cex = cex_label)
+mtext(expression(paste("Q"[GCM], " [m"^"3", "s"^"-1","]")), side = 2, 
+      line = y_lab_line, cex = cex_label)
 legend("bottomright", c("GFDL-ESM2M", "HadGEM2-ES", "IPSL-CM5A-LR",
                         "MIROC-ESM-CHEM", "NorESM1-M"), pch = 21:25, 
-       col = c("black"), cex = 1.0,
+       col = c("black"), cex = 1.4,
        box.lwd = 0.0, box.col = "black", bg = "white")
 box()
+
+#Main header
+par(mar = c(0, 0, 0, 0))
+plot(1:10, 1:10, type = "n", xlab = "", ylab = "", axes = F)
+mtext("All validation gauges", side = 3, line = -2.8, cex = 2.2)
+
+plot(1:10, 1:10, type = "n", xlab = "", ylab = "", axes = F)
+mtext("Selected gauges", side = 3, line = -2.8, cex = 2.2)
 
 dev.off()
 
@@ -628,6 +651,16 @@ dev.off()
 
 
 #plot_timing----
+
+pdf(paste0(bas_dir,"res_figs/eval_hist_doy_raw.pdf"), width = 16, height = 8)
+
+layout(matrix(c(10, 1, 2, 3,
+                10, 4, 5, 6,
+                10, 7, 8, 9),
+              3, 4, byrow = T), widths=c(0.08, 1, 1, 1), heights=c())
+
+par(family = "serif")
+par(mar = c(1.0, 4.2, 3.0, 1.0))
 
 plot_doy <- function(doy_mea, doy_obs, doy_cm1, doy_cm2, doy_cm3, doy_cm4, doy_cm5, 
                      calc_ylims = F, ylims = c(0, 365),
@@ -687,39 +720,55 @@ plot_doy <- function(doy_mea, doy_obs, doy_cm1, doy_cm2, doy_cm3, doy_cm4, doy_c
 
 plot_doy(doy_mea = disc_mea_doy[, 1], doy_obs = disc_obs_doy[, 1], doy_cm1 = disc_cm1_doy[, 1], 
          doy_cm2 = disc_cm2_doy[, 1], doy_cm3 = disc_cm3_doy[, 1], 
-         doy_cm4 = disc_cm4_doy[, 1], doy_cm5 = disc_cm5_doy[, 1])
+         doy_cm4 = disc_cm4_doy[, 1], doy_cm5 = disc_cm5_doy[, 1],
+         main_header = "a) Lobith")
 
 plot_doy(doy_mea = disc_mea_doy[, 2], doy_obs = disc_obs_doy[, 2], doy_cm1 = disc_cm1_doy[, 2], 
          doy_cm2 = disc_cm2_doy[, 2], doy_cm3 = disc_cm3_doy[, 2], 
-         doy_cm4 = disc_cm4_doy[, 2], doy_cm5 = disc_cm5_doy[, 2])
+         doy_cm4 = disc_cm4_doy[, 2], doy_cm5 = disc_cm5_doy[, 2],
+         main_header = "b) Cologne")
 
 plot_doy(doy_mea = disc_mea_doy[, 3], doy_obs = disc_obs_doy[, 3], doy_cm1 = disc_cm1_doy[, 3], 
          doy_cm2 = disc_cm2_doy[, 3], doy_cm3 = disc_cm3_doy[, 3], 
-         doy_cm4 = disc_cm4_doy[, 3], doy_cm5 = disc_cm5_doy[, 3])
+         doy_cm4 = disc_cm4_doy[, 3], doy_cm5 = disc_cm5_doy[, 3],
+         main_header = "c) Cochem")
 
 plot_doy(doy_mea = disc_mea_doy[, 4], doy_obs = disc_obs_doy[, 4], doy_cm1 = disc_cm1_doy[, 4], 
          doy_cm2 = disc_cm2_doy[, 4], doy_cm3 = disc_cm3_doy[, 4], 
-         doy_cm4 = disc_cm4_doy[, 4], doy_cm5 = disc_cm5_doy[, 4])
+         doy_cm4 = disc_cm4_doy[, 4], doy_cm5 = disc_cm5_doy[, 4],
+         main_header = "d) Kaub")
 
 plot_doy(doy_mea = disc_mea_doy[, 5], doy_obs = disc_obs_doy[, 5], doy_cm1 = disc_cm1_doy[, 5], 
          doy_cm2 = disc_cm2_doy[, 5], doy_cm3 = disc_cm3_doy[, 5], 
-         doy_cm4 = disc_cm4_doy[, 5], doy_cm5 = disc_cm5_doy[, 5])
+         doy_cm4 = disc_cm4_doy[, 5], doy_cm5 = disc_cm5_doy[, 5],
+         main_header = "e) Wuerzburg")
 
 plot_doy(doy_mea = disc_mea_doy[, 6], doy_obs = disc_obs_doy[, 6], doy_cm1 = disc_cm1_doy[, 6], 
          doy_cm2 = disc_cm2_doy[, 6], doy_cm3 = disc_cm3_doy[, 6], 
-         doy_cm4 = disc_cm4_doy[, 6], doy_cm5 = disc_cm5_doy[, 6])
+         doy_cm4 = disc_cm4_doy[, 6], doy_cm5 = disc_cm5_doy[, 6],
+         main_header = "f) Worms")
 
 plot_doy(doy_mea = disc_mea_doy[, 7], doy_obs = disc_obs_doy[, 7], doy_cm1 = disc_cm1_doy[, 7], 
          doy_cm2 = disc_cm2_doy[, 7], doy_cm3 = disc_cm3_doy[, 7], 
-         doy_cm4 = disc_cm4_doy[, 7], doy_cm5 = disc_cm5_doy[, 7])
+         doy_cm4 = disc_cm4_doy[, 7], doy_cm5 = disc_cm5_doy[, 7],
+         main_header = "g) Rockenau")
 
 plot_doy(doy_mea = disc_mea_doy[, 8], doy_obs = disc_obs_doy[, 8], doy_cm1 = disc_cm1_doy[, 8], 
          doy_cm2 = disc_cm2_doy[, 8], doy_cm3 = disc_cm3_doy[, 8], 
-         doy_cm4 = disc_cm4_doy[, 8], doy_cm5 = disc_cm5_doy[, 8])
+         doy_cm4 = disc_cm4_doy[, 8], doy_cm5 = disc_cm5_doy[, 8],
+         main_header = "h) Speyer")
 
 plot_doy(doy_mea = disc_mea_doy[, 9], doy_obs = disc_obs_doy[, 9], doy_cm1 = disc_cm1_doy[, 9], 
          doy_cm2 = disc_cm2_doy[, 9], doy_cm3 = disc_cm3_doy[, 9], 
-         doy_cm4 = disc_cm4_doy[, 9], doy_cm5 = disc_cm5_doy[, 9])
+         doy_cm4 = disc_cm4_doy[, 9], doy_cm5 = disc_cm5_doy[, 9],
+         main_header = "i) Basel")
+
+#Label y axis
+par(mar = c(0, 0, 0, 0))
+plot(1:10, 1:10, type = "n", ylab = "", xlab = "", axes = F)
+mtext("Timing annual maxima [DOY]", side = 2, line = -3.5, cex = 2.5)
+
+dev.off()
 
 
 
@@ -770,29 +819,79 @@ qmon_obs <- cbind(perc_month(disc_lobi$value), perc_month(disc_koel$value), perc
                   perc_month(disc_kaub$value), perc_month(disc_wuer$value), perc_month(disc_worm$value),
                   perc_month(disc_rock$value), perc_month(disc_spey$value), perc_month(disc_base$value))
 
-for(i in 1:9){
+pdf(paste0(bas_dir,"res_figs/eval_hist_qua_raw.pdf"), width = 16, height = 8)
+
+layout(matrix(c(10, 1, 2, 3,
+                10, 4, 5, 6,
+                10, 7, 8, 9),
+              3, 4, byrow = T), widths=c(0.08, 1, 1, 1), heights=c())
+
+par(family = "serif")
+par(mar = c(2.5, 3.5, 3.0, 1.0))
+
+plot_month_quan <- function(col_sel, main = ""){
   
-  col_sel <- i
   ylims <- range(qmon_obs[, col_sel], qmon_eob[, col_sel], qmon_cm1[, col_sel], qmon_cm2[, col_sel], 
                  qmon_cm3[, col_sel], qmon_cm4[, col_sel], qmon_cm5[, col_sel])
   
-  plot(qmon_obs[, col_sel], type = "n", ylim = ylims, main = i)
-  lines(qmon_obs[, col_sel], col = "red3", lwd = 2)
-  lines(qmon_eob[, col_sel], col = "blue3", lwd = 2)
-  lines(qmon_cm1[, col_sel], col = "grey55")
-  lines(qmon_cm2[, col_sel], col = "grey55")
-  lines(qmon_cm3[, col_sel], col = "grey55")
-  lines(qmon_cm4[, col_sel], col = "grey55")
-  lines(qmon_cm5[, col_sel], col = "grey55")
-  points(qmon_obs[, col_sel], col = "red3", pch = 19)
-  points(qmon_eob[, col_sel], col = "blue3", pch = 19)
-  points(qmon_cm1[, col_sel], col = "grey55", pch = 19)
-  points(qmon_cm2[, col_sel], col = "grey55", pch = 19)
-  points(qmon_cm3[, col_sel], col = "grey55", pch = 19)
-  points(qmon_cm4[, col_sel], col = "grey55", pch = 19)
-  points(qmon_cm5[, col_sel], col = "grey55", pch = 19)
+  x_labs <- c("O", "N", "D", "J", "F", "M", "A", "M", "J", "J", "A", "S")
+  x_ats <- seq(1, 12, 1)
+  x_tics <- seq(0.5, 12.5, 1)
+  line_lwd <- 2.0
+  point_cex <- 1.4
+  
+  col_gcm <- alpha("black", alpha = 0.5)
+  col_meas <- alpha("steelblue4", alpha = 0.5)
+  col_eobs <- alpha("darkred", alpha = 0.5)
+  
+  plot(qmon_obs[, col_sel], type = "n", ylim = ylims, axes = F, ylab = "", 
+       xlab = "", xlim = c(0.5, 12.5))
+  grid(nx = 0, ny = 4, col = "grey75", lty = "dashed", lwd = 0.7)
+  lines(qmon_cm1[, col_sel], col = col_gcm, lwd = line_lwd)
+  lines(qmon_cm2[, col_sel], col = col_gcm, lwd = line_lwd)
+  lines(qmon_cm3[, col_sel], col = col_gcm, lwd = line_lwd)
+  lines(qmon_cm4[, col_sel], col = col_gcm, lwd = line_lwd)
+  lines(qmon_cm5[, col_sel], col = col_gcm, lwd = line_lwd)
+  lines(qmon_obs[, col_sel], col = col_meas, lwd = line_lwd)
+  lines(qmon_eob[, col_sel], col = col_eobs, lwd = line_lwd)
+  points(qmon_cm1[, col_sel], bg = "grey25", col = "grey25", pch = 21, cex = point_cex)
+  points(qmon_cm2[, col_sel], bg = "grey25", col = "grey25", pch = 22, cex = point_cex)
+  points(qmon_cm3[, col_sel], bg = "grey25", col = "grey25", pch = 23, cex = point_cex)
+  points(qmon_cm4[, col_sel], bg = "grey25", col = "grey25", pch = 24, cex = point_cex)
+  points(qmon_cm5[, col_sel], bg = "grey25", col = "grey25", pch = 25, cex = point_cex)
+  points(qmon_obs[, col_sel], col = "steelblue4", pch = 19, cex = point_cex)
+  points(qmon_eob[, col_sel], col = "darkred", pch = 19, cex = point_cex)
+  axis(1, labels = x_labs, at = x_ats, mgp=c(3, 0.69, 0), tck = -0.0, cex.axis = 2.0)
+  axis(1, labels = F, at = x_tics, tck = -0.050)
+  axis(2, mgp=c(3, 0.21, 0), tck = -0.015, cex.axis = 2.5)
+  mtext(main, side = 3, adj = 0, cex = 2.2, line = 0.5)
+  box()
   
 }
 
+plot_month_quan(1, "a) Lobith")
 
+plot_month_quan(2, "b) Cologne")
+
+plot_month_quan(3, "c) Cochem")
+
+plot_month_quan(4, "d) Kaub")
+
+plot_month_quan(5, "e) Wuerzburg")
+
+plot_month_quan(6, "f) Worms")
+
+plot_month_quan(7, "g) Rockenau")
+
+plot_month_quan(8, "h) Speyer")
+
+plot_month_quan(9, "i) Basel")
+
+#Label y axis
+par(mar = c(0, 0, 0, 0))
+plot(1:10, 1:10, type = "n", ylab = "", xlab = "", axes = F)
+mtext(expression(paste("90 % Quantile discharge", " [m"^"3", "s"^"-1","]")), 
+      side = 2, line = -3.6, cex = 2.4)
+
+dev.off()
 
