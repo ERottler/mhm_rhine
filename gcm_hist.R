@@ -683,7 +683,7 @@ plot_doy <- function(doy_mea, doy_obs, doy_cm1, doy_cm2, doy_cm3, doy_cm4, doy_c
   boxplot(doy_df, boxfill = NA, border = NA, axes = F, ylim = ylims)
   axis(2, mgp=c(3, 0.55, 0), tck = -0.017, cex.axis = 2.5)
   mtext(y_lab, side = 2, line = 3.1, cex = 1.8)
-  grid(nx = 0, ny = 6, col = "grey55", lwd = 0.5)
+  abline(h = c(100, 200, 300), col = "grey55", lwd = 0.7, lty = "dashed")
   if(do_legend){
     legend(legend_pos, c("Hist.", "1.5K", "2.0K", "3.0K"), pch = 19, 
            col = c(col_hist, col_1p5K, col_2p0K, col_3p0K), cex = 1.3,
@@ -829,7 +829,7 @@ layout(matrix(c(10, 1, 2, 3,
 par(family = "serif")
 par(mar = c(2.5, 3.5, 3.0, 1.0))
 
-plot_month_quan <- function(col_sel, main = ""){
+plot_month_quan <- function(col_sel, main = "", set_horiz_grid = F, hori_grid = c(0, 100)){
   
   ylims <- range(qmon_obs[, col_sel], qmon_eob[, col_sel], qmon_cm1[, col_sel], qmon_cm2[, col_sel], 
                  qmon_cm3[, col_sel], qmon_cm4[, col_sel], qmon_cm5[, col_sel])
@@ -846,7 +846,12 @@ plot_month_quan <- function(col_sel, main = ""){
   
   plot(qmon_obs[, col_sel], type = "n", ylim = ylims, axes = F, ylab = "", 
        xlab = "", xlim = c(0.5, 12.5))
-  grid(nx = 0, ny = 4, col = "grey75", lty = "dashed", lwd = 0.7)
+  if(set_horiz_grid){
+    abline(h = hori_grid, lwd = 0.7, col = "grey75", lty = "dashed")
+  }else{
+    grid(nx = 0, ny = 4, col = "grey75", lty = "dashed", lwd = 0.7)  
+  }
+  
   lines(qmon_cm1[, col_sel], col = col_gcm, lwd = line_lwd)
   lines(qmon_cm2[, col_sel], col = col_gcm, lwd = line_lwd)
   lines(qmon_cm3[, col_sel], col = col_gcm, lwd = line_lwd)
@@ -869,23 +874,23 @@ plot_month_quan <- function(col_sel, main = ""){
   
 }
 
-plot_month_quan(1, "a) Lobith")
+plot_month_quan(1, "a) Lobith", set_horiz_grid = T, hori_grid = c(2500, 3500, 4500, 5500))
 
-plot_month_quan(2, "b) Cologne")
+plot_month_quan(2, "b) Cologne", set_horiz_grid = T, hori_grid = c(2500, 3500, 4500, 5500))
 
-plot_month_quan(3, "c) Cochem")
+plot_month_quan(3, "c) Cochem", set_horiz_grid = T, hori_grid = c(200, 400, 600, 800, 1000, 1200))
 
-plot_month_quan(4, "d) Kaub")
+plot_month_quan(4, "d) Kaub", set_horiz_grid = T, hori_grid = c(2000, 2500, 3000, 3500, 4000))
 
-plot_month_quan(5, "e) Wuerzburg")
+plot_month_quan(5, "e) Wuerzburg", set_horiz_grid = T, hori_grid = c(100, 200, 300, 400, 500, 600))
 
-plot_month_quan(6, "f) Worms")
+plot_month_quan(6, "f) Worms", set_horiz_grid = T, hori_grid = c(2000, 2500, 3000, 3500, 4000))
 
-plot_month_quan(7, "g) Rockenau")
+plot_month_quan(7, "g) Rockenau", set_horiz_grid = T, hori_grid = c(100, 200, 300, 400, 500, 600))
 
-plot_month_quan(8, "h) Speyer")
+plot_month_quan(8, "h) Speyer", set_horiz_grid = T, hori_grid = c(1600, 2000, 2400, 2800, 3200))
 
-plot_month_quan(9, "i) Basel")
+plot_month_quan(9, "i) Basel", set_horiz_grid = T, hori_grid = c(1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800))
 
 #Label y axis
 par(mar = c(0, 0, 0, 0))

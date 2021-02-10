@@ -1107,6 +1107,7 @@ gauges    <- sp::spTransform(gauges_84, CRS = raster::crs(dem, asText = T))
 
 #corp DEM sub-basin area
 my_ext <- raster::extent(basin_lobi_dem)
+# my_ext <- raster::extent(basin_koel_dem)
 # my_ext_buf <- my_ext + c(-20000, +150000, -10000, +250000) #xmin, xmax, ymin, ymax
 my_ext_buf <- my_ext + c(-1000, 1000, -1000, 1000) #xmin, xmax, ymin, ymax
 
@@ -1156,6 +1157,7 @@ dev.off()
 dem_1000 = raster::raster("D:/nrc_user/rottler/basin_data/eu_dem/processed/eu_dem_1000.tif")
 
 png(paste0(bas_dir, "res_figs/map_ins_raw_fut",".png"), width = 1000, height = 1000)
+# png(paste0(bas_dir, "res_figs/map_ins_raw_dis",".png"), width = 1000, height = 1000)
 
 par(bg=NA,mar=c(0,0,0,0),oma=c(0,0,0,0))
 
@@ -3025,7 +3027,7 @@ cols_spat_sim <- foreach(i = 1:length(scd_sim_ann), .combine = 'cbind') %dopar% 
 scd_dif <- (scd_sim - scd_dlr) / round(length(date_scd) / 365) #Calculate difference Obs. and Sim.
 cols_spat_dif <- foreach(i = 1:length(scd_dif), .combine = 'cbind') %dopar% {
   
-  val2col(val_in = scd_dif[i], 
+  <- val2col(val_in = scd_dif[i], 
           dat_ref = scd_dif,
           do_log = F,
           do_bicol = T)

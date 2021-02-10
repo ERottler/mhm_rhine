@@ -806,7 +806,7 @@ pmax_3p0K_8  <- f_max_mag_doy(prec_3p0K_8)
 
 #Snowmelt fraction streamflow peaks
 
-#fraction snowmelt preceding 14 days and snowmelt preceding 14 day plus liquid precipitation preceding 5 days
+#fraction snowmelt preceding 10 days and snowmelt preceding 10 day plus liquid precipitation preceding 5 days
 f_frac_max <- function(flux_in, prec_in, dmax_in){
   
   start_y <- as.numeric(format(flux_in$date[1], "%Y"))
@@ -906,6 +906,112 @@ max_frac_3p0K_6  <- f_frac_max(flux_3p0K_6, prec_3p0K_6, dmax_3p0K_6)
 max_frac_3p0K_7  <- f_frac_max(flux_3p0K_7, prec_3p0K_7, dmax_3p0K_7)
 max_frac_3p0K_8  <- f_frac_max(flux_3p0K_8, prec_3p0K_8, dmax_3p0K_8)
 
+
+#ET fraction streamflow peaks
+
+#fraction ET preceding 10 days and snowmelt preceding 10 day plus liquid precipitation preceding 5 days
+f_ETfrac_max <- function(flux_in, prec_in, dmax_in){
+  
+  start_y <- as.numeric(format(flux_in$date[1], "%Y"))
+  end_y <- as.numeric(format(flux_in$date[length(flux_in$date)], "%Y"))
+  
+  #sometimes flux values only starting 2.January
+  prec_in <- prec_in[which(prec_in$date %in% flux_in$date), ]
+  
+  frac_coch <- flux_in$coch_aev_ma / (flux_in$coch_melt_ma + prec_in$coch_pre_liq)
+  frac_base <- flux_in$base_aev_ma / (flux_in$base_melt_ma + prec_in$base_pre_liq)
+  
+  frac_coch_day <- ord_day(frac_coch,
+                           flux_in$date,
+                           start_y = start_y,
+                           end_y = end_y,
+                           break_day = 274)
+  
+  frac_base_day <- ord_day(frac_base,
+                           flux_in$date,
+                           start_y = start_y,
+                           end_y = end_y,
+                           break_day = 274)
+  
+  frac_max_coch <- NULL
+  frac_max_base <- NULL
+  for(i in 1:nrow(frac_coch_day)){
+    
+    #DOY discharge maximum minus one to get preceding 5/10 days
+    dmax_coch_sel <- dmax_in[i, 4] - 1
+    dmax_base_sel <- dmax_in[i, 6] - 1
+    
+    #if value is 1st of January then back to original DOY, i.e. 1
+    if(dmax_coch_sel == 0){
+      dmax_coch_sel = 1
+    }
+    
+    if(dmax_base_sel == 0){
+      dmax_base_sel = 1
+    }
+    
+    frac_max_coch <- c(frac_max_coch, as.numeric(frac_coch_day[i, dmax_coch_sel]))
+    frac_max_base <- c(frac_max_base, as.numeric(frac_base_day[i, dmax_base_sel]))
+  }
+  
+  frac_max_out <- data.frame(coch = frac_max_coch,
+                             base = frac_max_base)
+  
+  return(frac_max_out)
+  
+}
+
+#Melt fraction peaks: Historical
+max_ETfrac_hist_1 <- f_ETfrac_max(flux_hist_1, prec_hist_1, dmax_hist_1)
+max_ETfrac_hist_2 <- f_ETfrac_max(flux_hist_2, prec_hist_2, dmax_hist_2)
+max_ETfrac_hist_3 <- f_ETfrac_max(flux_hist_3, prec_hist_3, dmax_hist_3)
+max_ETfrac_hist_4 <- f_ETfrac_max(flux_hist_4, prec_hist_4, dmax_hist_4)
+max_ETfrac_hist_5 <- f_ETfrac_max(flux_hist_5, prec_hist_5, dmax_hist_5)
+
+#Melt fraction peaks: 1.5K warming
+max_ETfrac_1p5K_1  <- f_ETfrac_max(flux_1p5K_1, prec_1p5K_1, dmax_1p5K_1)
+max_ETfrac_1p5K_2  <- f_ETfrac_max(flux_1p5K_2, prec_1p5K_2, dmax_1p5K_2)
+max_ETfrac_1p5K_3  <- f_ETfrac_max(flux_1p5K_3, prec_1p5K_3, dmax_1p5K_3)
+max_ETfrac_1p5K_4  <- f_ETfrac_max(flux_1p5K_4, prec_1p5K_4, dmax_1p5K_4)
+max_ETfrac_1p5K_5  <- f_ETfrac_max(flux_1p5K_5, prec_1p5K_5, dmax_1p5K_5)
+max_ETfrac_1p5K_6  <- f_ETfrac_max(flux_1p5K_6, prec_1p5K_6, dmax_1p5K_6)
+max_ETfrac_1p5K_7  <- f_ETfrac_max(flux_1p5K_7, prec_1p5K_7, dmax_1p5K_7)
+max_ETfrac_1p5K_8  <- f_ETfrac_max(flux_1p5K_8, prec_1p5K_8, dmax_1p5K_8)
+max_ETfrac_1p5K_9  <- f_ETfrac_max(flux_1p5K_9, prec_1p5K_9, dmax_1p5K_9)
+max_ETfrac_1p5K_10 <- f_ETfrac_max(flux_1p5K_10, prec_1p5K_10, dmax_1p5K_10)
+max_ETfrac_1p5K_11 <- f_ETfrac_max(flux_1p5K_11, prec_1p5K_11, dmax_1p5K_11)
+max_ETfrac_1p5K_12 <- f_ETfrac_max(flux_1p5K_12, prec_1p5K_12, dmax_1p5K_12)
+max_ETfrac_1p5K_13 <- f_ETfrac_max(flux_1p5K_13, prec_1p5K_13, dmax_1p5K_13)
+max_ETfrac_1p5K_14 <- f_ETfrac_max(flux_1p5K_14, prec_1p5K_14, dmax_1p5K_14)
+
+#Melt ETfraction peaks: 2K warming
+max_ETfrac_2p0K_1  <- f_ETfrac_max(flux_2p0K_1, prec_2p0K_1, dmax_2p0K_1)
+max_ETfrac_2p0K_2  <- f_ETfrac_max(flux_2p0K_2, prec_2p0K_2, dmax_2p0K_2)
+max_ETfrac_2p0K_3  <- f_ETfrac_max(flux_2p0K_3, prec_2p0K_3, dmax_2p0K_3)
+max_ETfrac_2p0K_4  <- f_ETfrac_max(flux_2p0K_4, prec_2p0K_4, dmax_2p0K_4)
+max_ETfrac_2p0K_5  <- f_ETfrac_max(flux_2p0K_5, prec_2p0K_5, dmax_2p0K_5)
+max_ETfrac_2p0K_6  <- f_ETfrac_max(flux_2p0K_6, prec_2p0K_6, dmax_2p0K_6)
+max_ETfrac_2p0K_7  <- f_ETfrac_max(flux_2p0K_7, prec_2p0K_7, dmax_2p0K_7)
+max_ETfrac_2p0K_8  <- f_ETfrac_max(flux_2p0K_8, prec_2p0K_8, dmax_2p0K_8)
+max_ETfrac_2p0K_9  <- f_ETfrac_max(flux_2p0K_9, prec_2p0K_9, dmax_2p0K_9)
+max_ETfrac_2p0K_10 <- f_ETfrac_max(flux_2p0K_10, prec_2p0K_10, dmax_2p0K_10)
+max_ETfrac_2p0K_11 <- f_ETfrac_max(flux_2p0K_11, prec_2p0K_11, dmax_2p0K_11)
+max_ETfrac_2p0K_12 <- f_ETfrac_max(flux_2p0K_12, prec_2p0K_12, dmax_2p0K_12)
+max_ETfrac_2p0K_13 <- f_ETfrac_max(flux_2p0K_13, prec_2p0K_13, dmax_2p0K_13)
+
+#Melt ETfraction peaks: 3K warming
+max_ETfrac_3p0K_1  <- f_ETfrac_max(flux_3p0K_1, prec_3p0K_1, dmax_3p0K_1)
+max_ETfrac_3p0K_2  <- f_ETfrac_max(flux_3p0K_2, prec_3p0K_2, dmax_3p0K_2)
+max_ETfrac_3p0K_3  <- f_ETfrac_max(flux_3p0K_3, prec_3p0K_3, dmax_3p0K_3)
+max_ETfrac_3p0K_4  <- f_ETfrac_max(flux_3p0K_4, prec_3p0K_4, dmax_3p0K_4)
+max_ETfrac_3p0K_5  <- f_ETfrac_max(flux_3p0K_5, prec_3p0K_5, dmax_3p0K_5)
+max_ETfrac_3p0K_6  <- f_ETfrac_max(flux_3p0K_6, prec_3p0K_6, dmax_3p0K_6)
+max_ETfrac_3p0K_7  <- f_ETfrac_max(flux_3p0K_7, prec_3p0K_7, dmax_3p0K_7)
+max_ETfrac_3p0K_8  <- f_ETfrac_max(flux_3p0K_8, prec_3p0K_8, dmax_3p0K_8)
+
+
+
+
 #Put together Historical
 max_dis_mag_hist_koel <- c(dmax_hist_1[, 1],  dmax_hist_2[, 1],  dmax_hist_3[, 1],
                            dmax_hist_4[, 1],  dmax_hist_5[, 1])
@@ -923,6 +1029,10 @@ max_dis_fra_hist_base <- c(max_frac_hist_1$base,  max_frac_hist_2$base,  max_fra
                            max_frac_hist_4$base,  max_frac_hist_5$base)
 max_dis_fra_hist_coch <- c(max_frac_hist_1$coch,  max_frac_hist_2$coch,  max_frac_hist_3$coch,
                            max_frac_hist_4$coch,  max_frac_hist_5$coch)
+max_dis_fraET_hist_base <- c(max_ETfrac_hist_1$base,  max_ETfrac_hist_2$base,  max_ETfrac_hist_3$base,
+                           max_ETfrac_hist_4$base,  max_ETfrac_hist_5$base)
+max_dis_fraET_hist_coch <- c(max_ETfrac_hist_1$coch,  max_ETfrac_hist_2$coch,  max_ETfrac_hist_3$coch,
+                           max_ETfrac_hist_4$coch,  max_ETfrac_hist_5$coch)
 
 max_mel_mag_hist_base <- c(fmax_hist_1[, 1],  fmax_hist_2[, 1],  fmax_hist_3[, 1],
                            fmax_hist_4[, 1],  fmax_hist_5[, 1])
@@ -1001,6 +1111,17 @@ max_dis_fra_1p5K_coch <- c(max_frac_1p5K_1$coch,  max_frac_1p5K_2$coch,  max_fra
                            max_frac_1p5K_7$coch,  max_frac_1p5K_8$coch,  max_frac_1p5K_9$coch, 
                            max_frac_1p5K_10$coch, max_frac_1p5K_11$coch, max_frac_1p5K_12$coch, 
                            max_frac_1p5K_13$coch, max_frac_1p5K_14$coch)
+max_dis_fraET_1p5K_base <- c(max_ETfrac_1p5K_1$base,  max_ETfrac_1p5K_2$base,  max_ETfrac_1p5K_3$base,
+                           max_ETfrac_1p5K_4$base,  max_ETfrac_1p5K_5$base,  max_ETfrac_1p5K_6$base,
+                           max_ETfrac_1p5K_7$base,  max_ETfrac_1p5K_8$base,  max_ETfrac_1p5K_9$base, 
+                           max_ETfrac_1p5K_10$base, max_ETfrac_1p5K_11$base, max_ETfrac_1p5K_12$base, 
+                           max_ETfrac_1p5K_13$base, max_ETfrac_1p5K_14$base)
+max_dis_fraET_1p5K_coch <- c(max_ETfrac_1p5K_1$coch,  max_ETfrac_1p5K_2$coch,  max_ETfrac_1p5K_3$coch,
+                           max_ETfrac_1p5K_4$coch,  max_ETfrac_1p5K_5$coch,  max_ETfrac_1p5K_6$coch,
+                           max_ETfrac_1p5K_7$coch,  max_ETfrac_1p5K_8$coch,  max_ETfrac_1p5K_9$coch, 
+                           max_ETfrac_1p5K_10$coch, max_ETfrac_1p5K_11$coch, max_ETfrac_1p5K_12$coch, 
+                           max_ETfrac_1p5K_13$coch, max_ETfrac_1p5K_14$coch)
+
 
 max_mel_mag_1p5K_base <- c(fmax_1p5K_1[, 1],  fmax_1p5K_2[, 1],  fmax_1p5K_3[, 1],
                            fmax_1p5K_4[, 1],  fmax_1p5K_5[, 1],  fmax_1p5K_6[, 1],
@@ -1128,6 +1249,16 @@ max_dis_fra_2p0K_base <- c(max_frac_2p0K_1$base,  max_frac_2p0K_2$base,  max_fra
                            max_frac_2p0K_7$base,  max_frac_2p0K_8$base,  max_frac_2p0K_9$base, 
                            max_frac_2p0K_10$base, max_frac_2p0K_11$base, max_frac_2p0K_12$base, 
                            max_frac_2p0K_13$base)
+max_dis_fraET_2p0K_coch <- c(max_ETfrac_2p0K_1$coch,  max_ETfrac_2p0K_2$coch,  max_ETfrac_2p0K_3$coch,
+                           max_ETfrac_2p0K_4$coch,  max_ETfrac_2p0K_5$coch,  max_ETfrac_2p0K_6$coch,
+                           max_ETfrac_2p0K_7$coch,  max_ETfrac_2p0K_8$coch,  max_ETfrac_2p0K_9$coch, 
+                           max_ETfrac_2p0K_10$coch, max_ETfrac_2p0K_11$coch, max_ETfrac_2p0K_12$coch, 
+                           max_ETfrac_2p0K_13$coch)
+max_dis_fraET_2p0K_base <- c(max_ETfrac_2p0K_1$base,  max_ETfrac_2p0K_2$base,  max_ETfrac_2p0K_3$base,
+                           max_ETfrac_2p0K_4$base,  max_ETfrac_2p0K_5$base,  max_ETfrac_2p0K_6$base,
+                           max_ETfrac_2p0K_7$base,  max_ETfrac_2p0K_8$base,  max_ETfrac_2p0K_9$base, 
+                           max_ETfrac_2p0K_10$base, max_ETfrac_2p0K_11$base, max_ETfrac_2p0K_12$base, 
+                           max_ETfrac_2p0K_13$base)
 
 max_mel_mag_2p0K_base <- c(fmax_2p0K_1[, 1],  fmax_2p0K_2[, 1],  fmax_2p0K_3[, 1],
                            fmax_2p0K_4[, 1],  fmax_2p0K_5[, 1],  fmax_2p0K_6[, 1],
@@ -1238,6 +1369,12 @@ max_dis_fra_3p0K_coch <- c(max_frac_3p0K_1$coch,  max_frac_3p0K_2$coch,  max_fra
 max_dis_fra_3p0K_base <- c(max_frac_3p0K_1$base,  max_frac_3p0K_2$base,  max_frac_3p0K_3$base,
                            max_frac_3p0K_4$base,  max_frac_3p0K_5$base,  max_frac_3p0K_6$base,
                            max_frac_3p0K_7$base,  max_frac_3p0K_8$base)
+max_dis_fraET_3p0K_coch <- c(max_ETfrac_3p0K_1$coch,  max_ETfrac_3p0K_2$coch,  max_ETfrac_3p0K_3$coch,
+                           max_ETfrac_3p0K_4$coch,  max_ETfrac_3p0K_5$coch,  max_ETfrac_3p0K_6$coch,
+                           max_ETfrac_3p0K_7$coch,  max_ETfrac_3p0K_8$coch)
+max_dis_fraET_3p0K_base <- c(max_ETfrac_3p0K_1$base,  max_ETfrac_3p0K_2$base,  max_ETfrac_3p0K_3$base,
+                           max_ETfrac_3p0K_4$base,  max_ETfrac_3p0K_5$base,  max_ETfrac_3p0K_6$base,
+                           max_ETfrac_3p0K_7$base,  max_ETfrac_3p0K_8$base)
 
 max_mel_mag_3p0K_base <- c(fmax_3p0K_1[, 1],  fmax_3p0K_2[, 1],  fmax_3p0K_3[, 1],
                            fmax_3p0K_4[, 1],  fmax_3p0K_5[, 1],  fmax_3p0K_6[, 1],
@@ -1489,30 +1626,31 @@ dev.off()
 
 
 #Plot annual maxima additional features
-pdf(paste0(bas_dir,"res_figs/max_add_fut_raw.pdf"), width = 12, height = 14)
+pdf(paste0(bas_dir,"res_figs/max_add_fut_raw.pdf"), width = 12, height = 16)
 
 par(family = "serif")
 
-layout(matrix(c(13, 13, 13,
-                14, 1, 2,
-                14, 3, 4,
-                14, 5, 6,
-                14, 7, 8,
-                14, 9, 10,
-                14, 11, 12),
-              7, 3, byrow = T), widths=c(0.12, 1, 1), heights=c(0.100, rep(1, 6)))
+layout(matrix(c(15, 15, 15,
+                16, 1, 2,
+                16, 3, 4,
+                16, 5, 6,
+                16, 7, 8,
+                16, 9, 10,
+                16, 11, 12,
+                16, 13, 14),
+              8, 3, byrow = T), widths=c(0.14, 1, 1), heights=c(0.100, rep(1, 7)))
 # layout.show(n = 12)
 
 par(mar = c(1.5, 3.0, 2.5, 0.5))
 
 #Melt fraction
-plot_box(max_dis_fra_hist_base, max_dis_fra_1p5K_base, max_dis_fra_2p0K_base, max_dis_fra_3p0K_base,
-         y_lab = "[-]", do_legend = F, legend_pos = "topright", main_header = "(a)",
-         set_horiz_grid = T, hori_grid = seq(0, 1, 0.2), calc_ylims = F, ylims_in = c(0, 0.95))
+plot_box(max_dis_fra_hist_base*100, max_dis_fra_1p5K_base*100, max_dis_fra_2p0K_base*100, max_dis_fra_3p0K_base*100,
+         y_lab = "[%]", do_legend = F, legend_pos = "topright", main_header = "(a)",
+         set_horiz_grid = T, hori_grid = seq(0, 100, 20), calc_ylims = F, ylims_in = c(0, 95))
 
-plot_box(max_dis_fra_hist_coch, max_dis_fra_1p5K_coch, max_dis_fra_2p0K_coch, max_dis_fra_3p0K_coch,
+plot_box(max_dis_fra_hist_coch*100, max_dis_fra_1p5K_coch*100, max_dis_fra_2p0K_coch*100, max_dis_fra_3p0K_coch*100,
          y_lab = "", main_header = "(b)", pos_main = 1.0,
-         set_horiz_grid = T, hori_grid = seq(0, 1, 0.2), calc_ylims = F, ylims_in = c(0, 0.95))
+         set_horiz_grid = T, hori_grid = seq(0, 100, 20), calc_ylims = F, ylims_in = c(0, 95))
 
 #Melt magnitude
 plot_box(max_mel_mag_hist_base, max_mel_mag_1p5K_base, max_mel_mag_2p0K_base, max_mel_mag_3p0K_base,
@@ -1544,20 +1682,29 @@ plot_box(max_prt_mag_hist_coch, max_prt_mag_1p5K_coch, max_prt_mag_2p0K_coch, ma
 #Precipitation liquid magnitude
 plot_box(max_prl_mag_hist_base, max_prl_mag_1p5K_base, max_prl_mag_2p0K_base, max_prl_mag_3p0K_base,
          y_lab = "[mm]", calc_ylims = F, main_header = "(i)",
-         set_horiz_grid = T, hori_grid = seq(0, 180, 20), ylims_in = c(28, 165))
+         set_horiz_grid = T, hori_grid = seq(0, 180, 40), ylims_in = c(28, 165))
 
 plot_box(max_prl_mag_hist_coch, max_prl_mag_1p5K_coch, max_prl_mag_2p0K_coch, max_prl_mag_3p0K_coch,
          y_lab = "", calc_ylims = F, main_header = "(j)", pos_main = 1.0,
-         set_horiz_grid = T, hori_grid = seq(0, 180, 20), ylims_in = c(28, 165))
+         set_horiz_grid = T, hori_grid = seq(0, 180, 40), ylims_in = c(28, 165))
+
+#ET fraction
+plot_box(max_dis_fraET_hist_base*100, max_dis_fraET_1p5K_base*100, max_dis_fraET_2p0K_base*100, max_dis_fraET_3p0K_base*100,
+         y_lab = "[%]", do_legend = F, legend_pos = "topright", main_header = "(k)",
+         set_horiz_grid = T, hori_grid = seq(0, 100, 20), calc_ylims = F, ylims_in = c(0, 85))
+
+plot_box(max_dis_fraET_hist_coch*100, max_dis_fraET_1p5K_coch*100, max_dis_fraET_2p0K_coch*100, max_dis_fraET_3p0K_coch*100,
+         y_lab = "", main_header = "(l)", pos_main = 1.0,
+         set_horiz_grid = T, hori_grid = seq(0, 100, 20), calc_ylims = F, ylims_in = c(0, 85))
 
 #Actual evapotranspiration magnitude
 plot_box(max_aev_mag_hist_base, max_aev_mag_1p5K_base, max_aev_mag_2p0K_base, max_aev_mag_3p0K_base,
-         y_lab = "[mm]", calc_ylims = F, main_header = "(k)",
-         set_horiz_grid = T, hori_grid = c(25, 35, 45), ylims_in = c(24, 48))
+         y_lab = "[mm]", calc_ylims = F, main_header = "(m)",
+         set_horiz_grid = T, hori_grid = c(25, 30, 35, 40, 45), ylims_in = c(24, 48))
 
 plot_box(max_aev_mag_hist_coch, max_aev_mag_1p5K_coch, max_aev_mag_2p0K_coch, max_aev_mag_3p0K_coch,
-         y_lab = "", calc_ylims = F, main_header = "(l)", pos_main = 1.0,
-         set_horiz_grid = T, hori_grid = c(25, 35, 45), ylims_in = c(24, 48))
+         y_lab = "", calc_ylims = F, main_header = "(n)", pos_main = 1.0,
+         set_horiz_grid = T, hori_grid = c(25, 30, 35, 40, 45), ylims_in = c(24, 48))
 
 #Gauging station
 cex_header <- 2.2
@@ -1570,19 +1717,15 @@ mtext("Cochem",
       side = 3, line = -3.5, cex = cex_header+0.0, adj = 0.885)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Melt fract.",  side = 2, line = -2.2, cex = cex_header, adj = 0.935, outer = T)
-mtext("Melt mag.",  side = 2, line = -2.2, cex = cex_header, adj = 0.76, outer = T)
-mtext("Melt tim.",  side = 2, line = -2.2, cex = cex_header, adj = 0.58, outer = T)
-mtext("Prec. tot.",  side = 2, line = -2.2, cex = cex_header, adj = 0.395, outer = T)
-mtext("Prec. liq.",  side = 2, line = -2.2, cex = cex_header, adj = 0.215, outer = T)
-mtext("Act. ET",  side = 2, line = -2.2, cex = cex_header, adj = 0.045, outer = T)
+mtext(expression(paste("S"[frac])),  side = 2, line = -2.6, cex = cex_header, adj = 0.927, outer = T)
+mtext(expression(paste("S"[max10])),  side = 2, line = -2.6, cex = cex_header, adj = 0.787, outer = T)
+mtext(expression(paste("S"[max10])),  side = 2, line = -2.6, cex = cex_header, adj = 0.638, outer = T)
+mtext(expression(paste("P"[max5], " "[tot.])),  side = 2, line = -2.6, cex = cex_header, adj = 0.490, outer = T)
+mtext(expression(paste("P"[max5], " "[liq.])),  side = 2, line = -2.9, cex = cex_header, adj = 0.337, outer = T)
+mtext(expression(paste("ET"[loss])),  side = 2, line = -2.6, cex = cex_header, adj = 0.192, outer = T)
+mtext(expression(paste("ET"[max10])),  side = 2, line = -2.6, cex = cex_header, adj = 0.037, outer = T)
 
 dev.off()
-
-
-
-
-
 
 
 
@@ -1601,25 +1744,7 @@ annu_flu <- function(flux_in){
                           end_y = end_y,
                           break_day = 274)
   
-  lpr_base_day <- ord_day(data_in = flux_in$base_lpre_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  fra_base_day <- ord_day(data_in = flux_in$base_frac,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
   ele_base_day <- ord_day(data_in = flux_in$base_mel_ele,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  aev_base_day <- ord_day(data_in = flux_in$base_aev_ma,
                           date = date,
                           start_y = start_y,
                           end_y = end_y,
@@ -1631,91 +1756,23 @@ annu_flu <- function(flux_in){
                           end_y = end_y,
                           break_day = 274)
   
-  lpr_coch_day <- ord_day(data_in = flux_in$coch_lpre_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  fra_coch_day <- ord_day(data_in = flux_in$coch_frac,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
   ele_coch_day <- ord_day(data_in = flux_in$coch_mel_ele,
                           date = date,
                           start_y = start_y,
                           end_y = end_y,
                           break_day = 274)
   
-  aev_coch_day <- ord_day(data_in = flux_in$coch_aev_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  mel_koel_day <- ord_day(data_in = flux_in$koel_melt_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  lpr_koel_day <- ord_day(data_in = flux_in$koel_lpre_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  fra_koel_day <- ord_day(data_in = flux_in$koel_frac,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  ele_koel_day <- ord_day(data_in = flux_in$koel_mel_ele,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
-  
-  aev_koel_day <- ord_day(data_in = flux_in$koel_aev_ma,
-                          date = date,
-                          start_y = start_y,
-                          end_y = end_y,
-                          break_day = 274)
   
   mel_base_mea <- apply(mel_base_day, 2, mea_na)
   mel_coch_mea <- apply(mel_coch_day, 2, mea_na)
-  mel_koel_mea <- apply(mel_koel_day, 2, mea_na)
-  lpr_base_mea <- apply(lpr_base_day, 2, mea_na)
-  lpr_coch_mea <- apply(lpr_coch_day, 2, mea_na)
-  lpr_koel_mea <- apply(lpr_koel_day, 2, mea_na)
-  fra_base_mea <- apply(fra_base_day, 2, mea_na)
-  fra_coch_mea <- apply(fra_coch_day, 2, mea_na)
-  fra_koel_mea <- apply(fra_koel_day, 2, mea_na)
   ele_base_mea <- apply(ele_base_day, 2, mea_na)
   ele_coch_mea <- apply(ele_coch_day, 2, mea_na)
-  ele_koel_mea <- apply(ele_koel_day, 2, mea_na)
-  aev_base_mea <- apply(aev_base_day, 2, mea_na)
-  aev_coch_mea <- apply(aev_coch_day, 2, mea_na)
-  aev_koel_mea <- apply(aev_koel_day, 2, mea_na)
-  
+
   fra_mea_out <- data.frame(mel_base_mea = mel_base_mea, 
                             mel_coch_mea = mel_coch_mea,
-                            mel_koel_mea = mel_koel_mea,
-                            lpr_base_mea = lpr_base_mea,
-                            lpr_coch_mea = lpr_coch_mea,
-                            lpr_koel_mea = lpr_koel_mea,
-                            fra_base_mea = fra_base_mea, 
-                            fra_coch_mea = fra_coch_mea,
-                            fra_koel_mea = fra_koel_mea,
                             ele_base_mea = ele_base_mea,
-                            ele_coch_mea = ele_coch_mea,
-                            ele_koel_mea = ele_koel_mea,
-                            aev_base_mea = aev_base_mea,
-                            aev_coch_mea = aev_coch_mea,
-                            aev_koel_mea = aev_koel_mea)
+                            ele_coch_mea = ele_coch_mea
+                            )
   
   return(fra_mea_out)
   
@@ -1726,26 +1783,13 @@ annu_pre <- function(prec_in){
   start_y <- as.numeric(format(date[1], "%Y"))
   end_y <- as.numeric(format(date[length(date)], "%Y"))
   
-  base_pre_tot_ms <- rollapply(data = prec_in$base_pre_tot, width = 5,
-                               FUN = sum_na, align = "right", fill = NA)
-  coch_pre_tot_ms <- rollapply(data = prec_in$coch_pre_tot, width = 5,
-                               FUN = sum_na, align = "right", fill = NA)
-  koel_pre_tot_ms <- rollapply(data = prec_in$koel_pre_tot, width = 5,
-                               FUN = sum_na, align = "right", fill = NA)
-  
-  base_pre_tot_day <- ord_day(data_in = base_pre_tot_ms,
+  base_pre_tot_day <- ord_day(data_in = prec_in$base_pre_tot,
                               date = date,
                               start_y = start_y,
                               end_y = end_y,
                               break_day = 274)
   
-  coch_pre_tot_day <- ord_day(data_in = coch_pre_tot_ms,
-                              date = date,
-                              start_y = start_y,
-                              end_y = end_y,
-                              break_day = 274)
-  
-  koel_pre_tot_day <- ord_day(data_in = koel_pre_tot_ms,
+  coch_pre_tot_day <- ord_day(data_in = prec_in$coch_pre_tot,
                               date = date,
                               start_y = start_y,
                               end_y = end_y,
@@ -1763,12 +1807,6 @@ annu_pre <- function(prec_in){
                               end_y = end_y,
                               break_day = 274)
   
-  koel_pre_liq_day <- ord_day(data_in = prec_in$koel_pre_liq,
-                              date = date,
-                              start_y = start_y,
-                              end_y = end_y,
-                              break_day = 274)
-  
   base_pro_eff_day <- ord_day(data_in = prec_in$base_pro_eff,
                               date = date,
                               start_y = start_y,
@@ -1781,68 +1819,90 @@ annu_pre <- function(prec_in){
                               end_y = end_y,
                               break_day = 274)
   
-  koel_pro_eff_day <- ord_day(data_in = prec_in$koel_pro_eff,
-                              date = date,
-                              start_y = start_y,
-                              end_y = end_y,
-                              break_day = 274)
-  
   base_pre_tot_mea <- apply(base_pre_tot_day, 2, mea_na)
   coch_pre_tot_mea <- apply(coch_pre_tot_day, 2, mea_na)
-  koel_pre_tot_mea <- apply(koel_pre_tot_day, 2, mea_na)
   base_pre_liq_mea <- apply(base_pre_liq_day, 2, mea_na)
   coch_pre_liq_mea <- apply(coch_pre_liq_day, 2, mea_na)
-  koel_pre_liq_mea <- apply(koel_pre_liq_day, 2, mea_na)
   base_pro_eff_mea <- apply(base_pro_eff_day, 2, mea_na)
   coch_pro_eff_mea <- apply(coch_pro_eff_day, 2, mea_na)
-  koel_pro_eff_mea <- apply(koel_pro_eff_day, 2, mea_na)
   
   fra_mea_out <- data.frame(base_pre_tot = base_pre_tot_mea, 
                             coch_pre_tot = coch_pre_tot_mea,
-                            koel_pre_tot = koel_pre_tot_mea,
                             base_pre_liq = base_pre_liq_mea, 
                             coch_pre_liq = coch_pre_liq_mea,
-                            koel_pre_liq = koel_pre_liq_mea,
                             base_pro_eff = base_pro_eff_mea, 
-                            coch_pro_eff = coch_pro_eff_mea,
-                            koel_pro_eff = koel_pro_eff_mea)
+                            coch_pro_eff = coch_pro_eff_mea
+                            )
   
   return(fra_mea_out)
   
 }
-annu_dis <- function(disc_in){
+annu_fra <- function(flux_in, prec_in){
   
-  date <- disc_in$date
-  start_y <- as.numeric(format(date[1], "%Y"))
-  end_y <- as.numeric(format(date[length(date)], "%Y"))
+  start_y <- as.numeric(format(flux_in$date[1], "%Y"))
+  end_y <- as.numeric(format(flux_in$date[length(flux_in$date)], "%Y"))
   
-  base_disc_day <- ord_day(data_in = disc_in$base,
-                              date = date,
-                              start_y = start_y,
-                              end_y = end_y,
-                              break_day = 274)
+  #sometimes flux values only starting 2.January
+  prec_in <- prec_in[which(prec_in$date %in% flux_in$date), ]
   
-  coch_disc_day <- ord_day(data_in = disc_in$coch,
-                           date = date,
+  frac_coch <- flux_in$coch_melt_ma / (flux_in$coch_melt_ma + prec_in$coch_pre_liq)
+  frac_base <- flux_in$base_melt_ma / (flux_in$base_melt_ma + prec_in$base_pre_liq)
+  
+  frac_coch_day <- ord_day(frac_coch,
+                           flux_in$date,
                            start_y = start_y,
                            end_y = end_y,
                            break_day = 274)
   
-  koel_disc_day <- ord_day(data_in = disc_in$koel,
-                           date = date,
+  frac_base_day <- ord_day(frac_base,
+                           flux_in$date,
                            start_y = start_y,
                            end_y = end_y,
                            break_day = 274)
   
-  base_dis_mea <- apply(base_disc_day, 2, mea_na)
-  coch_dis_mea <- apply(coch_disc_day, 2, mea_na)
-  koel_dis_mea <- apply(koel_disc_day, 2, mea_na)
+  fra_base_mea <- apply(frac_base_day, 2, mea_na)
+  fra_coch_mea <- apply(frac_coch_day, 2, mea_na)
   
-  dis_mea_out <- data.frame(base_dis = base_dis_mea, 
-                            coch_dis = coch_dis_mea,
-                            koel_dis = koel_dis_mea)
+  fra_mea_out <- data.frame(fra_base_mea = fra_base_mea, 
+                            fra_coch_mea = fra_coch_mea
+  )
   
-  return(dis_mea_out)
+  
+  return(fra_mea_out)
+  
+}
+annu_fraET <- function(flux_in, prec_in){
+  
+  start_y <- as.numeric(format(flux_in$date[1], "%Y"))
+  end_y <- as.numeric(format(flux_in$date[length(flux_in$date)], "%Y"))
+  
+  #sometimes flux values only starting 2.January
+  prec_in <- prec_in[which(prec_in$date %in% flux_in$date), ]
+  
+  frac_coch <- flux_in$coch_aev_ma / (flux_in$coch_melt_ma + prec_in$coch_pre_liq)
+  frac_base <- flux_in$base_aev_ma / (flux_in$base_melt_ma + prec_in$base_pre_liq)
+  
+  frac_coch_day <- ord_day(frac_coch,
+                           flux_in$date,
+                           start_y = start_y,
+                           end_y = end_y,
+                           break_day = 274)
+  
+  frac_base_day <- ord_day(frac_base,
+                           flux_in$date,
+                           start_y = start_y,
+                           end_y = end_y,
+                           break_day = 274)
+  
+  fra_base_mea <- apply(frac_base_day, 2, med_na)
+  fra_coch_mea <- apply(frac_coch_day, 2, med_na)
+  
+  fra_mea_out <- data.frame(fra_base_mea = fra_base_mea, 
+                            fra_coch_mea = fra_coch_mea
+  )
+  
+  
+  return(fra_mea_out)
   
 }
 
@@ -1859,99 +1919,67 @@ ann_pre_hist_3 <- annu_pre(prec_hist_3)
 ann_pre_hist_4 <- annu_pre(prec_hist_4)
 ann_pre_hist_5 <- annu_pre(prec_hist_5)
 
-ann_dis_hist_1 <- annu_dis(disc_hist_1)
-ann_dis_hist_2 <- annu_dis(disc_hist_2)
-ann_dis_hist_3 <- annu_dis(disc_hist_3)
-ann_dis_hist_4 <- annu_dis(disc_hist_4)
-ann_dis_hist_5 <- annu_dis(disc_hist_5)
+ann_fra_hist_1 <- annu_fra(flux_hist_1, prec_hist_1)
+ann_fra_hist_2 <- annu_fra(flux_hist_2, prec_hist_2)
+ann_fra_hist_3 <- annu_fra(flux_hist_3, prec_hist_3)
+ann_fra_hist_4 <- annu_fra(flux_hist_4, prec_hist_4)
+ann_fra_hist_5 <- annu_fra(flux_hist_5, prec_hist_5)
+
+ann_fraET_hist_1 <- annu_fraET(flux_hist_1, prec_hist_1)
+ann_fraET_hist_2 <- annu_fraET(flux_hist_2, prec_hist_2)
+ann_fraET_hist_3 <- annu_fraET(flux_hist_3, prec_hist_3)
+ann_fraET_hist_4 <- annu_fraET(flux_hist_4, prec_hist_4)
+ann_fraET_hist_5 <- annu_fraET(flux_hist_5, prec_hist_5)
 
 ann_mel_hist_base_all <- cbind(ann_flu_hist_1$mel_base_mea, ann_flu_hist_2$mel_base_mea, ann_flu_hist_3$mel_base_mea,
                                ann_flu_hist_4$mel_base_mea, ann_flu_hist_5$mel_base_mea)
 ann_mel_hist_coch_all <- cbind(ann_flu_hist_1$mel_coch_mea, ann_flu_hist_2$mel_coch_mea, ann_flu_hist_3$mel_coch_mea,
                                ann_flu_hist_4$mel_coch_mea, ann_flu_hist_5$mel_coch_mea)
-ann_mel_hist_koel_all <- cbind(ann_flu_hist_1$mel_koel_mea, ann_flu_hist_2$mel_koel_mea, ann_flu_hist_3$mel_koel_mea,
-                               ann_flu_hist_4$mel_koel_mea, ann_flu_hist_5$mel_koel_mea)
-ann_lpr_hist_base_all <- cbind(ann_flu_hist_1$lpr_base_mea, ann_flu_hist_2$lpr_base_mea, ann_flu_hist_3$lpr_base_mea,
-                               ann_flu_hist_4$lpr_base_mea, ann_flu_hist_5$lpr_base_mea)
-ann_lpr_hist_coch_all <- cbind(ann_flu_hist_1$lpr_coch_mea, ann_flu_hist_2$lpr_coch_mea, ann_flu_hist_3$lpr_coch_mea,
-                               ann_flu_hist_4$lpr_coch_mea, ann_flu_hist_5$lpr_coch_mea)
-ann_lpr_hist_koel_all <- cbind(ann_flu_hist_1$lpr_koel_mea, ann_flu_hist_2$lpr_koel_mea, ann_flu_hist_3$lpr_koel_mea,
-                               ann_flu_hist_4$lpr_koel_mea, ann_flu_hist_5$lpr_koel_mea)
-ann_fra_hist_base_all <- cbind(ann_flu_hist_1$fra_base_mea, ann_flu_hist_2$fra_base_mea, ann_flu_hist_3$fra_base_mea,
-                               ann_flu_hist_4$fra_base_mea, ann_flu_hist_5$fra_base_mea)
-ann_fra_hist_coch_all <- cbind(ann_flu_hist_1$fra_coch_mea, ann_flu_hist_2$fra_coch_mea, ann_flu_hist_3$fra_coch_mea,
-                               ann_flu_hist_4$fra_coch_mea, ann_flu_hist_5$fra_coch_mea)
-ann_fra_hist_koel_all <- cbind(ann_flu_hist_1$fra_koel_mea, ann_flu_hist_2$fra_koel_mea, ann_flu_hist_3$fra_koel_mea,
-                               ann_flu_hist_4$fra_koel_mea, ann_flu_hist_5$fra_koel_mea)
 ann_ele_hist_base_all <- cbind(ann_flu_hist_1$ele_base_mea, ann_flu_hist_2$ele_base_mea, ann_flu_hist_3$ele_base_mea,
                                ann_flu_hist_4$ele_base_mea, ann_flu_hist_5$ele_base_mea)
 ann_ele_hist_coch_all <- cbind(ann_flu_hist_1$ele_coch_mea, ann_flu_hist_2$ele_coch_mea, ann_flu_hist_3$ele_coch_mea,
                                ann_flu_hist_4$ele_coch_mea, ann_flu_hist_5$ele_coch_mea)
-ann_ele_hist_koel_all <- cbind(ann_flu_hist_1$ele_koel_mea, ann_flu_hist_2$ele_koel_mea, ann_flu_hist_3$ele_koel_mea,
-                               ann_flu_hist_4$ele_koel_mea, ann_flu_hist_5$ele_koel_mea)
-ann_aev_hist_base_all <- cbind(ann_flu_hist_1$aev_base_mea, ann_flu_hist_2$aev_base_mea, ann_flu_hist_3$aev_base_mea,
-                               ann_flu_hist_4$aev_base_mea, ann_flu_hist_5$aev_base_mea)
-ann_aev_hist_coch_all <- cbind(ann_flu_hist_1$aev_coch_mea, ann_flu_hist_2$aev_coch_mea, ann_flu_hist_3$aev_coch_mea,
-                               ann_flu_hist_4$aev_coch_mea, ann_flu_hist_5$aev_coch_mea)
-ann_aev_hist_koel_all <- cbind(ann_flu_hist_1$aev_koel_mea, ann_flu_hist_2$aev_koel_mea, ann_flu_hist_3$aev_koel_mea,
-                               ann_flu_hist_4$aev_koel_mea, ann_flu_hist_5$aev_koel_mea)
-
 
 ann_prt_hist_base_all <- cbind(ann_pre_hist_1$base_pre_tot, ann_pre_hist_2$base_pre_tot, ann_pre_hist_3$base_pre_tot,
                                ann_pre_hist_4$base_pre_tot, ann_pre_hist_5$base_pre_tot)
 ann_prt_hist_coch_all <- cbind(ann_pre_hist_1$coch_pre_tot, ann_pre_hist_2$coch_pre_tot, ann_pre_hist_3$coch_pre_tot,
                                ann_pre_hist_4$coch_pre_tot, ann_pre_hist_5$coch_pre_tot)
-ann_prt_hist_koel_all <- cbind(ann_pre_hist_1$koel_pre_tot, ann_pre_hist_2$koel_pre_tot, ann_pre_hist_3$koel_pre_tot,
-                               ann_pre_hist_4$koel_pre_tot, ann_pre_hist_5$koel_pre_tot)
 ann_prl_hist_base_all <- cbind(ann_pre_hist_1$base_pre_liq, ann_pre_hist_2$base_pre_liq, ann_pre_hist_3$base_pre_liq,
                                ann_pre_hist_4$base_pre_liq, ann_pre_hist_5$base_pre_liq)
 ann_prl_hist_coch_all <- cbind(ann_pre_hist_1$coch_pre_liq, ann_pre_hist_2$coch_pre_liq, ann_pre_hist_3$coch_pre_liq,
                                ann_pre_hist_4$coch_pre_liq, ann_pre_hist_5$coch_pre_liq)
-ann_prl_hist_koel_all <- cbind(ann_pre_hist_1$koel_pre_liq, ann_pre_hist_2$koel_pre_liq, ann_pre_hist_3$koel_pre_liq,
-                               ann_pre_hist_4$koel_pre_liq, ann_pre_hist_5$koel_pre_liq)
 ann_eff_hist_base_all <- cbind(ann_pre_hist_1$base_pro_eff, ann_pre_hist_2$base_pro_eff, ann_pre_hist_3$base_pro_eff,
                                ann_pre_hist_4$base_pro_eff, ann_pre_hist_5$base_pro_eff)
 ann_eff_hist_coch_all <- cbind(ann_pre_hist_1$coch_pro_eff, ann_pre_hist_2$coch_pro_eff, ann_pre_hist_3$coch_pro_eff,
                                ann_pre_hist_4$coch_pro_eff, ann_pre_hist_5$coch_pro_eff)
-ann_eff_hist_koel_all <- cbind(ann_pre_hist_1$koel_pro_eff, ann_pre_hist_2$koel_pro_eff, ann_pre_hist_3$koel_pro_eff,
-                               ann_pre_hist_4$koel_pro_eff, ann_pre_hist_5$koel_pro_eff)
 
-ann_dis_hist_base_all <- cbind(ann_dis_hist_1$base_dis, ann_dis_hist_2$base_dis, ann_dis_hist_3$base_dis,
-                               ann_dis_hist_4$base_dis, ann_dis_hist_5$base_dis)
-ann_dis_hist_coch_all <- cbind(ann_dis_hist_1$coch_dis, ann_dis_hist_2$coch_dis, ann_dis_hist_3$coch_dis,
-                               ann_dis_hist_4$coch_dis, ann_dis_hist_5$coch_dis)
-ann_dis_hist_koel_all <- cbind(ann_dis_hist_1$koel_dis, ann_dis_hist_2$koel_dis, ann_dis_hist_3$koel_dis,
-                               ann_dis_hist_4$koel_dis, ann_dis_hist_5$koel_dis)
+ann_fra_hist_base_all <- cbind(ann_fra_hist_1$fra_base_mea, ann_fra_hist_2$fra_base_mea, ann_fra_hist_3$fra_base_mea,
+                               ann_fra_hist_4$fra_base_mea, ann_fra_hist_5$fra_base_mea)
+ann_fra_hist_coch_all <- cbind(ann_fra_hist_1$fra_coch_mea, ann_fra_hist_2$fra_coch_mea, ann_fra_hist_3$fra_coch_mea,
+                               ann_fra_hist_4$fra_coch_mea, ann_fra_hist_5$fra_coch_mea)
+
+ann_fraET_hist_base_all <- cbind(ann_fraET_hist_1$fra_base_mea, ann_fraET_hist_2$fra_base_mea, ann_fraET_hist_3$fra_base_mea,
+                                 ann_fraET_hist_4$fra_base_mea, ann_fraET_hist_5$fra_base_mea)
+ann_fraET_hist_coch_all <- cbind(ann_fraET_hist_1$fra_coch_mea, ann_fraET_hist_2$fra_coch_mea, ann_fraET_hist_3$fra_coch_mea,
+                                 ann_fraET_hist_4$fra_coch_mea, ann_fraET_hist_5$fra_coch_mea)
 
 ann_mel_hist_base <- apply(ann_mel_hist_base_all, 1, mea_na)
 ann_mel_hist_coch <- apply(ann_mel_hist_coch_all, 1, mea_na)
-ann_mel_hist_koel <- apply(ann_mel_hist_koel_all, 1, mea_na)
-ann_lpr_hist_base <- apply(ann_lpr_hist_base_all, 1, mea_na)
-ann_lpr_hist_coch <- apply(ann_lpr_hist_coch_all, 1, mea_na)
-ann_lpr_hist_koel <- apply(ann_lpr_hist_koel_all, 1, mea_na)
-ann_fra_hist_base <- apply(ann_fra_hist_base_all, 1, mea_na)
-ann_fra_hist_coch <- apply(ann_fra_hist_coch_all, 1, mea_na)
-ann_fra_hist_koel <- apply(ann_fra_hist_koel_all, 1, mea_na)
 ann_ele_hist_base <- apply(ann_ele_hist_base_all, 1, mea_na)
 ann_ele_hist_coch <- apply(ann_ele_hist_coch_all, 1, mea_na)
-ann_ele_hist_koel <- apply(ann_ele_hist_koel_all, 1, mea_na)
-ann_aev_hist_base <- apply(ann_aev_hist_base_all, 1, mea_na)
-ann_aev_hist_coch <- apply(ann_aev_hist_coch_all, 1, mea_na)
-ann_aev_hist_koel <- apply(ann_aev_hist_koel_all, 1, mea_na)
 
 ann_prt_hist_base <- apply(ann_prt_hist_base_all, 1, mea_na)
 ann_prt_hist_coch <- apply(ann_prt_hist_coch_all, 1, mea_na)
-ann_prt_hist_koel <- apply(ann_prt_hist_koel_all, 1, mea_na)
 ann_prl_hist_base <- apply(ann_prl_hist_base_all, 1, mea_na)
 ann_prl_hist_coch <- apply(ann_prl_hist_coch_all, 1, mea_na)
-ann_prl_hist_koel <- apply(ann_prl_hist_koel_all, 1, mea_na)
 ann_eff_hist_base <- apply(ann_eff_hist_base_all, 1, mea_na)
 ann_eff_hist_coch <- apply(ann_eff_hist_coch_all, 1, mea_na)
-ann_eff_hist_koel <- apply(ann_eff_hist_koel_all, 1, mea_na)
 
-ann_dis_hist_base <- apply(ann_dis_hist_base_all, 1, mea_na)
-ann_dis_hist_coch <- apply(ann_dis_hist_coch_all, 1, mea_na)
-ann_dis_hist_koel <- apply(ann_dis_hist_koel_all, 1, mea_na)
+ann_fra_hist_base <- apply(ann_fra_hist_base_all, 1, mea_na)
+ann_fra_hist_coch <- apply(ann_fra_hist_coch_all, 1, mea_na)
+
+ann_fraET_hist_base <- apply(ann_fraET_hist_base_all, 1, med_na)
+ann_fraET_hist_coch <- apply(ann_fraET_hist_coch_all, 1, med_na)
 
 #1.5K warming level
 ann_flu_1p5K_1 <-  annu_flu(flux_1p5K_1)
@@ -1984,20 +2012,35 @@ ann_pre_1p5K_12 <- annu_pre(prec_1p5K_12)
 ann_pre_1p5K_13 <- annu_pre(prec_1p5K_13)
 ann_pre_1p5K_14 <- annu_pre(prec_1p5K_14)
 
-ann_dis_1p5K_1 <-  annu_dis(disc_1p5K_1)
-ann_dis_1p5K_2 <-  annu_dis(disc_1p5K_2)
-ann_dis_1p5K_3 <-  annu_dis(disc_1p5K_3)
-ann_dis_1p5K_4 <-  annu_dis(disc_1p5K_4)
-ann_dis_1p5K_5 <-  annu_dis(disc_1p5K_5)
-ann_dis_1p5K_6 <-  annu_dis(disc_1p5K_6)
-ann_dis_1p5K_7 <-  annu_dis(disc_1p5K_7)
-ann_dis_1p5K_8 <-  annu_dis(disc_1p5K_8)
-ann_dis_1p5K_9 <-  annu_dis(disc_1p5K_9)
-ann_dis_1p5K_10 <- annu_dis(disc_1p5K_10)
-ann_dis_1p5K_11 <- annu_dis(disc_1p5K_11)
-ann_dis_1p5K_12 <- annu_dis(disc_1p5K_12)
-ann_dis_1p5K_13 <- annu_dis(disc_1p5K_13)
-ann_dis_1p5K_14 <- annu_dis(disc_1p5K_14)
+ann_fra_1p5K_1 <-  annu_fra(flux_1p5K_1, prec_1p5K_1)
+ann_fra_1p5K_2 <-  annu_fra(flux_1p5K_2, prec_1p5K_2)
+ann_fra_1p5K_3 <-  annu_fra(flux_1p5K_3, prec_1p5K_3)
+ann_fra_1p5K_4 <-  annu_fra(flux_1p5K_4, prec_1p5K_4)
+ann_fra_1p5K_5 <-  annu_fra(flux_1p5K_5, prec_1p5K_5)
+ann_fra_1p5K_6 <-  annu_fra(flux_1p5K_6, prec_1p5K_6)
+ann_fra_1p5K_7 <-  annu_fra(flux_1p5K_7, prec_1p5K_7)
+ann_fra_1p5K_8 <-  annu_fra(flux_1p5K_8, prec_1p5K_8)
+ann_fra_1p5K_9 <-  annu_fra(flux_1p5K_9, prec_1p5K_9)
+ann_fra_1p5K_10 <- annu_fra(flux_1p5K_10, prec_1p5K_10)
+ann_fra_1p5K_11 <- annu_fra(flux_1p5K_11, prec_1p5K_11)
+ann_fra_1p5K_12 <- annu_fra(flux_1p5K_12, prec_1p5K_12)
+ann_fra_1p5K_13 <- annu_fra(flux_1p5K_13, prec_1p5K_13)
+ann_fra_1p5K_14 <- annu_fra(flux_1p5K_14, prec_1p5K_14)
+
+ann_fraET_1p5K_1 <-  annu_fraET(flux_1p5K_1, prec_1p5K_1)
+ann_fraET_1p5K_2 <-  annu_fraET(flux_1p5K_2, prec_1p5K_2)
+ann_fraET_1p5K_3 <-  annu_fraET(flux_1p5K_3, prec_1p5K_3)
+ann_fraET_1p5K_4 <-  annu_fraET(flux_1p5K_4, prec_1p5K_4)
+ann_fraET_1p5K_5 <-  annu_fraET(flux_1p5K_5, prec_1p5K_5)
+ann_fraET_1p5K_6 <-  annu_fraET(flux_1p5K_6, prec_1p5K_6)
+ann_fraET_1p5K_7 <-  annu_fraET(flux_1p5K_7, prec_1p5K_7)
+ann_fraET_1p5K_8 <-  annu_fraET(flux_1p5K_8, prec_1p5K_8)
+ann_fraET_1p5K_9 <-  annu_fraET(flux_1p5K_9, prec_1p5K_9)
+ann_fraET_1p5K_10 <- annu_fraET(flux_1p5K_10, prec_1p5K_10)
+ann_fraET_1p5K_11 <- annu_fraET(flux_1p5K_11, prec_1p5K_11)
+ann_fraET_1p5K_12 <- annu_fraET(flux_1p5K_12, prec_1p5K_12)
+ann_fraET_1p5K_13 <- annu_fraET(flux_1p5K_13, prec_1p5K_13)
+ann_fraET_1p5K_14 <- annu_fraET(flux_1p5K_14, prec_1p5K_14)
 
 ann_mel_1p5K_base_all <- cbind(ann_flu_1p5K_1$mel_base_mea,  ann_flu_1p5K_2$mel_base_mea,  ann_flu_1p5K_3$mel_base_mea,
                                ann_flu_1p5K_4$mel_base_mea,  ann_flu_1p5K_5$mel_base_mea,  ann_flu_1p5K_6$mel_base_mea,
@@ -2009,41 +2052,6 @@ ann_mel_1p5K_coch_all <- cbind(ann_flu_1p5K_1$mel_coch_mea,  ann_flu_1p5K_2$mel_
                                ann_flu_1p5K_7$mel_coch_mea,  ann_flu_1p5K_8$mel_coch_mea,  ann_flu_1p5K_9$mel_coch_mea,
                                ann_flu_1p5K_10$mel_coch_mea, ann_flu_1p5K_11$mel_coch_mea, ann_flu_1p5K_12$mel_coch_mea,
                                ann_flu_1p5K_13$mel_coch_mea, ann_flu_1p5K_14$mel_coch_mea)
-ann_mel_1p5K_koel_all <- cbind(ann_flu_1p5K_1$mel_koel_mea,  ann_flu_1p5K_2$mel_koel_mea,  ann_flu_1p5K_3$mel_koel_mea,
-                               ann_flu_1p5K_4$mel_koel_mea,  ann_flu_1p5K_5$mel_koel_mea,  ann_flu_1p5K_6$mel_koel_mea,
-                               ann_flu_1p5K_7$mel_koel_mea,  ann_flu_1p5K_8$mel_koel_mea,  ann_flu_1p5K_9$mel_koel_mea,
-                               ann_flu_1p5K_10$mel_koel_mea, ann_flu_1p5K_11$mel_koel_mea, ann_flu_1p5K_12$mel_koel_mea,
-                               ann_flu_1p5K_13$mel_koel_mea, ann_flu_1p5K_14$mel_koel_mea)
-ann_lpr_1p5K_base_all <- cbind(ann_flu_1p5K_1$lpr_base_mea,  ann_flu_1p5K_2$lpr_base_mea,  ann_flu_1p5K_3$lpr_base_mea,
-                               ann_flu_1p5K_4$lpr_base_mea,  ann_flu_1p5K_5$lpr_base_mea,  ann_flu_1p5K_6$lpr_base_mea,
-                               ann_flu_1p5K_7$lpr_base_mea,  ann_flu_1p5K_8$lpr_base_mea,  ann_flu_1p5K_9$lpr_base_mea,
-                               ann_flu_1p5K_10$lpr_base_mea, ann_flu_1p5K_11$lpr_base_mea, ann_flu_1p5K_12$lpr_base_mea,
-                               ann_flu_1p5K_13$lpr_base_mea, ann_flu_1p5K_14$lpr_base_mea)
-ann_lpr_1p5K_coch_all <- cbind(ann_flu_1p5K_1$lpr_coch_mea,  ann_flu_1p5K_2$lpr_coch_mea,  ann_flu_1p5K_3$lpr_coch_mea,
-                               ann_flu_1p5K_4$lpr_coch_mea,  ann_flu_1p5K_5$lpr_coch_mea,  ann_flu_1p5K_6$lpr_coch_mea,
-                               ann_flu_1p5K_7$lpr_coch_mea,  ann_flu_1p5K_8$lpr_coch_mea,  ann_flu_1p5K_9$lpr_coch_mea,
-                               ann_flu_1p5K_10$lpr_coch_mea, ann_flu_1p5K_11$lpr_coch_mea, ann_flu_1p5K_12$lpr_coch_mea,
-                               ann_flu_1p5K_13$lpr_coch_mea, ann_flu_1p5K_14$lpr_coch_mea)
-ann_lpr_1p5K_koel_all <- cbind(ann_flu_1p5K_1$lpr_koel_mea,  ann_flu_1p5K_2$lpr_koel_mea,  ann_flu_1p5K_3$lpr_koel_mea,
-                               ann_flu_1p5K_4$lpr_koel_mea,  ann_flu_1p5K_5$lpr_koel_mea,  ann_flu_1p5K_6$lpr_koel_mea,
-                               ann_flu_1p5K_7$lpr_koel_mea,  ann_flu_1p5K_8$lpr_koel_mea,  ann_flu_1p5K_9$lpr_koel_mea,
-                               ann_flu_1p5K_10$lpr_koel_mea, ann_flu_1p5K_11$lpr_koel_mea, ann_flu_1p5K_12$lpr_koel_mea,
-                               ann_flu_1p5K_13$lpr_koel_mea, ann_flu_1p5K_14$lpr_koel_mea)
-ann_fra_1p5K_base_all <- cbind(ann_flu_1p5K_1$fra_base_mea,  ann_flu_1p5K_2$fra_base_mea,  ann_flu_1p5K_3$fra_base_mea,
-                               ann_flu_1p5K_4$fra_base_mea,  ann_flu_1p5K_5$fra_base_mea,  ann_flu_1p5K_6$fra_base_mea,
-                               ann_flu_1p5K_7$fra_base_mea,  ann_flu_1p5K_8$fra_base_mea,  ann_flu_1p5K_9$fra_base_mea,
-                               ann_flu_1p5K_10$fra_base_mea, ann_flu_1p5K_11$fra_base_mea, ann_flu_1p5K_12$fra_base_mea,
-                               ann_flu_1p5K_13$fra_base_mea, ann_flu_1p5K_14$fra_base_mea)
-ann_fra_1p5K_coch_all <- cbind(ann_flu_1p5K_1$fra_coch_mea,  ann_flu_1p5K_2$fra_coch_mea,  ann_flu_1p5K_3$fra_coch_mea,
-                               ann_flu_1p5K_4$fra_coch_mea,  ann_flu_1p5K_5$fra_coch_mea,  ann_flu_1p5K_6$fra_coch_mea,
-                               ann_flu_1p5K_7$fra_coch_mea,  ann_flu_1p5K_8$fra_coch_mea,  ann_flu_1p5K_9$fra_coch_mea,
-                               ann_flu_1p5K_10$fra_coch_mea, ann_flu_1p5K_11$fra_coch_mea, ann_flu_1p5K_12$fra_coch_mea,
-                               ann_flu_1p5K_13$fra_coch_mea, ann_flu_1p5K_14$fra_coch_mea)
-ann_fra_1p5K_koel_all <- cbind(ann_flu_1p5K_1$fra_koel_mea,  ann_flu_1p5K_2$fra_koel_mea,  ann_flu_1p5K_3$fra_koel_mea,
-                               ann_flu_1p5K_4$fra_koel_mea,  ann_flu_1p5K_5$fra_koel_mea,  ann_flu_1p5K_6$fra_koel_mea,
-                               ann_flu_1p5K_7$fra_koel_mea,  ann_flu_1p5K_8$fra_koel_mea,  ann_flu_1p5K_9$fra_koel_mea,
-                               ann_flu_1p5K_10$fra_koel_mea, ann_flu_1p5K_11$fra_koel_mea, ann_flu_1p5K_12$fra_koel_mea,
-                               ann_flu_1p5K_13$fra_koel_mea, ann_flu_1p5K_14$fra_koel_mea)
 ann_ele_1p5K_base_all <- cbind(ann_flu_1p5K_1$ele_base_mea,  ann_flu_1p5K_2$ele_base_mea,  ann_flu_1p5K_3$ele_base_mea,
                                ann_flu_1p5K_4$ele_base_mea,  ann_flu_1p5K_5$ele_base_mea,  ann_flu_1p5K_6$ele_base_mea,
                                ann_flu_1p5K_7$ele_base_mea,  ann_flu_1p5K_8$ele_base_mea,  ann_flu_1p5K_9$ele_base_mea,
@@ -2054,27 +2062,6 @@ ann_ele_1p5K_coch_all <- cbind(ann_flu_1p5K_1$ele_coch_mea,  ann_flu_1p5K_2$ele_
                                ann_flu_1p5K_7$ele_coch_mea,  ann_flu_1p5K_8$ele_coch_mea,  ann_flu_1p5K_9$ele_coch_mea,
                                ann_flu_1p5K_10$ele_coch_mea, ann_flu_1p5K_11$ele_coch_mea, ann_flu_1p5K_12$ele_coch_mea,
                                ann_flu_1p5K_13$ele_coch_mea, ann_flu_1p5K_14$ele_coch_mea)
-ann_ele_1p5K_koel_all <- cbind(ann_flu_1p5K_1$ele_koel_mea,  ann_flu_1p5K_2$ele_koel_mea,  ann_flu_1p5K_3$ele_koel_mea,
-                               ann_flu_1p5K_4$ele_koel_mea,  ann_flu_1p5K_5$ele_koel_mea,  ann_flu_1p5K_6$ele_koel_mea,
-                               ann_flu_1p5K_7$ele_koel_mea,  ann_flu_1p5K_8$ele_koel_mea,  ann_flu_1p5K_9$ele_koel_mea,
-                               ann_flu_1p5K_10$ele_koel_mea, ann_flu_1p5K_11$ele_koel_mea, ann_flu_1p5K_12$ele_koel_mea,
-                               ann_flu_1p5K_13$ele_koel_mea, ann_flu_1p5K_14$ele_koel_mea)
-ann_aev_1p5K_base_all <- cbind(ann_flu_1p5K_1$aev_base_mea,  ann_flu_1p5K_2$aev_base_mea,  ann_flu_1p5K_3$aev_base_mea,
-                               ann_flu_1p5K_4$aev_base_mea,  ann_flu_1p5K_5$aev_base_mea,  ann_flu_1p5K_6$aev_base_mea,
-                               ann_flu_1p5K_7$aev_base_mea,  ann_flu_1p5K_8$aev_base_mea,  ann_flu_1p5K_9$aev_base_mea,
-                               ann_flu_1p5K_10$aev_base_mea, ann_flu_1p5K_11$aev_base_mea, ann_flu_1p5K_12$aev_base_mea,
-                               ann_flu_1p5K_13$aev_base_mea, ann_flu_1p5K_14$aev_base_mea)
-ann_aev_1p5K_coch_all <- cbind(ann_flu_1p5K_1$aev_coch_mea,  ann_flu_1p5K_2$aev_coch_mea,  ann_flu_1p5K_3$aev_coch_mea,
-                               ann_flu_1p5K_4$aev_coch_mea,  ann_flu_1p5K_5$aev_coch_mea,  ann_flu_1p5K_6$aev_coch_mea,
-                               ann_flu_1p5K_7$aev_coch_mea,  ann_flu_1p5K_8$aev_coch_mea,  ann_flu_1p5K_9$aev_coch_mea,
-                               ann_flu_1p5K_10$aev_coch_mea, ann_flu_1p5K_11$aev_coch_mea, ann_flu_1p5K_12$aev_coch_mea,
-                               ann_flu_1p5K_13$aev_coch_mea, ann_flu_1p5K_14$aev_coch_mea)
-ann_aev_1p5K_koel_all <- cbind(ann_flu_1p5K_1$aev_koel_mea,  ann_flu_1p5K_2$aev_koel_mea,  ann_flu_1p5K_3$aev_koel_mea,
-                               ann_flu_1p5K_4$aev_koel_mea,  ann_flu_1p5K_5$aev_koel_mea,  ann_flu_1p5K_6$aev_koel_mea,
-                               ann_flu_1p5K_7$aev_koel_mea,  ann_flu_1p5K_8$aev_koel_mea,  ann_flu_1p5K_9$aev_koel_mea,
-                               ann_flu_1p5K_10$aev_koel_mea, ann_flu_1p5K_11$aev_koel_mea, ann_flu_1p5K_12$aev_koel_mea,
-                               ann_flu_1p5K_13$aev_koel_mea, ann_flu_1p5K_14$aev_koel_mea)
-
 
 ann_prt_1p5K_base_all <- cbind(ann_pre_1p5K_1$base_pre_tot,  ann_pre_1p5K_2$base_pre_tot,  ann_pre_1p5K_3$base_pre_tot,
                                ann_pre_1p5K_4$base_pre_tot,  ann_pre_1p5K_5$base_pre_tot,  ann_pre_1p5K_6$base_pre_tot,
@@ -2086,11 +2073,6 @@ ann_prt_1p5K_coch_all <- cbind(ann_pre_1p5K_1$coch_pre_tot,  ann_pre_1p5K_2$coch
                                ann_pre_1p5K_7$coch_pre_tot,  ann_pre_1p5K_8$coch_pre_tot,  ann_pre_1p5K_9$coch_pre_tot,
                                ann_pre_1p5K_10$coch_pre_tot, ann_pre_1p5K_11$coch_pre_tot, ann_pre_1p5K_12$coch_pre_tot,
                                ann_pre_1p5K_13$coch_pre_tot, ann_pre_1p5K_14$coch_pre_tot)
-ann_prt_1p5K_koel_all <- cbind(ann_pre_1p5K_1$koel_pre_tot,  ann_pre_1p5K_2$koel_pre_tot,  ann_pre_1p5K_3$koel_pre_tot,
-                               ann_pre_1p5K_4$koel_pre_tot,  ann_pre_1p5K_5$koel_pre_tot,  ann_pre_1p5K_6$koel_pre_tot,
-                               ann_pre_1p5K_7$koel_pre_tot,  ann_pre_1p5K_8$koel_pre_tot,  ann_pre_1p5K_9$koel_pre_tot,
-                               ann_pre_1p5K_10$koel_pre_tot, ann_pre_1p5K_11$koel_pre_tot, ann_pre_1p5K_12$koel_pre_tot,
-                               ann_pre_1p5K_13$koel_pre_tot, ann_pre_1p5K_14$koel_pre_tot)
 ann_prl_1p5K_base_all <- cbind(ann_pre_1p5K_1$base_pre_liq,  ann_pre_1p5K_2$base_pre_liq,  ann_pre_1p5K_3$base_pre_liq,
                                ann_pre_1p5K_4$base_pre_liq,  ann_pre_1p5K_5$base_pre_liq,  ann_pre_1p5K_6$base_pre_liq,
                                ann_pre_1p5K_7$base_pre_liq,  ann_pre_1p5K_8$base_pre_liq,  ann_pre_1p5K_9$base_pre_liq,
@@ -2101,11 +2083,6 @@ ann_prl_1p5K_coch_all <- cbind(ann_pre_1p5K_1$coch_pre_liq,  ann_pre_1p5K_2$coch
                                ann_pre_1p5K_7$coch_pre_liq,  ann_pre_1p5K_8$coch_pre_liq,  ann_pre_1p5K_9$coch_pre_liq,
                                ann_pre_1p5K_10$coch_pre_liq, ann_pre_1p5K_11$coch_pre_liq, ann_pre_1p5K_12$coch_pre_liq,
                                ann_pre_1p5K_13$coch_pre_liq, ann_pre_1p5K_14$coch_pre_liq)
-ann_prl_1p5K_koel_all <- cbind(ann_pre_1p5K_1$koel_pre_liq,  ann_pre_1p5K_2$koel_pre_liq,  ann_pre_1p5K_3$koel_pre_liq,
-                               ann_pre_1p5K_4$koel_pre_liq,  ann_pre_1p5K_5$koel_pre_liq,  ann_pre_1p5K_6$koel_pre_liq,
-                               ann_pre_1p5K_7$koel_pre_liq,  ann_pre_1p5K_8$koel_pre_liq,  ann_pre_1p5K_9$koel_pre_liq,
-                               ann_pre_1p5K_10$koel_pre_liq, ann_pre_1p5K_11$koel_pre_liq, ann_pre_1p5K_12$koel_pre_liq,
-                               ann_pre_1p5K_13$koel_pre_liq, ann_pre_1p5K_14$koel_pre_liq)
 ann_eff_1p5K_base_all <- cbind(ann_pre_1p5K_1$base_pro_eff,  ann_pre_1p5K_2$base_pro_eff,  ann_pre_1p5K_3$base_pro_eff,
                                ann_pre_1p5K_4$base_pro_eff,  ann_pre_1p5K_5$base_pro_eff,  ann_pre_1p5K_6$base_pro_eff,
                                ann_pre_1p5K_7$base_pro_eff,  ann_pre_1p5K_8$base_pro_eff,  ann_pre_1p5K_9$base_pro_eff,
@@ -2116,57 +2093,46 @@ ann_eff_1p5K_coch_all <- cbind(ann_pre_1p5K_1$coch_pro_eff,  ann_pre_1p5K_2$coch
                                ann_pre_1p5K_7$coch_pro_eff,  ann_pre_1p5K_8$coch_pro_eff,  ann_pre_1p5K_9$coch_pro_eff,
                                ann_pre_1p5K_10$coch_pro_eff, ann_pre_1p5K_11$coch_pro_eff, ann_pre_1p5K_12$coch_pro_eff,
                                ann_pre_1p5K_13$coch_pro_eff, ann_pre_1p5K_14$coch_pro_eff)
-ann_eff_1p5K_koel_all <- cbind(ann_pre_1p5K_1$koel_pro_eff,  ann_pre_1p5K_2$koel_pro_eff,  ann_pre_1p5K_3$koel_pro_eff,
-                               ann_pre_1p5K_4$koel_pro_eff,  ann_pre_1p5K_5$koel_pro_eff,  ann_pre_1p5K_6$koel_pro_eff,
-                               ann_pre_1p5K_7$koel_pro_eff,  ann_pre_1p5K_8$koel_pro_eff,  ann_pre_1p5K_9$koel_pro_eff,
-                               ann_pre_1p5K_10$koel_pro_eff, ann_pre_1p5K_11$koel_pro_eff, ann_pre_1p5K_12$koel_pro_eff,
-                               ann_pre_1p5K_13$koel_pro_eff, ann_pre_1p5K_14$koel_pro_eff)
 
-ann_dis_1p5K_base_all <- cbind(ann_dis_1p5K_1$base_dis,  ann_dis_1p5K_2$base_dis,  ann_dis_1p5K_3$base_dis,
-                               ann_dis_1p5K_4$base_dis,  ann_dis_1p5K_5$base_dis,  ann_dis_1p5K_6$base_dis,
-                               ann_dis_1p5K_7$base_dis,  ann_dis_1p5K_8$base_dis,  ann_dis_1p5K_9$base_dis,
-                               ann_dis_1p5K_10$base_dis, ann_dis_1p5K_11$base_dis, ann_dis_1p5K_12$base_dis,
-                               ann_dis_1p5K_13$base_dis, ann_dis_1p5K_14$base_dis)
-ann_dis_1p5K_coch_all <- cbind(ann_dis_1p5K_1$coch_dis,  ann_dis_1p5K_2$coch_dis,  ann_dis_1p5K_3$coch_dis,
-                               ann_dis_1p5K_4$coch_dis,  ann_dis_1p5K_5$coch_dis,  ann_dis_1p5K_6$coch_dis,
-                               ann_dis_1p5K_7$coch_dis,  ann_dis_1p5K_8$coch_dis,  ann_dis_1p5K_9$coch_dis,
-                               ann_dis_1p5K_10$coch_dis, ann_dis_1p5K_11$coch_dis, ann_dis_1p5K_12$coch_dis,
-                               ann_dis_1p5K_13$coch_dis, ann_dis_1p5K_14$coch_dis)
-ann_dis_1p5K_koel_all <- cbind(ann_dis_1p5K_1$koel_dis,  ann_dis_1p5K_2$koel_dis,  ann_dis_1p5K_3$koel_dis,
-                               ann_dis_1p5K_4$koel_dis,  ann_dis_1p5K_5$koel_dis,  ann_dis_1p5K_6$koel_dis,
-                               ann_dis_1p5K_7$koel_dis,  ann_dis_1p5K_8$koel_dis,  ann_dis_1p5K_9$koel_dis,
-                               ann_dis_1p5K_10$koel_dis, ann_dis_1p5K_11$koel_dis, ann_dis_1p5K_12$koel_dis,
-                               ann_dis_1p5K_13$koel_dis, ann_dis_1p5K_14$koel_dis)
+ann_fra_1p5K_base_all <- cbind(ann_fra_1p5K_1$fra_base_mea,  ann_fra_1p5K_2$fra_base_mea,  ann_fra_1p5K_3$fra_base_mea,
+                               ann_fra_1p5K_4$fra_base_mea,  ann_fra_1p5K_5$fra_base_mea,  ann_fra_1p5K_6$fra_base_mea,
+                               ann_fra_1p5K_7$fra_base_mea,  ann_fra_1p5K_8$fra_base_mea,  ann_fra_1p5K_9$fra_base_mea,
+                               ann_fra_1p5K_10$fra_base_mea, ann_fra_1p5K_11$fra_base_mea, ann_fra_1p5K_12$fra_base_mea,
+                               ann_fra_1p5K_13$fra_base_mea, ann_fra_1p5K_14$fra_base_mea)
+ann_fra_1p5K_coch_all <- cbind(ann_fra_1p5K_1$fra_coch_mea,  ann_fra_1p5K_2$fra_coch_mea,  ann_fra_1p5K_3$fra_coch_mea,
+                               ann_fra_1p5K_4$fra_coch_mea,  ann_fra_1p5K_5$fra_coch_mea,  ann_fra_1p5K_6$fra_coch_mea,
+                               ann_fra_1p5K_7$fra_coch_mea,  ann_fra_1p5K_8$fra_coch_mea,  ann_fra_1p5K_9$fra_coch_mea,
+                               ann_fra_1p5K_10$fra_coch_mea, ann_fra_1p5K_11$fra_coch_mea, ann_fra_1p5K_12$fra_coch_mea,
+                               ann_fra_1p5K_13$fra_coch_mea, ann_fra_1p5K_14$fra_coch_mea)
+
+ann_fraET_1p5K_base_all <- cbind(ann_fraET_1p5K_1$fra_base_mea,  ann_fraET_1p5K_2$fra_base_mea,  ann_fraET_1p5K_3$fra_base_mea,
+                                 ann_fraET_1p5K_4$fra_base_mea,  ann_fraET_1p5K_5$fra_base_mea,  ann_fraET_1p5K_6$fra_base_mea,
+                                 ann_fraET_1p5K_7$fra_base_mea,  ann_fraET_1p5K_8$fra_base_mea,  ann_fraET_1p5K_9$fra_base_mea,
+                                 ann_fraET_1p5K_10$fra_base_mea, ann_fraET_1p5K_11$fra_base_mea, ann_fraET_1p5K_12$fra_base_mea,
+                                 ann_fraET_1p5K_13$fra_base_mea, ann_fraET_1p5K_14$fra_base_mea)
+ann_fraET_1p5K_coch_all <- cbind(ann_fraET_1p5K_1$fra_coch_mea,  ann_fraET_1p5K_2$fra_coch_mea,  ann_fraET_1p5K_3$fra_coch_mea,
+                                 ann_fraET_1p5K_4$fra_coch_mea,  ann_fraET_1p5K_5$fra_coch_mea,  ann_fraET_1p5K_6$fra_coch_mea,
+                                 ann_fraET_1p5K_7$fra_coch_mea,  ann_fraET_1p5K_8$fra_coch_mea,  ann_fraET_1p5K_9$fra_coch_mea,
+                                 ann_fraET_1p5K_10$fra_coch_mea, ann_fraET_1p5K_11$fra_coch_mea, ann_fraET_1p5K_12$fra_coch_mea,
+                                 ann_fraET_1p5K_13$fra_coch_mea, ann_fraET_1p5K_14$fra_coch_mea)
 
 ann_mel_1p5K_base <- apply(ann_mel_1p5K_base_all, 1, mea_na)
 ann_mel_1p5K_coch <- apply(ann_mel_1p5K_coch_all, 1, mea_na)
-ann_mel_1p5K_koel <- apply(ann_mel_1p5K_koel_all, 1, mea_na)
-ann_lpr_1p5K_base <- apply(ann_lpr_1p5K_base_all, 1, mea_na)
-ann_lpr_1p5K_coch <- apply(ann_lpr_1p5K_coch_all, 1, mea_na)
-ann_lpr_1p5K_koel <- apply(ann_lpr_1p5K_koel_all, 1, mea_na)
-ann_fra_1p5K_base <- apply(ann_fra_1p5K_base_all, 1, mea_na)
-ann_fra_1p5K_coch <- apply(ann_fra_1p5K_coch_all, 1, mea_na)
-ann_fra_1p5K_koel <- apply(ann_fra_1p5K_koel_all, 1, mea_na)
 ann_ele_1p5K_base <- apply(ann_ele_1p5K_base_all, 1, mea_na)
 ann_ele_1p5K_coch <- apply(ann_ele_1p5K_coch_all, 1, mea_na)
-ann_ele_1p5K_koel <- apply(ann_ele_1p5K_koel_all, 1, mea_na)
-ann_aev_1p5K_base <- apply(ann_aev_1p5K_base_all, 1, mea_na)
-ann_aev_1p5K_coch <- apply(ann_aev_1p5K_coch_all, 1, mea_na)
-ann_aev_1p5K_koel <- apply(ann_aev_1p5K_koel_all, 1, mea_na)
 
 ann_prt_1p5K_base <- apply(ann_prt_1p5K_base_all, 1, mea_na)
 ann_prt_1p5K_coch <- apply(ann_prt_1p5K_coch_all, 1, mea_na)
-ann_prt_1p5K_koel <- apply(ann_prt_1p5K_koel_all, 1, mea_na)
 ann_prl_1p5K_base <- apply(ann_prl_1p5K_base_all, 1, mea_na)
 ann_prl_1p5K_coch <- apply(ann_prl_1p5K_coch_all, 1, mea_na)
-ann_prl_1p5K_koel <- apply(ann_prl_1p5K_koel_all, 1, mea_na)
 ann_eff_1p5K_base <- apply(ann_eff_1p5K_base_all, 1, mea_na)
 ann_eff_1p5K_coch <- apply(ann_eff_1p5K_coch_all, 1, mea_na)
-ann_eff_1p5K_koel <- apply(ann_eff_1p5K_koel_all, 1, mea_na)
 
-ann_dis_1p5K_base <- apply(ann_dis_1p5K_base_all, 1, mea_na)
-ann_dis_1p5K_coch <- apply(ann_dis_1p5K_coch_all, 1, mea_na)
-ann_dis_1p5K_koel <- apply(ann_dis_1p5K_koel_all, 1, mea_na)
+ann_fra_1p5K_base <- apply(ann_fra_1p5K_base_all, 1, mea_na)
+ann_fra_1p5K_coch <- apply(ann_fra_1p5K_coch_all, 1, mea_na)
+
+ann_fraET_1p5K_base <- apply(ann_fraET_1p5K_base_all, 1, med_na)
+ann_fraET_1p5K_coch <- apply(ann_fraET_1p5K_coch_all, 1, med_na)
 
 #2.0K warming level
 ann_flu_2p0K_1 <-  annu_flu(flux_2p0K_1)
@@ -2197,19 +2163,33 @@ ann_pre_2p0K_11 <- annu_pre(prec_2p0K_11)
 ann_pre_2p0K_12 <- annu_pre(prec_2p0K_12)
 ann_pre_2p0K_13 <- annu_pre(prec_2p0K_13)
 
-ann_dis_2p0K_1 <-  annu_dis(disc_2p0K_1)
-ann_dis_2p0K_2 <-  annu_dis(disc_2p0K_2)
-ann_dis_2p0K_3 <-  annu_dis(disc_2p0K_3)
-ann_dis_2p0K_4 <-  annu_dis(disc_2p0K_4)
-ann_dis_2p0K_5 <-  annu_dis(disc_2p0K_5)
-ann_dis_2p0K_6 <-  annu_dis(disc_2p0K_6)
-ann_dis_2p0K_7 <-  annu_dis(disc_2p0K_7)
-ann_dis_2p0K_8 <-  annu_dis(disc_2p0K_8)
-ann_dis_2p0K_9 <-  annu_dis(disc_2p0K_9)
-ann_dis_2p0K_10 <- annu_dis(disc_2p0K_10)
-ann_dis_2p0K_11 <- annu_dis(disc_2p0K_11)
-ann_dis_2p0K_12 <- annu_dis(disc_2p0K_12)
-ann_dis_2p0K_13 <- annu_dis(disc_2p0K_13)
+ann_fra_2p0K_1 <-  annu_fra(flux_2p0K_1, prec_2p0K_1)
+ann_fra_2p0K_2 <-  annu_fra(flux_2p0K_2, prec_2p0K_2)
+ann_fra_2p0K_3 <-  annu_fra(flux_2p0K_3, prec_2p0K_3)
+ann_fra_2p0K_4 <-  annu_fra(flux_2p0K_4, prec_2p0K_4)
+ann_fra_2p0K_5 <-  annu_fra(flux_2p0K_5, prec_2p0K_5)
+ann_fra_2p0K_6 <-  annu_fra(flux_2p0K_6, prec_2p0K_6)
+ann_fra_2p0K_7 <-  annu_fra(flux_2p0K_7, prec_2p0K_7)
+ann_fra_2p0K_8 <-  annu_fra(flux_2p0K_8, prec_2p0K_8)
+ann_fra_2p0K_9 <-  annu_fra(flux_2p0K_9, prec_2p0K_9)
+ann_fra_2p0K_10 <- annu_fra(flux_2p0K_10, prec_2p0K_10)
+ann_fra_2p0K_11 <- annu_fra(flux_2p0K_11, prec_2p0K_11)
+ann_fra_2p0K_12 <- annu_fra(flux_2p0K_12, prec_2p0K_12)
+ann_fra_2p0K_13 <- annu_fra(flux_2p0K_13, prec_2p0K_13)
+
+ann_fraET_2p0K_1 <-  annu_fraET(flux_2p0K_1, prec_2p0K_1)
+ann_fraET_2p0K_2 <-  annu_fraET(flux_2p0K_2, prec_2p0K_2)
+ann_fraET_2p0K_3 <-  annu_fraET(flux_2p0K_3, prec_2p0K_3)
+ann_fraET_2p0K_4 <-  annu_fraET(flux_2p0K_4, prec_2p0K_4)
+ann_fraET_2p0K_5 <-  annu_fraET(flux_2p0K_5, prec_2p0K_5)
+ann_fraET_2p0K_6 <-  annu_fraET(flux_2p0K_6, prec_2p0K_6)
+ann_fraET_2p0K_7 <-  annu_fraET(flux_2p0K_7, prec_2p0K_7)
+ann_fraET_2p0K_8 <-  annu_fraET(flux_2p0K_8, prec_2p0K_8)
+ann_fraET_2p0K_9 <-  annu_fraET(flux_2p0K_9, prec_2p0K_9)
+ann_fraET_2p0K_10 <- annu_fraET(flux_2p0K_10, prec_2p0K_10)
+ann_fraET_2p0K_11 <- annu_fraET(flux_2p0K_11, prec_2p0K_11)
+ann_fraET_2p0K_12 <- annu_fraET(flux_2p0K_12, prec_2p0K_12)
+ann_fraET_2p0K_13 <- annu_fraET(flux_2p0K_13, prec_2p0K_13)
 
 ann_mel_2p0K_base_all <- cbind(ann_flu_2p0K_1$mel_base_mea,  ann_flu_2p0K_2$mel_base_mea,  ann_flu_2p0K_3$mel_base_mea,
                                ann_flu_2p0K_4$mel_base_mea,  ann_flu_2p0K_5$mel_base_mea,  ann_flu_2p0K_6$mel_base_mea,
@@ -2221,41 +2201,6 @@ ann_mel_2p0K_coch_all <- cbind(ann_flu_2p0K_1$mel_coch_mea,  ann_flu_2p0K_2$mel_
                                ann_flu_2p0K_7$mel_coch_mea,  ann_flu_2p0K_8$mel_coch_mea,  ann_flu_2p0K_9$mel_coch_mea,
                                ann_flu_2p0K_10$mel_coch_mea, ann_flu_2p0K_11$mel_coch_mea, ann_flu_2p0K_12$mel_coch_mea,
                                ann_flu_2p0K_13$mel_coch_mea)
-ann_mel_2p0K_koel_all <- cbind(ann_flu_2p0K_1$mel_koel_mea,  ann_flu_2p0K_2$mel_koel_mea,  ann_flu_2p0K_3$mel_koel_mea,
-                               ann_flu_2p0K_4$mel_koel_mea,  ann_flu_2p0K_5$mel_koel_mea,  ann_flu_2p0K_6$mel_koel_mea,
-                               ann_flu_2p0K_7$mel_koel_mea,  ann_flu_2p0K_8$mel_koel_mea,  ann_flu_2p0K_9$mel_koel_mea,
-                               ann_flu_2p0K_10$mel_koel_mea, ann_flu_2p0K_11$mel_koel_mea, ann_flu_2p0K_12$mel_koel_mea,
-                               ann_flu_2p0K_13$mel_koel_mea)
-ann_lpr_2p0K_base_all <- cbind(ann_flu_2p0K_1$lpr_base_mea,  ann_flu_2p0K_2$lpr_base_mea,  ann_flu_2p0K_3$lpr_base_mea,
-                               ann_flu_2p0K_4$lpr_base_mea,  ann_flu_2p0K_5$lpr_base_mea,  ann_flu_2p0K_6$lpr_base_mea,
-                               ann_flu_2p0K_7$lpr_base_mea,  ann_flu_2p0K_8$lpr_base_mea,  ann_flu_2p0K_9$lpr_base_mea,
-                               ann_flu_2p0K_10$lpr_base_mea, ann_flu_2p0K_11$lpr_base_mea, ann_flu_2p0K_12$lpr_base_mea,
-                               ann_flu_2p0K_13$lpr_base_mea)
-ann_lpr_2p0K_coch_all <- cbind(ann_flu_2p0K_1$lpr_coch_mea,  ann_flu_2p0K_2$lpr_coch_mea,  ann_flu_2p0K_3$lpr_coch_mea,
-                               ann_flu_2p0K_4$lpr_coch_mea,  ann_flu_2p0K_5$lpr_coch_mea,  ann_flu_2p0K_6$lpr_coch_mea,
-                               ann_flu_2p0K_7$lpr_coch_mea,  ann_flu_2p0K_8$lpr_coch_mea,  ann_flu_2p0K_9$lpr_coch_mea,
-                               ann_flu_2p0K_10$lpr_coch_mea, ann_flu_2p0K_11$lpr_coch_mea, ann_flu_2p0K_12$lpr_coch_mea,
-                               ann_flu_2p0K_13$lpr_coch_mea)
-ann_lpr_2p0K_koel_all <- cbind(ann_flu_2p0K_1$lpr_koel_mea,  ann_flu_2p0K_2$lpr_koel_mea,  ann_flu_2p0K_3$lpr_koel_mea,
-                               ann_flu_2p0K_4$lpr_koel_mea,  ann_flu_2p0K_5$lpr_koel_mea,  ann_flu_2p0K_6$lpr_koel_mea,
-                               ann_flu_2p0K_7$lpr_koel_mea,  ann_flu_2p0K_8$lpr_koel_mea,  ann_flu_2p0K_9$lpr_koel_mea,
-                               ann_flu_2p0K_10$lpr_koel_mea, ann_flu_2p0K_11$lpr_koel_mea, ann_flu_2p0K_12$lpr_koel_mea,
-                               ann_flu_2p0K_13$lpr_koel_mea)
-ann_fra_2p0K_base_all <- cbind(ann_flu_2p0K_1$fra_base_mea,  ann_flu_2p0K_2$fra_base_mea,  ann_flu_2p0K_3$fra_base_mea,
-                               ann_flu_2p0K_4$fra_base_mea,  ann_flu_2p0K_5$fra_base_mea,  ann_flu_2p0K_6$fra_base_mea,
-                               ann_flu_2p0K_7$fra_base_mea,  ann_flu_2p0K_8$fra_base_mea,  ann_flu_2p0K_9$fra_base_mea,
-                               ann_flu_2p0K_10$fra_base_mea, ann_flu_2p0K_11$fra_base_mea, ann_flu_2p0K_12$fra_base_mea,
-                               ann_flu_2p0K_13$fra_base_mea)
-ann_fra_2p0K_coch_all <- cbind(ann_flu_2p0K_1$fra_coch_mea,  ann_flu_2p0K_2$fra_coch_mea,  ann_flu_2p0K_3$fra_coch_mea,
-                               ann_flu_2p0K_4$fra_coch_mea,  ann_flu_2p0K_5$fra_coch_mea,  ann_flu_2p0K_6$fra_coch_mea,
-                               ann_flu_2p0K_7$fra_coch_mea,  ann_flu_2p0K_8$fra_coch_mea,  ann_flu_2p0K_9$fra_coch_mea,
-                               ann_flu_2p0K_10$fra_coch_mea, ann_flu_2p0K_11$fra_coch_mea, ann_flu_2p0K_12$fra_coch_mea,
-                               ann_flu_2p0K_13$fra_coch_mea)
-ann_fra_2p0K_koel_all <- cbind(ann_flu_2p0K_1$fra_koel_mea,  ann_flu_2p0K_2$fra_koel_mea,  ann_flu_2p0K_3$fra_koel_mea,
-                               ann_flu_2p0K_4$fra_koel_mea,  ann_flu_2p0K_5$fra_koel_mea,  ann_flu_2p0K_6$fra_koel_mea,
-                               ann_flu_2p0K_7$fra_koel_mea,  ann_flu_2p0K_8$fra_koel_mea,  ann_flu_2p0K_9$fra_koel_mea,
-                               ann_flu_2p0K_10$fra_koel_mea, ann_flu_2p0K_11$fra_koel_mea, ann_flu_2p0K_12$fra_koel_mea,
-                               ann_flu_2p0K_13$fra_koel_mea)
 ann_ele_2p0K_base_all <- cbind(ann_flu_2p0K_1$ele_base_mea,  ann_flu_2p0K_2$ele_base_mea,  ann_flu_2p0K_3$ele_base_mea,
                                ann_flu_2p0K_4$ele_base_mea,  ann_flu_2p0K_5$ele_base_mea,  ann_flu_2p0K_6$ele_base_mea,
                                ann_flu_2p0K_7$ele_base_mea,  ann_flu_2p0K_8$ele_base_mea,  ann_flu_2p0K_9$ele_base_mea,
@@ -2266,26 +2211,6 @@ ann_ele_2p0K_coch_all <- cbind(ann_flu_2p0K_1$ele_coch_mea,  ann_flu_2p0K_2$ele_
                                ann_flu_2p0K_7$ele_coch_mea,  ann_flu_2p0K_8$ele_coch_mea,  ann_flu_2p0K_9$ele_coch_mea,
                                ann_flu_2p0K_10$ele_coch_mea, ann_flu_2p0K_11$ele_coch_mea, ann_flu_2p0K_12$ele_coch_mea,
                                ann_flu_2p0K_13$ele_coch_mea)
-ann_ele_2p0K_koel_all <- cbind(ann_flu_2p0K_1$ele_koel_mea,  ann_flu_2p0K_2$ele_koel_mea,  ann_flu_2p0K_3$ele_koel_mea,
-                               ann_flu_2p0K_4$ele_koel_mea,  ann_flu_2p0K_5$ele_koel_mea,  ann_flu_2p0K_6$ele_koel_mea,
-                               ann_flu_2p0K_7$ele_koel_mea,  ann_flu_2p0K_8$ele_koel_mea,  ann_flu_2p0K_9$ele_koel_mea,
-                               ann_flu_2p0K_10$ele_koel_mea, ann_flu_2p0K_11$ele_koel_mea, ann_flu_2p0K_12$ele_koel_mea,
-                               ann_flu_2p0K_13$ele_koel_mea)
-ann_aev_2p0K_base_all <- cbind(ann_flu_2p0K_1$aev_base_mea,  ann_flu_2p0K_2$aev_base_mea,  ann_flu_2p0K_3$aev_base_mea,
-                               ann_flu_2p0K_4$aev_base_mea,  ann_flu_2p0K_5$aev_base_mea,  ann_flu_2p0K_6$aev_base_mea,
-                               ann_flu_2p0K_7$aev_base_mea,  ann_flu_2p0K_8$aev_base_mea,  ann_flu_2p0K_9$aev_base_mea,
-                               ann_flu_2p0K_10$aev_base_mea, ann_flu_2p0K_11$aev_base_mea, ann_flu_2p0K_12$aev_base_mea,
-                               ann_flu_2p0K_13$aev_base_mea)
-ann_aev_2p0K_coch_all <- cbind(ann_flu_2p0K_1$aev_coch_mea,  ann_flu_2p0K_2$aev_coch_mea,  ann_flu_2p0K_3$aev_coch_mea,
-                               ann_flu_2p0K_4$aev_coch_mea,  ann_flu_2p0K_5$aev_coch_mea,  ann_flu_2p0K_6$aev_coch_mea,
-                               ann_flu_2p0K_7$aev_coch_mea,  ann_flu_2p0K_8$aev_coch_mea,  ann_flu_2p0K_9$aev_coch_mea,
-                               ann_flu_2p0K_10$aev_coch_mea, ann_flu_2p0K_11$aev_coch_mea, ann_flu_2p0K_12$aev_coch_mea,
-                               ann_flu_2p0K_13$aev_coch_mea)
-ann_aev_2p0K_koel_all <- cbind(ann_flu_2p0K_1$aev_koel_mea,  ann_flu_2p0K_2$aev_koel_mea,  ann_flu_2p0K_3$aev_koel_mea,
-                               ann_flu_2p0K_4$aev_koel_mea,  ann_flu_2p0K_5$aev_koel_mea,  ann_flu_2p0K_6$aev_koel_mea,
-                               ann_flu_2p0K_7$aev_koel_mea,  ann_flu_2p0K_8$aev_koel_mea,  ann_flu_2p0K_9$aev_koel_mea,
-                               ann_flu_2p0K_10$aev_koel_mea, ann_flu_2p0K_11$aev_koel_mea, ann_flu_2p0K_12$aev_koel_mea,
-                               ann_flu_2p0K_13$aev_koel_mea)
 
 ann_prt_2p0K_base_all <- cbind(ann_pre_2p0K_1$base_pre_tot,  ann_pre_2p0K_2$base_pre_tot,  ann_pre_2p0K_3$base_pre_tot,
                                ann_pre_2p0K_4$base_pre_tot,  ann_pre_2p0K_5$base_pre_tot,  ann_pre_2p0K_6$base_pre_tot,
@@ -2297,11 +2222,6 @@ ann_prt_2p0K_coch_all <- cbind(ann_pre_2p0K_1$coch_pre_tot,  ann_pre_2p0K_2$coch
                                ann_pre_2p0K_7$coch_pre_tot,  ann_pre_2p0K_8$coch_pre_tot,  ann_pre_2p0K_9$coch_pre_tot,
                                ann_pre_2p0K_10$coch_pre_tot, ann_pre_2p0K_11$coch_pre_tot, ann_pre_2p0K_12$coch_pre_tot,
                                ann_pre_2p0K_13$coch_pre_tot)
-ann_prt_2p0K_koel_all <- cbind(ann_pre_2p0K_1$koel_pre_tot,  ann_pre_2p0K_2$koel_pre_tot,  ann_pre_2p0K_3$koel_pre_tot,
-                               ann_pre_2p0K_4$koel_pre_tot,  ann_pre_2p0K_5$koel_pre_tot,  ann_pre_2p0K_6$koel_pre_tot,
-                               ann_pre_2p0K_7$koel_pre_tot,  ann_pre_2p0K_8$koel_pre_tot,  ann_pre_2p0K_9$koel_pre_tot,
-                               ann_pre_2p0K_10$koel_pre_tot, ann_pre_2p0K_11$koel_pre_tot, ann_pre_2p0K_12$koel_pre_tot,
-                               ann_pre_2p0K_13$koel_pre_tot)
 ann_prl_2p0K_base_all <- cbind(ann_pre_2p0K_1$base_pre_liq,  ann_pre_2p0K_2$base_pre_liq,  ann_pre_2p0K_3$base_pre_liq,
                                ann_pre_2p0K_4$base_pre_liq,  ann_pre_2p0K_5$base_pre_liq,  ann_pre_2p0K_6$base_pre_liq,
                                ann_pre_2p0K_7$base_pre_liq,  ann_pre_2p0K_8$base_pre_liq,  ann_pre_2p0K_9$base_pre_liq,
@@ -2312,11 +2232,6 @@ ann_prl_2p0K_coch_all <- cbind(ann_pre_2p0K_1$coch_pre_liq,  ann_pre_2p0K_2$coch
                                ann_pre_2p0K_7$coch_pre_liq,  ann_pre_2p0K_8$coch_pre_liq,  ann_pre_2p0K_9$coch_pre_liq,
                                ann_pre_2p0K_10$coch_pre_liq, ann_pre_2p0K_11$coch_pre_liq, ann_pre_2p0K_12$coch_pre_liq,
                                ann_pre_2p0K_13$coch_pre_liq)
-ann_prl_2p0K_koel_all <- cbind(ann_pre_2p0K_1$koel_pre_liq,  ann_pre_2p0K_2$koel_pre_liq,  ann_pre_2p0K_3$koel_pre_liq,
-                               ann_pre_2p0K_4$koel_pre_liq,  ann_pre_2p0K_5$koel_pre_liq,  ann_pre_2p0K_6$koel_pre_liq,
-                               ann_pre_2p0K_7$koel_pre_liq,  ann_pre_2p0K_8$koel_pre_liq,  ann_pre_2p0K_9$koel_pre_liq,
-                               ann_pre_2p0K_10$koel_pre_liq, ann_pre_2p0K_11$koel_pre_liq, ann_pre_2p0K_12$koel_pre_liq,
-                               ann_pre_2p0K_13$koel_pre_liq)
 ann_eff_2p0K_base_all <- cbind(ann_pre_2p0K_1$base_pro_eff,  ann_pre_2p0K_2$base_pro_eff,  ann_pre_2p0K_3$base_pro_eff,
                                ann_pre_2p0K_4$base_pro_eff,  ann_pre_2p0K_5$base_pro_eff,  ann_pre_2p0K_6$base_pro_eff,
                                ann_pre_2p0K_7$base_pro_eff,  ann_pre_2p0K_8$base_pro_eff,  ann_pre_2p0K_9$base_pro_eff,
@@ -2327,57 +2242,57 @@ ann_eff_2p0K_coch_all <- cbind(ann_pre_2p0K_1$coch_pro_eff,  ann_pre_2p0K_2$coch
                                ann_pre_2p0K_7$coch_pro_eff,  ann_pre_2p0K_8$coch_pro_eff,  ann_pre_2p0K_9$coch_pro_eff,
                                ann_pre_2p0K_10$coch_pro_eff, ann_pre_2p0K_11$coch_pro_eff, ann_pre_2p0K_12$coch_pro_eff,
                                ann_pre_2p0K_13$coch_pro_eff)
-ann_eff_2p0K_koel_all <- cbind(ann_pre_2p0K_1$koel_pro_eff,  ann_pre_2p0K_2$koel_pro_eff,  ann_pre_2p0K_3$koel_pro_eff,
-                               ann_pre_2p0K_4$koel_pro_eff,  ann_pre_2p0K_5$koel_pro_eff,  ann_pre_2p0K_6$koel_pro_eff,
-                               ann_pre_2p0K_7$koel_pro_eff,  ann_pre_2p0K_8$koel_pro_eff,  ann_pre_2p0K_9$koel_pro_eff,
-                               ann_pre_2p0K_10$koel_pro_eff, ann_pre_2p0K_11$koel_pro_eff, ann_pre_2p0K_12$koel_pro_eff,
-                               ann_pre_2p0K_13$koel_pro_eff)
 
-ann_dis_2p0K_base_all <- cbind(ann_dis_2p0K_1$base_dis,  ann_dis_2p0K_2$base_dis,  ann_dis_2p0K_3$base_dis,
-                               ann_dis_2p0K_4$base_dis,  ann_dis_2p0K_5$base_dis,  ann_dis_2p0K_6$base_dis,
-                               ann_dis_2p0K_7$base_dis,  ann_dis_2p0K_8$base_dis,  ann_dis_2p0K_9$base_dis,
-                               ann_dis_2p0K_10$base_dis, ann_dis_2p0K_11$base_dis, ann_dis_2p0K_12$base_dis,
-                               ann_dis_2p0K_13$base_dis)
-ann_dis_2p0K_coch_all <- cbind(ann_dis_2p0K_1$coch_dis,  ann_dis_2p0K_2$coch_dis,  ann_dis_2p0K_3$coch_dis,
-                               ann_dis_2p0K_4$coch_dis,  ann_dis_2p0K_5$coch_dis,  ann_dis_2p0K_6$coch_dis,
-                               ann_dis_2p0K_7$coch_dis,  ann_dis_2p0K_8$coch_dis,  ann_dis_2p0K_9$coch_dis,
-                               ann_dis_2p0K_10$coch_dis, ann_dis_2p0K_11$coch_dis, ann_dis_2p0K_12$coch_dis,
-                               ann_dis_2p0K_13$coch_dis)
-ann_dis_2p0K_koel_all <- cbind(ann_dis_2p0K_1$koel_dis,  ann_dis_2p0K_2$koel_dis,  ann_dis_2p0K_3$koel_dis,
-                               ann_dis_2p0K_4$koel_dis,  ann_dis_2p0K_5$koel_dis,  ann_dis_2p0K_6$koel_dis,
-                               ann_dis_2p0K_7$koel_dis,  ann_dis_2p0K_8$koel_dis,  ann_dis_2p0K_9$koel_dis,
-                               ann_dis_2p0K_10$koel_dis, ann_dis_2p0K_11$koel_dis, ann_dis_2p0K_12$koel_dis,
-                               ann_dis_2p0K_13$koel_dis)
+ann_eff_2p0K_base_all <- cbind(ann_pre_2p0K_1$base_pro_eff,  ann_pre_2p0K_2$base_pro_eff,  ann_pre_2p0K_3$base_pro_eff,
+                               ann_pre_2p0K_4$base_pro_eff,  ann_pre_2p0K_5$base_pro_eff,  ann_pre_2p0K_6$base_pro_eff,
+                               ann_pre_2p0K_7$base_pro_eff,  ann_pre_2p0K_8$base_pro_eff,  ann_pre_2p0K_9$base_pro_eff,
+                               ann_pre_2p0K_10$base_pro_eff, ann_pre_2p0K_11$base_pro_eff, ann_pre_2p0K_12$base_pro_eff,
+                               ann_pre_2p0K_13$base_pro_eff)
+ann_eff_2p0K_coch_all <- cbind(ann_pre_2p0K_1$coch_pro_eff,  ann_pre_2p0K_2$coch_pro_eff,  ann_pre_2p0K_3$coch_pro_eff,
+                               ann_pre_2p0K_4$coch_pro_eff,  ann_pre_2p0K_5$coch_pro_eff,  ann_pre_2p0K_6$coch_pro_eff,
+                               ann_pre_2p0K_7$coch_pro_eff,  ann_pre_2p0K_8$coch_pro_eff,  ann_pre_2p0K_9$coch_pro_eff,
+                               ann_pre_2p0K_10$coch_pro_eff, ann_pre_2p0K_11$coch_pro_eff, ann_pre_2p0K_12$coch_pro_eff,
+                               ann_pre_2p0K_13$coch_pro_eff)
+
+ann_fra_2p0K_base_all <- cbind(ann_fra_2p0K_1$fra_base_mea,  ann_fra_2p0K_2$fra_base_mea,  ann_fra_2p0K_3$fra_base_mea,
+                               ann_fra_2p0K_4$fra_base_mea,  ann_fra_2p0K_5$fra_base_mea,  ann_fra_2p0K_6$fra_base_mea,
+                               ann_fra_2p0K_7$fra_base_mea,  ann_fra_2p0K_8$fra_base_mea,  ann_fra_2p0K_9$fra_base_mea,
+                               ann_fra_2p0K_10$fra_base_mea, ann_fra_2p0K_11$fra_base_mea, ann_fra_2p0K_12$fra_base_mea,
+                               ann_fra_2p0K_13$fra_base_mea)
+ann_fra_2p0K_coch_all <- cbind(ann_fra_2p0K_1$fra_coch_mea,  ann_fra_2p0K_2$fra_coch_mea,  ann_fra_2p0K_3$fra_coch_mea,
+                               ann_fra_2p0K_4$fra_coch_mea,  ann_fra_2p0K_5$fra_coch_mea,  ann_fra_2p0K_6$fra_coch_mea,
+                               ann_fra_2p0K_7$fra_coch_mea,  ann_fra_2p0K_8$fra_coch_mea,  ann_fra_2p0K_9$fra_coch_mea,
+                               ann_fra_2p0K_10$fra_coch_mea, ann_fra_2p0K_11$fra_coch_mea, ann_fra_2p0K_12$fra_coch_mea,
+                               ann_fra_2p0K_13$fra_coch_mea)
+
+ann_fraET_2p0K_base_all <- cbind(ann_fraET_2p0K_1$fra_base_mea,  ann_fraET_2p0K_2$fra_base_mea,  ann_fraET_2p0K_3$fra_base_mea,
+                                 ann_fraET_2p0K_4$fra_base_mea,  ann_fraET_2p0K_5$fra_base_mea,  ann_fraET_2p0K_6$fra_base_mea,
+                                 ann_fraET_2p0K_7$fra_base_mea,  ann_fraET_2p0K_8$fra_base_mea,  ann_fraET_2p0K_9$fra_base_mea,
+                                 ann_fraET_2p0K_10$fra_base_mea, ann_fraET_2p0K_11$fra_base_mea, ann_fraET_2p0K_12$fra_base_mea,
+                                 ann_fraET_2p0K_13$fra_base_mea)
+ann_fraET_2p0K_coch_all <- cbind(ann_fraET_2p0K_1$fra_coch_mea,  ann_fraET_2p0K_2$fra_coch_mea,  ann_fraET_2p0K_3$fra_coch_mea,
+                                 ann_fraET_2p0K_4$fra_coch_mea,  ann_fraET_2p0K_5$fra_coch_mea,  ann_fraET_2p0K_6$fra_coch_mea,
+                                 ann_fraET_2p0K_7$fra_coch_mea,  ann_fraET_2p0K_8$fra_coch_mea,  ann_fraET_2p0K_9$fra_coch_mea,
+                                 ann_fraET_2p0K_10$fra_coch_mea, ann_fraET_2p0K_11$fra_coch_mea, ann_fraET_2p0K_12$fra_coch_mea,
+                                 ann_fraET_2p0K_13$fra_coch_mea)
 
 ann_mel_2p0K_base <- apply(ann_mel_2p0K_base_all, 1, mea_na)
 ann_mel_2p0K_coch <- apply(ann_mel_2p0K_coch_all, 1, mea_na)
-ann_mel_2p0K_koel <- apply(ann_mel_2p0K_koel_all, 1, mea_na)
-ann_lpr_2p0K_base <- apply(ann_lpr_2p0K_base_all, 1, mea_na)
-ann_lpr_2p0K_coch <- apply(ann_lpr_2p0K_coch_all, 1, mea_na)
-ann_lpr_2p0K_koel <- apply(ann_lpr_2p0K_koel_all, 1, mea_na)
-ann_fra_2p0K_base <- apply(ann_fra_2p0K_base_all, 1, mea_na)
-ann_fra_2p0K_coch <- apply(ann_fra_2p0K_coch_all, 1, mea_na)
-ann_fra_2p0K_koel <- apply(ann_fra_2p0K_koel_all, 1, mea_na)
 ann_ele_2p0K_base <- apply(ann_ele_2p0K_base_all, 1, mea_na)
 ann_ele_2p0K_coch <- apply(ann_ele_2p0K_coch_all, 1, mea_na)
-ann_ele_2p0K_koel <- apply(ann_ele_2p0K_koel_all, 1, mea_na)
-ann_aev_2p0K_base <- apply(ann_aev_2p0K_base_all, 1, mea_na)
-ann_aev_2p0K_coch <- apply(ann_aev_2p0K_coch_all, 1, mea_na)
-ann_aev_2p0K_koel <- apply(ann_aev_2p0K_koel_all, 1, mea_na)
 
 ann_prt_2p0K_base <- apply(ann_prt_2p0K_base_all, 1, mea_na)
 ann_prt_2p0K_coch <- apply(ann_prt_2p0K_coch_all, 1, mea_na)
-ann_prt_2p0K_koel <- apply(ann_prt_2p0K_koel_all, 1, mea_na)
 ann_prl_2p0K_base <- apply(ann_prl_2p0K_base_all, 1, mea_na)
 ann_prl_2p0K_coch <- apply(ann_prl_2p0K_coch_all, 1, mea_na)
-ann_prl_2p0K_koel <- apply(ann_prl_2p0K_koel_all, 1, mea_na)
 ann_eff_2p0K_base <- apply(ann_eff_2p0K_base_all, 1, mea_na)
 ann_eff_2p0K_coch <- apply(ann_eff_2p0K_coch_all, 1, mea_na)
-ann_eff_2p0K_koel <- apply(ann_eff_2p0K_koel_all, 1, mea_na)
 
-ann_dis_2p0K_base <- apply(ann_dis_2p0K_base_all, 1, mea_na)
-ann_dis_2p0K_coch <- apply(ann_dis_2p0K_coch_all, 1, mea_na)
-ann_dis_2p0K_koel <- apply(ann_dis_2p0K_koel_all, 1, mea_na)
+ann_fra_2p0K_base <- apply(ann_fra_2p0K_base_all, 1, mea_na)
+ann_fra_2p0K_coch <- apply(ann_fra_2p0K_coch_all, 1, mea_na)
+
+ann_fraET_2p0K_base <- apply(ann_fraET_2p0K_base_all, 1, med_na)
+ann_fraET_2p0K_coch <- apply(ann_fraET_2p0K_coch_all, 1, med_na)
 
 #3.0K warming level
 ann_flu_3p0K_1 <-  annu_flu(flux_3p0K_1)
@@ -2398,14 +2313,23 @@ ann_pre_3p0K_6 <-  annu_pre(prec_3p0K_6)
 ann_pre_3p0K_7 <-  annu_pre(prec_3p0K_7)
 ann_pre_3p0K_8 <-  annu_pre(prec_3p0K_8)
 
-ann_dis_3p0K_1 <-  annu_dis(disc_3p0K_1)
-ann_dis_3p0K_2 <-  annu_dis(disc_3p0K_2)
-ann_dis_3p0K_3 <-  annu_dis(disc_3p0K_3)
-ann_dis_3p0K_4 <-  annu_dis(disc_3p0K_4)
-ann_dis_3p0K_5 <-  annu_dis(disc_3p0K_5)
-ann_dis_3p0K_6 <-  annu_dis(disc_3p0K_6)
-ann_dis_3p0K_7 <-  annu_dis(disc_3p0K_7)
-ann_dis_3p0K_8 <-  annu_dis(disc_3p0K_8)
+ann_fra_3p0K_1 <-  annu_fra(flux_3p0K_1, prec_3p0K_1)
+ann_fra_3p0K_2 <-  annu_fra(flux_3p0K_2, prec_3p0K_2)
+ann_fra_3p0K_3 <-  annu_fra(flux_3p0K_3, prec_3p0K_3)
+ann_fra_3p0K_4 <-  annu_fra(flux_3p0K_4, prec_3p0K_4)
+ann_fra_3p0K_5 <-  annu_fra(flux_3p0K_5, prec_3p0K_5)
+ann_fra_3p0K_6 <-  annu_fra(flux_3p0K_6, prec_3p0K_6)
+ann_fra_3p0K_7 <-  annu_fra(flux_3p0K_7, prec_3p0K_7)
+ann_fra_3p0K_8 <-  annu_fra(flux_3p0K_8, prec_3p0K_8)
+
+ann_fraET_3p0K_1 <-  annu_fraET(flux_3p0K_1, prec_3p0K_1)
+ann_fraET_3p0K_2 <-  annu_fraET(flux_3p0K_2, prec_3p0K_2)
+ann_fraET_3p0K_3 <-  annu_fraET(flux_3p0K_3, prec_3p0K_3)
+ann_fraET_3p0K_4 <-  annu_fraET(flux_3p0K_4, prec_3p0K_4)
+ann_fraET_3p0K_5 <-  annu_fraET(flux_3p0K_5, prec_3p0K_5)
+ann_fraET_3p0K_6 <-  annu_fraET(flux_3p0K_6, prec_3p0K_6)
+ann_fraET_3p0K_7 <-  annu_fraET(flux_3p0K_7, prec_3p0K_7)
+ann_fraET_3p0K_8 <-  annu_fraET(flux_3p0K_8, prec_3p0K_8)
 
 ann_mel_3p0K_base_all <- cbind(ann_flu_3p0K_1$mel_base_mea,  ann_flu_3p0K_2$mel_base_mea,  ann_flu_3p0K_3$mel_base_mea,
                                ann_flu_3p0K_4$mel_base_mea,  ann_flu_3p0K_5$mel_base_mea,  ann_flu_3p0K_6$mel_base_mea,
@@ -2413,45 +2337,12 @@ ann_mel_3p0K_base_all <- cbind(ann_flu_3p0K_1$mel_base_mea,  ann_flu_3p0K_2$mel_
 ann_mel_3p0K_coch_all <- cbind(ann_flu_3p0K_1$mel_coch_mea,  ann_flu_3p0K_2$mel_coch_mea,  ann_flu_3p0K_3$mel_coch_mea,
                                ann_flu_3p0K_4$mel_coch_mea,  ann_flu_3p0K_5$mel_coch_mea,  ann_flu_3p0K_6$mel_coch_mea,
                                ann_flu_3p0K_7$mel_coch_mea,  ann_flu_3p0K_8$mel_coch_mea)
-ann_mel_3p0K_koel_all <- cbind(ann_flu_3p0K_1$mel_koel_mea,  ann_flu_3p0K_2$mel_koel_mea,  ann_flu_3p0K_3$mel_koel_mea,
-                               ann_flu_3p0K_4$mel_koel_mea,  ann_flu_3p0K_5$mel_koel_mea,  ann_flu_3p0K_6$mel_koel_mea,
-                               ann_flu_3p0K_7$mel_koel_mea,  ann_flu_3p0K_8$mel_koel_mea)
-ann_lpr_3p0K_base_all <- cbind(ann_flu_3p0K_1$lpr_base_mea,  ann_flu_3p0K_2$lpr_base_mea,  ann_flu_3p0K_3$lpr_base_mea,
-                               ann_flu_3p0K_4$lpr_base_mea,  ann_flu_3p0K_5$lpr_base_mea,  ann_flu_3p0K_6$lpr_base_mea,
-                               ann_flu_3p0K_7$lpr_base_mea,  ann_flu_3p0K_8$lpr_base_mea)
-ann_lpr_3p0K_coch_all <- cbind(ann_flu_3p0K_1$lpr_coch_mea,  ann_flu_3p0K_2$lpr_coch_mea,  ann_flu_3p0K_3$lpr_coch_mea,
-                               ann_flu_3p0K_4$lpr_coch_mea,  ann_flu_3p0K_5$lpr_coch_mea,  ann_flu_3p0K_6$lpr_coch_mea,
-                               ann_flu_3p0K_7$lpr_coch_mea,  ann_flu_3p0K_8$lpr_coch_mea)
-ann_lpr_3p0K_koel_all <- cbind(ann_flu_3p0K_1$lpr_koel_mea,  ann_flu_3p0K_2$lpr_koel_mea,  ann_flu_3p0K_3$lpr_koel_mea,
-                               ann_flu_3p0K_4$lpr_koel_mea,  ann_flu_3p0K_5$lpr_koel_mea,  ann_flu_3p0K_6$lpr_koel_mea,
-                               ann_flu_3p0K_7$lpr_koel_mea,  ann_flu_3p0K_8$lpr_koel_mea)
-ann_fra_3p0K_base_all <- cbind(ann_flu_3p0K_1$fra_base_mea,  ann_flu_3p0K_2$fra_base_mea,  ann_flu_3p0K_3$fra_base_mea,
-                               ann_flu_3p0K_4$fra_base_mea,  ann_flu_3p0K_5$fra_base_mea,  ann_flu_3p0K_6$fra_base_mea,
-                               ann_flu_3p0K_7$fra_base_mea,  ann_flu_3p0K_8$fra_base_mea)
-ann_fra_3p0K_coch_all <- cbind(ann_flu_3p0K_1$fra_coch_mea,  ann_flu_3p0K_2$fra_coch_mea,  ann_flu_3p0K_3$fra_coch_mea,
-                               ann_flu_3p0K_4$fra_coch_mea,  ann_flu_3p0K_5$fra_coch_mea,  ann_flu_3p0K_6$fra_coch_mea,
-                               ann_flu_3p0K_7$fra_coch_mea,  ann_flu_3p0K_8$fra_coch_mea)
-ann_fra_3p0K_koel_all <- cbind(ann_flu_3p0K_1$fra_koel_mea,  ann_flu_3p0K_2$fra_koel_mea,  ann_flu_3p0K_3$fra_koel_mea,
-                               ann_flu_3p0K_4$fra_koel_mea,  ann_flu_3p0K_5$fra_koel_mea,  ann_flu_3p0K_6$fra_koel_mea,
-                               ann_flu_3p0K_7$fra_koel_mea,  ann_flu_3p0K_8$fra_koel_mea)
 ann_ele_3p0K_base_all <- cbind(ann_flu_3p0K_1$ele_base_mea,  ann_flu_3p0K_2$ele_base_mea,  ann_flu_3p0K_3$ele_base_mea,
                                ann_flu_3p0K_4$ele_base_mea,  ann_flu_3p0K_5$ele_base_mea,  ann_flu_3p0K_6$ele_base_mea,
                                ann_flu_3p0K_7$ele_base_mea,  ann_flu_3p0K_8$ele_base_mea)
 ann_ele_3p0K_coch_all <- cbind(ann_flu_3p0K_1$ele_coch_mea,  ann_flu_3p0K_2$ele_coch_mea,  ann_flu_3p0K_3$ele_coch_mea,
                                ann_flu_3p0K_4$ele_coch_mea,  ann_flu_3p0K_5$ele_coch_mea,  ann_flu_3p0K_6$ele_coch_mea,
                                ann_flu_3p0K_7$ele_coch_mea,  ann_flu_3p0K_8$ele_coch_mea)
-ann_ele_3p0K_koel_all <- cbind(ann_flu_3p0K_1$ele_koel_mea,  ann_flu_3p0K_2$ele_koel_mea,  ann_flu_3p0K_3$ele_koel_mea,
-                               ann_flu_3p0K_4$ele_koel_mea,  ann_flu_3p0K_5$ele_koel_mea,  ann_flu_3p0K_6$ele_koel_mea,
-                               ann_flu_3p0K_7$ele_koel_mea,  ann_flu_3p0K_8$ele_koel_mea)
-ann_aev_3p0K_base_all <- cbind(ann_flu_3p0K_1$aev_base_mea,  ann_flu_3p0K_2$aev_base_mea,  ann_flu_3p0K_3$aev_base_mea,
-                               ann_flu_3p0K_4$aev_base_mea,  ann_flu_3p0K_5$aev_base_mea,  ann_flu_3p0K_6$aev_base_mea,
-                               ann_flu_3p0K_7$aev_base_mea,  ann_flu_3p0K_8$aev_base_mea)
-ann_aev_3p0K_coch_all <- cbind(ann_flu_3p0K_1$aev_coch_mea,  ann_flu_3p0K_2$aev_coch_mea,  ann_flu_3p0K_3$aev_coch_mea,
-                               ann_flu_3p0K_4$aev_coch_mea,  ann_flu_3p0K_5$aev_coch_mea,  ann_flu_3p0K_6$aev_coch_mea,
-                               ann_flu_3p0K_7$aev_coch_mea,  ann_flu_3p0K_8$aev_coch_mea)
-ann_aev_3p0K_koel_all <- cbind(ann_flu_3p0K_1$aev_koel_mea,  ann_flu_3p0K_2$aev_koel_mea,  ann_flu_3p0K_3$aev_koel_mea,
-                               ann_flu_3p0K_4$aev_koel_mea,  ann_flu_3p0K_5$aev_koel_mea,  ann_flu_3p0K_6$aev_koel_mea,
-                               ann_flu_3p0K_7$aev_koel_mea,  ann_flu_3p0K_8$aev_koel_mea)
 
 ann_prt_3p0K_base_all <- cbind(ann_pre_3p0K_1$base_pre_tot,  ann_pre_3p0K_2$base_pre_tot,  ann_pre_3p0K_3$base_pre_tot,
                                ann_pre_3p0K_4$base_pre_tot,  ann_pre_3p0K_5$base_pre_tot,  ann_pre_3p0K_6$base_pre_tot,
@@ -2459,74 +2350,56 @@ ann_prt_3p0K_base_all <- cbind(ann_pre_3p0K_1$base_pre_tot,  ann_pre_3p0K_2$base
 ann_prt_3p0K_coch_all <- cbind(ann_pre_3p0K_1$coch_pre_tot,  ann_pre_3p0K_2$coch_pre_tot,  ann_pre_3p0K_3$coch_pre_tot,
                                ann_pre_3p0K_4$coch_pre_tot,  ann_pre_3p0K_5$coch_pre_tot,  ann_pre_3p0K_6$coch_pre_tot,
                                ann_pre_3p0K_7$coch_pre_tot,  ann_pre_3p0K_8$coch_pre_tot)
-ann_prt_3p0K_koel_all <- cbind(ann_pre_3p0K_1$koel_pre_tot,  ann_pre_3p0K_2$koel_pre_tot,  ann_pre_3p0K_3$koel_pre_tot,
-                               ann_pre_3p0K_4$koel_pre_tot,  ann_pre_3p0K_5$koel_pre_tot,  ann_pre_3p0K_6$koel_pre_tot,
-                               ann_pre_3p0K_7$koel_pre_tot,  ann_pre_3p0K_8$koel_pre_tot)
 ann_prl_3p0K_base_all <- cbind(ann_pre_3p0K_1$base_pre_liq,  ann_pre_3p0K_2$base_pre_liq,  ann_pre_3p0K_3$base_pre_liq,
                                ann_pre_3p0K_4$base_pre_liq,  ann_pre_3p0K_5$base_pre_liq,  ann_pre_3p0K_6$base_pre_liq,
                                ann_pre_3p0K_7$base_pre_liq,  ann_pre_3p0K_8$base_pre_liq)
 ann_prl_3p0K_coch_all <- cbind(ann_pre_3p0K_1$coch_pre_liq,  ann_pre_3p0K_2$coch_pre_liq,  ann_pre_3p0K_3$coch_pre_liq,
                                ann_pre_3p0K_4$coch_pre_liq,  ann_pre_3p0K_5$coch_pre_liq,  ann_pre_3p0K_6$coch_pre_liq,
                                ann_pre_3p0K_7$coch_pre_liq,  ann_pre_3p0K_8$coch_pre_liq)
-ann_prl_3p0K_koel_all <- cbind(ann_pre_3p0K_1$koel_pre_liq,  ann_pre_3p0K_2$koel_pre_liq,  ann_pre_3p0K_3$koel_pre_liq,
-                               ann_pre_3p0K_4$koel_pre_liq,  ann_pre_3p0K_5$koel_pre_liq,  ann_pre_3p0K_6$koel_pre_liq,
-                               ann_pre_3p0K_7$koel_pre_liq,  ann_pre_3p0K_8$koel_pre_liq)
 ann_eff_3p0K_base_all <- cbind(ann_pre_3p0K_1$base_pro_eff,  ann_pre_3p0K_2$base_pro_eff,  ann_pre_3p0K_3$base_pro_eff,
                                ann_pre_3p0K_4$base_pro_eff,  ann_pre_3p0K_5$base_pro_eff,  ann_pre_3p0K_6$base_pro_eff,
                                ann_pre_3p0K_7$base_pro_eff,  ann_pre_3p0K_8$base_pro_eff)
 ann_eff_3p0K_coch_all <- cbind(ann_pre_3p0K_1$coch_pro_eff,  ann_pre_3p0K_2$coch_pro_eff,  ann_pre_3p0K_3$coch_pro_eff,
                                ann_pre_3p0K_4$coch_pro_eff,  ann_pre_3p0K_5$coch_pro_eff,  ann_pre_3p0K_6$coch_pro_eff,
                                ann_pre_3p0K_7$coch_pro_eff,  ann_pre_3p0K_8$coch_pro_eff)
-ann_eff_3p0K_koel_all <- cbind(ann_pre_3p0K_1$koel_pro_eff,  ann_pre_3p0K_2$koel_pro_eff,  ann_pre_3p0K_3$koel_pro_eff,
-                               ann_pre_3p0K_4$koel_pro_eff,  ann_pre_3p0K_5$koel_pro_eff,  ann_pre_3p0K_6$koel_pro_eff,
-                               ann_pre_3p0K_7$koel_pro_eff,  ann_pre_3p0K_8$koel_pro_eff)
 
-ann_dis_3p0K_base_all <- cbind(ann_dis_3p0K_1$base_dis,  ann_dis_3p0K_2$base_dis,  ann_dis_3p0K_3$base_dis,
-                               ann_dis_3p0K_4$base_dis,  ann_dis_3p0K_5$base_dis,  ann_dis_3p0K_6$base_dis,
-                               ann_dis_3p0K_7$base_dis,  ann_dis_3p0K_8$base_dis)
-ann_dis_3p0K_coch_all <- cbind(ann_dis_3p0K_1$coch_dis,  ann_dis_3p0K_2$coch_dis,  ann_dis_3p0K_3$coch_dis,
-                               ann_dis_3p0K_4$coch_dis,  ann_dis_3p0K_5$coch_dis,  ann_dis_3p0K_6$coch_dis,
-                               ann_dis_3p0K_7$coch_dis,  ann_dis_3p0K_8$coch_dis)
-ann_dis_3p0K_koel_all <- cbind(ann_dis_3p0K_1$koel_dis,  ann_dis_3p0K_2$koel_dis,  ann_dis_3p0K_3$koel_dis,
-                               ann_dis_3p0K_4$koel_dis,  ann_dis_3p0K_5$koel_dis,  ann_dis_3p0K_6$koel_dis,
-                               ann_dis_3p0K_7$koel_dis,  ann_dis_3p0K_8$koel_dis)
+ann_fra_3p0K_base_all <- cbind(ann_fra_3p0K_1$fra_base_mea,  ann_fra_3p0K_2$fra_base_mea,  ann_fra_3p0K_3$fra_base_mea,
+                               ann_fra_3p0K_4$fra_base_mea,  ann_fra_3p0K_5$fra_base_mea,  ann_fra_3p0K_6$fra_base_mea,
+                               ann_fra_3p0K_7$fra_base_mea,  ann_fra_3p0K_8$fra_base_mea)
+ann_fra_3p0K_coch_all <- cbind(ann_fra_3p0K_1$fra_coch_mea,  ann_fra_3p0K_2$fra_coch_mea,  ann_fra_3p0K_3$fra_coch_mea,
+                               ann_fra_3p0K_4$fra_coch_mea,  ann_fra_3p0K_5$fra_coch_mea,  ann_fra_3p0K_6$fra_coch_mea,
+                               ann_fra_3p0K_7$fra_coch_mea,  ann_fra_3p0K_8$fra_coch_mea)
+
+ann_fraET_3p0K_base_all <- cbind(ann_fraET_3p0K_1$fra_base_mea,  ann_fraET_3p0K_2$fra_base_mea,  ann_fraET_3p0K_3$fra_base_mea,
+                                 ann_fraET_3p0K_4$fra_base_mea,  ann_fraET_3p0K_5$fra_base_mea,  ann_fraET_3p0K_6$fra_base_mea,
+                                 ann_fraET_3p0K_7$fra_base_mea,  ann_fraET_3p0K_8$fra_base_mea)
+ann_fraET_3p0K_coch_all <- cbind(ann_fraET_3p0K_1$fra_coch_mea,  ann_fraET_3p0K_2$fra_coch_mea,  ann_fraET_3p0K_3$fra_coch_mea,
+                                 ann_fraET_3p0K_4$fra_coch_mea,  ann_fraET_3p0K_5$fra_coch_mea,  ann_fraET_3p0K_6$fra_coch_mea,
+                                 ann_fraET_3p0K_7$fra_coch_mea,  ann_fraET_3p0K_8$fra_coch_mea)
 
 ann_mel_3p0K_base <- apply(ann_mel_3p0K_base_all, 1, mea_na)
 ann_mel_3p0K_coch <- apply(ann_mel_3p0K_coch_all, 1, mea_na)
-ann_mel_3p0K_koel <- apply(ann_mel_3p0K_koel_all, 1, mea_na)
-ann_lpr_3p0K_base <- apply(ann_lpr_3p0K_base_all, 1, mea_na)
-ann_lpr_3p0K_coch <- apply(ann_lpr_3p0K_coch_all, 1, mea_na)
-ann_lpr_3p0K_koel <- apply(ann_lpr_3p0K_koel_all, 1, mea_na)
-ann_fra_3p0K_base <- apply(ann_fra_3p0K_base_all, 1, mea_na)
-ann_fra_3p0K_coch <- apply(ann_fra_3p0K_coch_all, 1, mea_na)
-ann_fra_3p0K_koel <- apply(ann_fra_3p0K_koel_all, 1, mea_na)
 ann_ele_3p0K_base <- apply(ann_ele_3p0K_base_all, 1, mea_na)
 ann_ele_3p0K_coch <- apply(ann_ele_3p0K_coch_all, 1, mea_na)
-ann_ele_3p0K_koel <- apply(ann_ele_3p0K_koel_all, 1, mea_na)
-ann_aev_3p0K_base <- apply(ann_aev_3p0K_base_all, 1, mea_na)
-ann_aev_3p0K_coch <- apply(ann_aev_3p0K_coch_all, 1, mea_na)
-ann_aev_3p0K_koel <- apply(ann_aev_3p0K_koel_all, 1, mea_na)
 
 ann_prt_3p0K_base <- apply(ann_prt_3p0K_base_all, 1, mea_na)
 ann_prt_3p0K_coch <- apply(ann_prt_3p0K_coch_all, 1, mea_na)
-ann_prt_3p0K_koel <- apply(ann_prt_3p0K_koel_all, 1, mea_na)
 ann_prl_3p0K_base <- apply(ann_prl_3p0K_base_all, 1, mea_na)
 ann_prl_3p0K_coch <- apply(ann_prl_3p0K_coch_all, 1, mea_na)
-ann_prl_3p0K_koel <- apply(ann_prl_3p0K_koel_all, 1, mea_na)
 ann_eff_3p0K_base <- apply(ann_eff_3p0K_base_all, 1, mea_na)
 ann_eff_3p0K_coch <- apply(ann_eff_3p0K_coch_all, 1, mea_na)
-ann_eff_3p0K_koel <- apply(ann_eff_3p0K_koel_all, 1, mea_na)
 
-ann_dis_3p0K_base <- apply(ann_dis_3p0K_base_all, 1, mea_na)
-ann_dis_3p0K_coch <- apply(ann_dis_3p0K_coch_all, 1, mea_na)
-ann_dis_3p0K_koel <- apply(ann_dis_3p0K_koel_all, 1, mea_na)
+ann_fra_3p0K_base <- apply(ann_fra_3p0K_base_all, 1, mea_na)
+ann_fra_3p0K_coch <- apply(ann_fra_3p0K_coch_all, 1, mea_na)
 
+ann_fraET_3p0K_base <- apply(ann_fraET_3p0K_base_all, 1, med_na)
+ann_fraET_3p0K_coch <- apply(ann_fraET_3p0K_coch_all, 1, med_na)
 
 #Functiont to plot annual cycles
 ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all,
                        data_hist_mea, data_1p5K_mea, data_2p0K_mea, data_3p0K_mea, 
                        main = "", do_legend = F, main_pos = 0.0,
-                       y_lab = "", do_y_lab = F){
+                       y_lab = "", do_y_lab = F, set_ylim = F, ylims_in = c(0, 1)){
   
   col_hist <- "steelblue4"
   col_1p5K <- "grey25"
@@ -2541,6 +2414,9 @@ ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_al
   ylims <- c(min_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)),
              max_na(c(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_all)))
   
+  if(set_ylim){
+    ylims <- ylims_in
+  }
   x_axis_lab <- c(16,46,74,105,135,166,196,227,258,288,319,349)
   x_axis_tic <- c(16,46,74,105,135,166,196,227,258,288,319,349,380)-15
   
@@ -2581,70 +2457,71 @@ ann_cycl_2 <- function(data_hist_all, data_1p5K_all, data_2p0K_all, data_3p0K_al
   
 }
 
-
 #Plot annual cycles export
-pdf(paste0(bas_dir,"res_figs/ann_cyc_fut3.pdf"), width = 12, height = 8)
-# tiff(paste0(bas_dir, "res_figs/ann_cyc_fut3",".tiff"), width = 10.0, height = 6.0,
-#      units = "in", res = 300)
+# pdf(paste0(bas_dir,"res_figs/ann_cyc_fut3.pdf"), width = 12, height = 8)
+png(paste0(bas_dir, "res_figs/ann_cyc_fut3",".png"), width = 12.0, height = 10.0,
+     units = "in", res = 300)
 
 par(family = "serif")
 par(mar = c(1.5, 3.0, 2.5, 1.0))
 
-layout(matrix(c(7,  7, 7,
-                8, 1, 2,
-                8, 3, 4,
-                8, 5, 6
+layout(matrix(c(9,  9, 9,
+                10, 1, 2,
+                10, 3, 4,
+                10, 5, 6,
+                10, 7, 8
                 ),
-              4, 3, byrow = T), widths=c(0.05, 1, 1), heights=c(0.06, 1, 1, 1))
+              5, 3, byrow = T), widths=c(0.05, 1, 1), heights=c(0.06, 1, 1, 1, 1))
 
 
 #Protective effect Basel
-ann_cycl_2(ann_eff_hist_base_all, ann_eff_1p5K_base_all, 
-           ann_eff_2p0K_base_all, ann_eff_3p0K_base_all,
-           ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
-           y_lab = "", do_y_lab = T, do_legend = T, main = "(a)") 
+ann_cycl_2(ann_eff_hist_base_all*100, ann_eff_1p5K_base_all*100, 
+           ann_eff_2p0K_base_all*100, ann_eff_3p0K_base_all*100,
+           ann_eff_hist_base*100, ann_eff_1p5K_base*100, ann_eff_2p0K_base*100, ann_eff_3p0K_base*100,
+           y_lab = "", do_y_lab = T, do_legend = T, main = "(a)", 
+           set_ylim = T, ylims = c(0, 90)) 
 
 #Protective effect Cochem
-ann_cycl_2(ann_eff_hist_coch_all, ann_eff_1p5K_coch_all, 
-           ann_eff_2p0K_coch_all, ann_eff_3p0K_coch_all,
-           ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch,
-           do_legend = T, main = "(b)")
+ann_cycl_2(ann_eff_hist_coch_all*100, ann_eff_1p5K_coch_all*100, 
+           ann_eff_2p0K_coch_all*100, ann_eff_3p0K_coch_all*100,
+           ann_eff_hist_coch*100, ann_eff_1p5K_coch*100, ann_eff_2p0K_coch*100, ann_eff_3p0K_coch*100,
+           do_legend = T, main = "(b)", set_ylim = T, ylims = c(0, 90))
 
 #Melt fraction Basel
-ann_cycl_2(ann_fra_hist_base_all, ann_fra_1p5K_base_all, 
-           ann_fra_2p0K_base_all, ann_fra_3p0K_base_all,
-           ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
-           y_lab = "", do_y_lab = T, main = "(c)") 
+ann_cycl_2(ann_fra_hist_base_all*100, ann_fra_1p5K_base_all*100, 
+           ann_fra_2p0K_base_all*100, ann_fra_3p0K_base_all*100,
+           ann_fra_hist_base*100, ann_fra_1p5K_base*100, ann_fra_2p0K_base*100, ann_fra_3p0K_base*100,
+           y_lab = "", do_y_lab = T, main = "(c)", set_ylim = T, ylims = c(0, 90)) 
 
 #Melt fraction Cochem
-ann_cycl_2(ann_fra_hist_coch_all, ann_fra_1p5K_coch_all, 
-           ann_fra_2p0K_coch_all, ann_fra_3p0K_coch_all,
-           ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch,
-           main = "(d)")
+ann_cycl_2(ann_fra_hist_coch_all*100, ann_fra_1p5K_coch_all*100, 
+           ann_fra_2p0K_coch_all*100, ann_fra_3p0K_coch_all*100,
+           ann_fra_hist_coch*100, ann_fra_1p5K_coch*100, ann_fra_2p0K_coch*100, ann_fra_3p0K_coch*100,
+           main = "(d)", set_ylim = T, ylims = c(0, 90))
 
 #Snowmelt elevation Basel
 ann_cycl_2(ann_ele_hist_base_all, ann_ele_1p5K_base_all, 
            ann_ele_2p0K_base_all, ann_ele_3p0K_base_all,
            ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
-           y_lab = "", do_y_lab = T, main = "(e)") 
+           y_lab = "", do_y_lab = T, main = "(e)", set_ylim = T, ylims = c(200, 3200)) 
 
 #Snowmelt elevation Cochem
 ann_cycl_2(ann_ele_hist_coch_all, ann_ele_1p5K_coch_all, 
            ann_ele_2p0K_coch_all, ann_ele_3p0K_coch_all,
            ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch,
-           main = "(f)")
+           main = "(f)", set_ylim = T, ylims = c(200, 3200))
 
-# #Actual evapotranspiration Basel
-# ann_cycl_2(ann_aev_hist_base_all, ann_aev_1p5K_base_all, 
-#            ann_aev_2p0K_base_all, ann_aev_3p0K_base_all,
-#            ann_aev_hist_base, ann_aev_1p5K_base, ann_aev_2p0K_base, ann_aev_3p0K_base,
-#            y_lab = "", do_y_lab = T, main = "(g)") 
-# 
-# #Actual evapotranspiration Cochem
-# ann_cycl_2(ann_aev_hist_coch_all, ann_aev_1p5K_coch_all, 
-#            ann_aev_2p0K_coch_all, ann_aev_3p0K_coch_all,
-#            ann_aev_hist_coch, ann_aev_1p5K_coch, ann_aev_2p0K_coch, ann_aev_3p0K_coch,
-#            y_lab = "", do_y_lab = T, main = "(h)") 
+#ET fraction Basel
+ann_cycl_2(ann_fraET_hist_base_all*100, ann_fraET_1p5K_base_all*100, 
+           ann_fraET_2p0K_base_all*100, ann_fraET_3p0K_base_all*100,
+           ann_fraET_hist_base*100, ann_fraET_1p5K_base*100, ann_fraET_2p0K_base*100, ann_fraET_3p0K_base*100,
+           y_lab = "", do_y_lab = T, main = "(g)", set_ylim = T, ylims = c(0, 450)) 
+
+#ET fraETction Cochem
+ann_cycl_2(ann_fraET_hist_coch_all*100, ann_fraET_1p5K_coch_all*100, 
+           ann_fraET_2p0K_coch_all*100, ann_fraET_3p0K_coch_all*100,
+           ann_fraET_hist_coch*100, ann_fraET_1p5K_coch*100, ann_fraET_2p0K_coch*100, ann_fraET_3p0K_coch*100,
+           main = "(h)", set_ylim = T, ylims = c(0, 450))
 
 #Gauging station
 cex_header <- 1.7
@@ -2657,166 +2534,12 @@ mtext("Cochem",
       side = 3, line = -3.35, cex = cex_header+0.2, adj = 0.78)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Prec. solid [-]",  side = 2, line = -2.2, cex = cex_header, adj = 0.880, outer = T)
-mtext("Melt frac. [-]",   side = 2, line = -2.2, cex = cex_header, adj = 0.470, outer = T)
-mtext("Melt elev. [m]",   side = 2, line = -2.2, cex = cex_header, adj = 0.072, outer = T)
-# mtext("Act. ET [mm]",     side = 2, line = -2.2, cex = cex_header, adj = 0.045, outer = T)
+mtext(expression(paste("P"[solid], "  [%]")),  side = 2, line = -2.2, cex = cex_header, adj = 0.890, outer = T)
+mtext(expression(paste("S"[frac], "  [%]")),   side = 2, line = -2.2, cex = cex_header, adj = 0.625, outer = T)
+mtext(expression(paste("S"[elev], "  [m]")),   side = 2, line = -2.2, cex = cex_header, adj = 0.353, outer = T)
+mtext(expression(paste("ET"[loss], "  [%]")),   side = 2, line = -2.2, cex = cex_header, adj = 0.072, outer = T)
 
 dev.off()
-
-
-
-
-
-
-
-
-pdf(paste0(bas_dir,"res_figs/ann_cyc_fut2.pdf"), width = 16, height = 16)
-
-par(family = "serif")
-par(mar = c(1.5, 3.0, 1.0, 1.0))
-
-layout(matrix(c(rep(22, 4),
-                23, 1, 2, 3,
-                23, 4, 5, 6,
-                23, 7, 8, 9,
-                23, 10, 11, 12,
-                23, 13, 14, 15,
-                23, 16, 17, 18,
-                23, 19, 20, 21),
-              8, 4, byrow = T), widths=c(0.15, 1, 1, 1), heights=c(0.2, rep(1, 7)))
-# layout.show(n = 23)
-
-#Discharge
-ann_cycl_2(ann_dis_hist_base_all, ann_dis_1p5K_base_all, 
-           ann_dis_2p0K_base_all, ann_dis_3p0K_base_all,
-           ann_dis_hist_base, ann_dis_1p5K_base, ann_dis_2p0K_base, ann_dis_3p0K_base,
-           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")), 
-           do_legend = T, do_y_lab = T)
-
-ann_cycl_2(ann_dis_hist_coch_all, ann_dis_1p5K_coch_all, 
-           ann_dis_2p0K_coch_all, ann_dis_3p0K_coch_all,
-           ann_dis_hist_coch, ann_dis_1p5K_coch, ann_dis_2p0K_coch, ann_dis_3p0K_coch,
-           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-           do_legend = T)
-
-ann_cycl_2(ann_dis_hist_koel_all, ann_dis_1p5K_koel_all, 
-           ann_dis_2p0K_koel_all, ann_dis_3p0K_koel_all,
-           ann_dis_hist_koel, ann_dis_1p5K_koel, ann_dis_2p0K_koel, ann_dis_3p0K_koel,
-           y_lab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-           do_legend = T)
-
-#Precipitation total
-ann_cycl_2(ann_prt_hist_base_all, ann_prt_1p5K_base_all, 
-           ann_prt_2p0K_base_all, ann_prt_3p0K_base_all,
-           ann_prt_hist_base, ann_prt_1p5K_base, ann_prt_2p0K_base, ann_prt_3p0K_base,
-           y_lab = expression(paste("Precip. [mm]")), 
-           do_y_lab = T)
-
-ann_cycl_2(ann_prt_hist_coch_all, ann_prt_1p5K_coch_all, 
-           ann_prt_2p0K_coch_all, ann_prt_3p0K_coch_all,
-           ann_prt_hist_coch, ann_prt_1p5K_coch, ann_prt_2p0K_coch, ann_prt_3p0K_coch)
-
-ann_cycl_2(ann_prt_hist_koel_all, ann_prt_1p5K_koel_all, 
-           ann_prt_2p0K_koel_all, ann_prt_3p0K_koel_all,
-           ann_prt_hist_koel, ann_prt_1p5K_koel, ann_prt_2p0K_koel, ann_prt_3p0K_koel)
-
-#Precipitation total
-ann_cycl_2(ann_prl_hist_base_all, ann_prl_1p5K_base_all, 
-           ann_prl_2p0K_base_all, ann_prl_3p0K_base_all,
-           ann_prl_hist_base, ann_prl_1p5K_base, ann_prl_2p0K_base, ann_prl_3p0K_base,
-           y_lab = expression(paste("Precip. [mm]")), 
-           do_y_lab = T)
-
-ann_cycl_2(ann_prl_hist_coch_all, ann_prl_1p5K_coch_all, 
-           ann_prl_2p0K_coch_all, ann_prl_3p0K_coch_all,
-           ann_prl_hist_coch, ann_prl_1p5K_coch, ann_prl_2p0K_coch, ann_prl_3p0K_coch)
-
-ann_cycl_2(ann_prl_hist_koel_all, ann_prl_1p5K_koel_all, 
-           ann_prl_2p0K_koel_all, ann_prl_3p0K_koel_all,
-           ann_prl_hist_koel, ann_prl_1p5K_koel, ann_prl_2p0K_koel, ann_prl_3p0K_koel)
-
-#Protective effect
-ann_cycl_2(ann_eff_hist_base_all, ann_eff_1p5K_base_all, 
-           ann_eff_2p0K_base_all, ann_eff_3p0K_base_all,
-           ann_eff_hist_base, ann_eff_1p5K_base, ann_eff_2p0K_base, ann_eff_3p0K_base,
-           y_lab = expression(paste("Prec. solid/total [-]")), do_y_lab = T) 
-
-ann_cycl_2(ann_eff_hist_coch_all, ann_eff_1p5K_coch_all, 
-           ann_eff_2p0K_coch_all, ann_eff_3p0K_coch_all,
-           ann_eff_hist_coch, ann_eff_1p5K_coch, ann_eff_2p0K_coch, ann_eff_3p0K_coch)
-
-ann_cycl_2(ann_eff_hist_koel_all, ann_eff_1p5K_koel_all, 
-           ann_eff_2p0K_koel_all, ann_eff_3p0K_koel_all,
-           ann_eff_hist_koel, ann_eff_1p5K_koel, ann_eff_2p0K_koel, ann_eff_3p0K_koel)
-
-#Snowmelt
-ann_cycl_2(ann_mel_hist_base_all, ann_mel_1p5K_base_all, 
-           ann_mel_2p0K_base_all, ann_mel_3p0K_base_all,
-           ann_mel_hist_base, ann_mel_1p5K_base, ann_mel_2p0K_base, ann_mel_3p0K_base,
-           y_lab = expression(paste("Snowmelt [mm]")), do_y_lab = T) 
-
-ann_cycl_2(ann_mel_hist_coch_all, ann_mel_1p5K_coch_all, 
-           ann_mel_2p0K_coch_all, ann_mel_3p0K_coch_all,
-           ann_mel_hist_coch, ann_mel_1p5K_coch, ann_mel_2p0K_coch, ann_mel_3p0K_coch)
-
-ann_cycl_2(ann_mel_hist_koel_all, ann_mel_1p5K_koel_all, 
-           ann_mel_2p0K_koel_all, ann_mel_3p0K_koel_all,
-           ann_mel_hist_koel, ann_mel_1p5K_koel, ann_mel_2p0K_koel, ann_mel_3p0K_koel)
-
-#Runoff fraction
-ann_cycl_2(ann_fra_hist_base_all, ann_fra_1p5K_base_all, 
-           ann_fra_2p0K_base_all, ann_fra_3p0K_base_all,
-           ann_fra_hist_base, ann_fra_1p5K_base, ann_fra_2p0K_base, ann_fra_3p0K_base,
-           y_lab = expression(paste("Snowmelt fraction [-]")), do_y_lab = T) 
-
-ann_cycl_2(ann_fra_hist_coch_all, ann_fra_1p5K_coch_all, 
-           ann_fra_2p0K_coch_all, ann_fra_3p0K_coch_all,
-           ann_fra_hist_coch, ann_fra_1p5K_coch, ann_fra_2p0K_coch, ann_fra_3p0K_coch)
-
-ann_cycl_2(ann_fra_hist_koel_all, ann_fra_1p5K_koel_all, 
-           ann_fra_2p0K_koel_all, ann_fra_3p0K_koel_all,
-           ann_fra_hist_koel, ann_fra_1p5K_koel, ann_fra_2p0K_koel, ann_fra_3p0K_koel)
-
-#Snowmelt elevation
-ann_cycl_2(ann_ele_hist_base_all, ann_ele_1p5K_base_all, 
-           ann_ele_2p0K_base_all, ann_ele_3p0K_base_all,
-           ann_ele_hist_base, ann_ele_1p5K_base, ann_ele_2p0K_base, ann_ele_3p0K_base,
-           y_lab = expression(paste("Elevation [-]")), do_y_lab = T) 
-
-ann_cycl_2(ann_ele_hist_coch_all, ann_ele_1p5K_coch_all, 
-           ann_ele_2p0K_coch_all, ann_ele_3p0K_coch_all,
-           ann_ele_hist_coch, ann_ele_1p5K_coch, ann_ele_2p0K_coch, ann_ele_3p0K_coch)
-
-ann_cycl_2(ann_ele_hist_koel_all, ann_ele_1p5K_koel_all, 
-           ann_ele_2p0K_koel_all, ann_ele_3p0K_koel_all,
-           ann_ele_hist_koel, ann_ele_1p5K_koel, ann_ele_2p0K_koel, ann_ele_3p0K_koel)
-
-cex_header <- 1.7
-par(mar = c(0,0,0,0))
-
-#Gauging station
-
-plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("a) Basel",
-      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.191)
-mtext("b) Cochem",
-      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.525)
-mtext("c) Cologne",
-      side = 3, line = -2.35, cex = cex_header+0.2, adj = 0.875)
-
-plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("1. Disc.",  side = 2, line = -2.2, cex = cex_header, adj = 0.933, outer = T)
-mtext("2. Prec. total",  side = 2, line = -2.2, cex = cex_header, adj = 0.805, outer = T)
-mtext("3. Prec. liquid",  side = 2, line = -2.2, cex = cex_header, adj = 0.643, outer = T)
-mtext("4. Protect. effect",  side = 2, line = -2.2, cex = cex_header, adj = 0.483, outer = T)
-mtext("5. Snowmelt",  side = 2, line = -2.2, cex = cex_header, adj = 0.325, outer = T)
-mtext("6. Melt fract.",  side = 2, line = -2.2, cex = cex_header, adj = 0.180, outer = T)
-mtext("7. Melt elevat.",  side = 2, line = -2.2, cex = cex_header, adj = 0.024, outer = T)
-
-dev.off()
-
-
 
 
 #snow_future----
@@ -3854,32 +3577,24 @@ max_dis_mon_hist_coch <- rbind(dmax_mon_hist_1[, 13:24], dmax_mon_hist_2[, 13:24
 max_dis_mon_hist_base <- rbind(dmax_mon_hist_1[, 25:36], dmax_mon_hist_2[, 25:36], dmax_mon_hist_3[, 25:36],
                                dmax_mon_hist_4[, 25:36], dmax_mon_hist_5[, 25:36])
 
-max_mel_mon_hist_koel <- rbind(fmax_mon_hist_1[, 25:36], fmax_mon_hist_2[, 25:36], fmax_mon_hist_3[, 25:36],
-                               fmax_mon_hist_4[, 25:36], fmax_mon_hist_5[, 25:36])
-max_mel_mon_hist_coch <- rbind(fmax_mon_hist_1[, 13:24], fmax_mon_hist_2[, 13:24], fmax_mon_hist_3[, 13:24],
-                               fmax_mon_hist_4[, 13:24], fmax_mon_hist_5[, 13:24])
 max_mel_mon_hist_base <- rbind(fmax_mon_hist_1[, 1:12], fmax_mon_hist_2[, 1:12], fmax_mon_hist_3[, 1:12],
                                fmax_mon_hist_4[, 1:12], fmax_mon_hist_5[, 1:12])
+max_mel_mon_hist_coch <- rbind(fmax_mon_hist_1[, 13:24], fmax_mon_hist_2[, 13:24], fmax_mon_hist_3[, 13:24],
+                               fmax_mon_hist_4[, 13:24], fmax_mon_hist_5[, 13:24])
 
-max_aev_mon_hist_koel <- rbind(fmax_mon_hist_1[, 169:180], fmax_mon_hist_2[, 169:180], fmax_mon_hist_3[, 169:180],
-                               fmax_mon_hist_4[, 169:180], fmax_mon_hist_5[, 169:180])
-max_aev_mon_hist_coch <- rbind(fmax_mon_hist_1[, 157:168], fmax_mon_hist_2[, 157:168], fmax_mon_hist_3[, 13:24],
-                               fmax_mon_hist_4[, 157:168], fmax_mon_hist_5[, 157:168])
-max_aev_mon_hist_base <- rbind(fmax_mon_hist_1[, 145:156], fmax_mon_hist_2[, 145:156], fmax_mon_hist_3[, 1:12],
-                               fmax_mon_hist_4[, 145:156], fmax_mon_hist_5[, 145:156])
+max_aev_mon_hist_base <- rbind(fmax_mon_hist_1[, 49:60], fmax_mon_hist_2[, 49:60], fmax_mon_hist_3[, 49:60],
+                               fmax_mon_hist_4[, 49:60], fmax_mon_hist_5[, 49:60])
+max_aev_mon_hist_coch <- rbind(fmax_mon_hist_1[, 61:72], fmax_mon_hist_2[, 61:72], fmax_mon_hist_3[, 61:72],
+                               fmax_mon_hist_4[, 61:72], fmax_mon_hist_5[, 61:72])
 
-max_prt_mon_hist_koel <- rbind(pmax_mon_hist_1[, 25:36], pmax_mon_hist_2[, 25:36], pmax_mon_hist_3[, 25:36],
-                               pmax_mon_hist_4[, 25:36], pmax_mon_hist_5[, 25:36])
-max_prt_mon_hist_coch <- rbind(pmax_mon_hist_1[, 13:24], pmax_mon_hist_2[, 13:24], pmax_mon_hist_3[, 13:24],
-                               pmax_mon_hist_4[, 13:24], pmax_mon_hist_5[, 13:24])
 max_prt_mon_hist_base <- rbind(pmax_mon_hist_1[, 1:12], pmax_mon_hist_2[, 1:12], pmax_mon_hist_3[, 1:12],
                                pmax_mon_hist_4[, 1:12], pmax_mon_hist_5[, 1:12])
+max_prt_mon_hist_coch <- rbind(pmax_mon_hist_1[, 13:24], pmax_mon_hist_2[, 13:24], pmax_mon_hist_3[, 13:24],
+                               pmax_mon_hist_4[, 13:24], pmax_mon_hist_5[, 13:24])
 
-max_prl_mon_hist_koel <- rbind(pmax_mon_hist_1[, 61:72], pmax_mon_hist_2[, 61:72], pmax_mon_hist_3[, 61:72],
-                               pmax_mon_hist_4[, 61:72], pmax_mon_hist_5[, 61:72])
-max_prl_mon_hist_coch <- rbind(pmax_mon_hist_1[, 49:60], pmax_mon_hist_2[, 49:60], pmax_mon_hist_3[, 49:60],
-                               pmax_mon_hist_4[, 49:60], pmax_mon_hist_5[, 49:60])
-max_prl_mon_hist_base <- rbind(pmax_mon_hist_1[, 37:48], pmax_mon_hist_2[, 37:48], pmax_mon_hist_3[, 37:48],
+max_prl_mon_hist_base <- rbind(pmax_mon_hist_1[, 25:36], pmax_mon_hist_2[, 25:36], pmax_mon_hist_3[, 25:36],
+                               pmax_mon_hist_4[, 25:36], pmax_mon_hist_5[, 25:36])
+max_prl_mon_hist_coch <- rbind(pmax_mon_hist_1[, 37:48], pmax_mon_hist_2[, 37:48], pmax_mon_hist_3[, 37:48],
                                pmax_mon_hist_4[, 37:48], pmax_mon_hist_5[, 37:48])
 
 #Put together 1.5K warming level
@@ -3899,65 +3614,45 @@ max_dis_mon_1p5K_base <- rbind(dmax_mon_1p5K_1[, 25:36], dmax_mon_1p5K_2[, 25:36
                                dmax_mon_1p5K_10[, 25:36], dmax_mon_1p5K_11[, 25:36], dmax_mon_1p5K_12[, 25:36],
                                dmax_mon_1p5K_13[, 25:36], dmax_mon_1p5K_14[, 25:36])
 
-max_mel_mon_1p5K_koel <- rbind(fmax_mon_1p5K_1[, 25:36], fmax_mon_1p5K_2[, 25:36], fmax_mon_1p5K_3[, 25:36],
-                               fmax_mon_1p5K_4[, 25:36], fmax_mon_1p5K_5[, 25:36], fmax_mon_1p5K_6[, 25:36],
-                               fmax_mon_1p5K_7[, 25:36], fmax_mon_1p5K_8[, 25:36], fmax_mon_1p5K_9[, 25:36],
-                               fmax_mon_1p5K_10[, 25:36], fmax_mon_1p5K_11[, 25:36], fmax_mon_1p5K_12[, 25:36],
-                               fmax_mon_1p5K_13[, 25:36], fmax_mon_1p5K_14[, 25:36])
-max_mel_mon_1p5K_coch <- rbind(fmax_mon_1p5K_1[, 13:24], fmax_mon_1p5K_2[, 13:24], fmax_mon_1p5K_3[, 13:24],
-                               fmax_mon_1p5K_4[, 13:24], fmax_mon_1p5K_5[, 13:24], fmax_mon_1p5K_6[, 13:24],
-                               fmax_mon_1p5K_7[, 13:24], fmax_mon_1p5K_8[, 13:24], fmax_mon_1p5K_9[, 13:24],
-                               fmax_mon_1p5K_10[, 13:24], fmax_mon_1p5K_11[, 13:24], fmax_mon_1p5K_12[, 13:24],
-                               fmax_mon_1p5K_13[, 13:24], fmax_mon_1p5K_14[, 13:24])
 max_mel_mon_1p5K_base <- rbind(fmax_mon_1p5K_1[, 1:12], fmax_mon_1p5K_2[, 1:12], fmax_mon_1p5K_3[, 1:12],
                                fmax_mon_1p5K_4[, 1:12], fmax_mon_1p5K_5[, 1:12], fmax_mon_1p5K_6[, 1:12],
                                fmax_mon_1p5K_7[, 1:12], fmax_mon_1p5K_8[, 1:12], fmax_mon_1p5K_9[, 1:12],
                                fmax_mon_1p5K_10[, 1:12], fmax_mon_1p5K_11[, 1:12], fmax_mon_1p5K_12[, 1:12],
                                fmax_mon_1p5K_13[, 1:12], fmax_mon_1p5K_14[, 1:12])
+max_mel_mon_1p5K_coch <- rbind(fmax_mon_1p5K_1[, 13:24], fmax_mon_1p5K_2[, 13:24], fmax_mon_1p5K_3[, 13:24],
+                               fmax_mon_1p5K_4[, 13:24], fmax_mon_1p5K_5[, 13:24], fmax_mon_1p5K_6[, 13:24],
+                               fmax_mon_1p5K_7[, 13:24], fmax_mon_1p5K_8[, 13:24], fmax_mon_1p5K_9[, 13:24],
+                               fmax_mon_1p5K_10[, 13:24], fmax_mon_1p5K_11[, 13:24], fmax_mon_1p5K_12[, 13:24],
+                               fmax_mon_1p5K_13[, 13:24], fmax_mon_1p5K_14[, 13:24])
 
-max_aev_mon_1p5K_koel <- rbind(fmax_mon_1p5K_1[, 169:180], fmax_mon_1p5K_2[, 169:180], fmax_mon_1p5K_3[, 169:180],
-                               fmax_mon_1p5K_4[, 169:180], fmax_mon_1p5K_5[, 169:180], fmax_mon_1p5K_6[, 169:180],
-                               fmax_mon_1p5K_7[, 169:180], fmax_mon_1p5K_8[, 169:180], fmax_mon_1p5K_9[, 169:180],
-                               fmax_mon_1p5K_10[, 169:180], fmax_mon_1p5K_11[, 169:180], fmax_mon_1p5K_12[, 169:180],
-                               fmax_mon_1p5K_13[, 169:180], fmax_mon_1p5K_14[, 169:180])
-max_aev_mon_1p5K_coch <- rbind(fmax_mon_1p5K_1[, 157:168], fmax_mon_1p5K_2[, 157:168], fmax_mon_1p5K_3[, 157:168],
-                               fmax_mon_1p5K_4[, 157:168], fmax_mon_1p5K_5[, 157:168], fmax_mon_1p5K_6[, 157:168],
-                               fmax_mon_1p5K_7[, 157:168], fmax_mon_1p5K_8[, 157:168], fmax_mon_1p5K_9[, 157:168],
-                               fmax_mon_1p5K_10[, 157:168], fmax_mon_1p5K_11[, 157:168], fmax_mon_1p5K_12[, 157:168],
-                               fmax_mon_1p5K_13[, 157:168], fmax_mon_1p5K_14[, 157:168])
-max_aev_mon_1p5K_base <- rbind(fmax_mon_1p5K_1[, 145:156], fmax_mon_1p5K_2[, 145:156], fmax_mon_1p5K_3[, 145:156],
-                               fmax_mon_1p5K_4[, 145:156], fmax_mon_1p5K_5[, 145:156], fmax_mon_1p5K_6[, 145:156],
-                               fmax_mon_1p5K_7[, 145:156], fmax_mon_1p5K_8[, 145:156], fmax_mon_1p5K_9[, 145:156],
-                               fmax_mon_1p5K_10[, 145:156], fmax_mon_1p5K_11[, 145:156], fmax_mon_1p5K_12[, 145:156],
-                               fmax_mon_1p5K_13[, 145:156], fmax_mon_1p5K_14[, 145:156])
+max_aev_mon_1p5K_base <- rbind(fmax_mon_1p5K_1[, 49:60], fmax_mon_1p5K_2[, 49:60], fmax_mon_1p5K_3[, 49:60],
+                               fmax_mon_1p5K_4[, 49:60], fmax_mon_1p5K_5[, 49:60], fmax_mon_1p5K_6[, 49:60],
+                               fmax_mon_1p5K_7[, 49:60], fmax_mon_1p5K_8[, 49:60], fmax_mon_1p5K_9[, 49:60],
+                               fmax_mon_1p5K_10[, 49:60], fmax_mon_1p5K_11[, 49:60], fmax_mon_1p5K_12[, 49:60],
+                               fmax_mon_1p5K_13[, 49:60], fmax_mon_1p5K_14[, 49:60])
+max_aev_mon_1p5K_coch <- rbind(fmax_mon_1p5K_1[, 61:72], fmax_mon_1p5K_2[, 61:72], fmax_mon_1p5K_3[, 61:72],
+                               fmax_mon_1p5K_4[, 61:72], fmax_mon_1p5K_5[, 61:72], fmax_mon_1p5K_6[, 61:72],
+                               fmax_mon_1p5K_7[, 61:72], fmax_mon_1p5K_8[, 61:72], fmax_mon_1p5K_9[, 61:72],
+                               fmax_mon_1p5K_10[, 61:72], fmax_mon_1p5K_11[, 61:72], fmax_mon_1p5K_12[, 61:72],
+                               fmax_mon_1p5K_13[, 61:72], fmax_mon_1p5K_14[, 61:72])
 
-max_prt_mon_1p5K_koel <- rbind(pmax_mon_1p5K_1[, 25:36], pmax_mon_1p5K_2[, 25:36], pmax_mon_1p5K_3[, 25:36],
-                               pmax_mon_1p5K_4[, 25:36], pmax_mon_1p5K_5[, 25:36], pmax_mon_1p5K_6[, 25:36],
-                               pmax_mon_1p5K_7[, 25:36], pmax_mon_1p5K_8[, 25:36], pmax_mon_1p5K_9[, 25:36],
-                               pmax_mon_1p5K_10[, 25:36], pmax_mon_1p5K_11[, 25:36], pmax_mon_1p5K_12[, 25:36],
-                               pmax_mon_1p5K_13[, 25:36], pmax_mon_1p5K_14[, 25:36])
-max_prt_mon_1p5K_coch <- rbind(pmax_mon_1p5K_1[, 13:24], pmax_mon_1p5K_2[, 13:24], pmax_mon_1p5K_3[, 13:24],
-                               pmax_mon_1p5K_4[, 13:24], pmax_mon_1p5K_5[, 13:24], pmax_mon_1p5K_6[, 13:24],
-                               pmax_mon_1p5K_7[, 13:24], pmax_mon_1p5K_8[, 13:24], pmax_mon_1p5K_9[, 13:24],
-                               pmax_mon_1p5K_10[, 13:24], pmax_mon_1p5K_11[, 13:24], pmax_mon_1p5K_12[, 13:24],
-                               pmax_mon_1p5K_13[, 13:24], pmax_mon_1p5K_14[, 13:24])
 max_prt_mon_1p5K_base <- rbind(pmax_mon_1p5K_1[, 1:12], pmax_mon_1p5K_2[, 1:12], pmax_mon_1p5K_3[, 1:12],
                                pmax_mon_1p5K_4[, 1:12], pmax_mon_1p5K_5[, 1:12], pmax_mon_1p5K_6[, 1:12],
                                pmax_mon_1p5K_7[, 1:12], pmax_mon_1p5K_8[, 1:12], pmax_mon_1p5K_9[, 1:12],
                                pmax_mon_1p5K_10[, 1:12], pmax_mon_1p5K_11[, 1:12], pmax_mon_1p5K_12[, 1:12],
                                pmax_mon_1p5K_13[, 1:12], pmax_mon_1p5K_14[, 1:12])
+max_prt_mon_1p5K_coch <- rbind(pmax_mon_1p5K_1[, 13:24], pmax_mon_1p5K_2[, 13:24], pmax_mon_1p5K_3[, 13:24],
+                               pmax_mon_1p5K_4[, 13:24], pmax_mon_1p5K_5[, 13:24], pmax_mon_1p5K_6[, 13:24],
+                               pmax_mon_1p5K_7[, 13:24], pmax_mon_1p5K_8[, 13:24], pmax_mon_1p5K_9[, 13:24],
+                               pmax_mon_1p5K_10[, 13:24], pmax_mon_1p5K_11[, 13:24], pmax_mon_1p5K_12[, 13:24],
+                               pmax_mon_1p5K_13[, 13:24], pmax_mon_1p5K_14[, 13:24])
 
-max_prl_mon_1p5K_koel <- rbind(pmax_mon_1p5K_1[, 61:72], pmax_mon_1p5K_2[, 61:72], pmax_mon_1p5K_3[, 61:72],
-                               pmax_mon_1p5K_4[, 61:72], pmax_mon_1p5K_5[, 61:72], pmax_mon_1p5K_6[, 61:72],
-                               pmax_mon_1p5K_7[, 61:72], pmax_mon_1p5K_8[, 61:72], pmax_mon_1p5K_9[, 61:72],
-                               pmax_mon_1p5K_10[, 61:72], pmax_mon_1p5K_11[, 61:72], pmax_mon_1p5K_12[, 61:72],
-                               pmax_mon_1p5K_13[, 61:72], pmax_mon_1p5K_14[, 61:72])
-max_prl_mon_1p5K_coch <- rbind(pmax_mon_1p5K_1[, 49:60], pmax_mon_1p5K_2[, 49:60], pmax_mon_1p5K_3[, 49:60],
-                               pmax_mon_1p5K_4[, 49:60], pmax_mon_1p5K_5[, 49:60], pmax_mon_1p5K_6[, 49:60],
-                               pmax_mon_1p5K_7[, 49:60], pmax_mon_1p5K_8[, 49:60], pmax_mon_1p5K_9[, 49:60],
-                               pmax_mon_1p5K_10[, 49:60], pmax_mon_1p5K_11[, 49:60], pmax_mon_1p5K_12[, 49:60],
-                               pmax_mon_1p5K_13[, 49:60], pmax_mon_1p5K_14[, 49:60])
-max_prl_mon_1p5K_base <- rbind(pmax_mon_1p5K_1[, 37:48], pmax_mon_1p5K_2[, 37:48], pmax_mon_1p5K_3[, 37:48],
+max_prl_mon_1p5K_base <- rbind(pmax_mon_1p5K_1[, 25:36], pmax_mon_1p5K_2[, 25:36], pmax_mon_1p5K_3[, 25:36],
+                               pmax_mon_1p5K_4[, 25:36], pmax_mon_1p5K_5[, 25:36], pmax_mon_1p5K_6[, 25:36],
+                               pmax_mon_1p5K_7[, 25:36], pmax_mon_1p5K_8[, 25:36], pmax_mon_1p5K_9[, 25:36],
+                               pmax_mon_1p5K_10[, 25:36], pmax_mon_1p5K_11[, 25:36], pmax_mon_1p5K_12[, 25:36],
+                               pmax_mon_1p5K_13[, 25:36], pmax_mon_1p5K_14[, 25:36])
+max_prl_mon_1p5K_coch <- rbind(pmax_mon_1p5K_1[, 37:48], pmax_mon_1p5K_2[, 37:48], pmax_mon_1p5K_3[, 37:48],
                                pmax_mon_1p5K_4[, 37:48], pmax_mon_1p5K_5[, 37:48], pmax_mon_1p5K_6[, 37:48],
                                pmax_mon_1p5K_7[, 37:48], pmax_mon_1p5K_8[, 37:48], pmax_mon_1p5K_9[, 37:48],
                                pmax_mon_1p5K_10[, 37:48], pmax_mon_1p5K_11[, 37:48], pmax_mon_1p5K_12[, 37:48],
@@ -3980,65 +3675,45 @@ max_dis_mon_2p0K_base <- rbind(dmax_mon_2p0K_1[, 25:36], dmax_mon_2p0K_2[, 25:36
                                dmax_mon_2p0K_10[, 25:36], dmax_mon_2p0K_11[, 25:36], dmax_mon_2p0K_12[, 25:36],
                                dmax_mon_2p0K_13[, 25:36])
 
-max_mel_mon_2p0K_koel <- rbind(fmax_mon_2p0K_1[, 25:36], fmax_mon_2p0K_2[, 25:36], fmax_mon_2p0K_3[, 25:36],
-                               fmax_mon_2p0K_4[, 25:36], fmax_mon_2p0K_5[, 25:36], fmax_mon_2p0K_6[, 25:36],
-                               fmax_mon_2p0K_7[, 25:36], fmax_mon_2p0K_8[, 25:36], fmax_mon_2p0K_9[, 25:36],
-                               fmax_mon_2p0K_10[, 25:36], fmax_mon_2p0K_11[, 25:36], fmax_mon_2p0K_12[, 25:36],
-                               fmax_mon_2p0K_13[, 25:36])
-max_mel_mon_2p0K_coch <- rbind(fmax_mon_2p0K_1[, 13:24], fmax_mon_2p0K_2[, 13:24], fmax_mon_2p0K_3[, 13:24],
-                               fmax_mon_2p0K_4[, 13:24], fmax_mon_2p0K_5[, 13:24], fmax_mon_2p0K_6[, 13:24],
-                               fmax_mon_2p0K_7[, 13:24], fmax_mon_2p0K_8[, 13:24], fmax_mon_2p0K_9[, 13:24],
-                               fmax_mon_2p0K_10[, 13:24], fmax_mon_2p0K_11[, 13:24], fmax_mon_2p0K_12[, 13:24],
-                               fmax_mon_2p0K_13[, 13:24])
 max_mel_mon_2p0K_base <- rbind(fmax_mon_2p0K_1[, 1:12], fmax_mon_2p0K_2[, 1:12], fmax_mon_2p0K_3[, 1:12],
                                fmax_mon_2p0K_4[, 1:12], fmax_mon_2p0K_5[, 1:12], fmax_mon_2p0K_6[, 1:12],
                                fmax_mon_2p0K_7[, 1:12], fmax_mon_2p0K_8[, 1:12], fmax_mon_2p0K_9[, 1:12],
                                fmax_mon_2p0K_10[, 1:12], fmax_mon_2p0K_11[, 1:12], fmax_mon_2p0K_12[, 1:12],
                                fmax_mon_2p0K_13[, 1:12])
+max_mel_mon_2p0K_coch <- rbind(fmax_mon_2p0K_1[, 13:24], fmax_mon_2p0K_2[, 13:24], fmax_mon_2p0K_3[, 13:24],
+                               fmax_mon_2p0K_4[, 13:24], fmax_mon_2p0K_5[, 13:24], fmax_mon_2p0K_6[, 13:24],
+                               fmax_mon_2p0K_7[, 13:24], fmax_mon_2p0K_8[, 13:24], fmax_mon_2p0K_9[, 13:24],
+                               fmax_mon_2p0K_10[, 13:24], fmax_mon_2p0K_11[, 13:24], fmax_mon_2p0K_12[, 13:24],
+                               fmax_mon_2p0K_13[, 13:24])
 
-max_aev_mon_2p0K_koel <- rbind(fmax_mon_2p0K_1[, 169:180], fmax_mon_2p0K_2[, 169:180], fmax_mon_2p0K_3[, 169:180],
-                               fmax_mon_2p0K_4[, 169:180], fmax_mon_2p0K_5[, 169:180], fmax_mon_2p0K_6[, 169:180],
-                               fmax_mon_2p0K_7[, 169:180], fmax_mon_2p0K_8[, 169:180], fmax_mon_2p0K_9[, 169:180],
-                               fmax_mon_2p0K_10[, 169:180], fmax_mon_2p0K_11[, 169:180], fmax_mon_2p0K_12[, 169:180],
-                               fmax_mon_2p0K_13[, 169:180])
-max_aev_mon_2p0K_coch <- rbind(fmax_mon_2p0K_1[, 157:168], fmax_mon_2p0K_2[, 157:168], fmax_mon_2p0K_3[, 157:168],
-                               fmax_mon_2p0K_4[, 157:168], fmax_mon_2p0K_5[, 157:168], fmax_mon_2p0K_6[, 157:168],
-                               fmax_mon_2p0K_7[, 157:168], fmax_mon_2p0K_8[, 157:168], fmax_mon_2p0K_9[, 157:168],
-                               fmax_mon_2p0K_10[, 157:168], fmax_mon_2p0K_11[, 157:168], fmax_mon_2p0K_12[, 157:168],
-                               fmax_mon_2p0K_13[, 157:168])
-max_aev_mon_2p0K_base <- rbind(fmax_mon_2p0K_1[, 145:156], fmax_mon_2p0K_2[, 145:156], fmax_mon_2p0K_3[, 145:156],
-                               fmax_mon_2p0K_4[, 145:156], fmax_mon_2p0K_5[, 145:156], fmax_mon_2p0K_6[, 145:156],
-                               fmax_mon_2p0K_7[, 145:156], fmax_mon_2p0K_8[, 145:156], fmax_mon_2p0K_9[, 145:156],
-                               fmax_mon_2p0K_10[, 145:156], fmax_mon_2p0K_11[, 145:156], fmax_mon_2p0K_12[, 145:156],
-                               fmax_mon_2p0K_13[, 145:156])
+max_aev_mon_2p0K_base <- rbind(fmax_mon_2p0K_1[, 49:60], fmax_mon_2p0K_2[, 49:60], fmax_mon_2p0K_3[, 49:60],
+                               fmax_mon_2p0K_4[, 49:60], fmax_mon_2p0K_5[, 49:60], fmax_mon_2p0K_6[, 49:60],
+                               fmax_mon_2p0K_7[, 49:60], fmax_mon_2p0K_8[, 49:60], fmax_mon_2p0K_9[, 49:60],
+                               fmax_mon_2p0K_10[, 49:60], fmax_mon_2p0K_11[, 49:60], fmax_mon_2p0K_12[, 49:60],
+                               fmax_mon_2p0K_13[, 49:60])
+max_aev_mon_2p0K_coch <- rbind(fmax_mon_2p0K_1[, 61:72], fmax_mon_2p0K_2[, 61:72], fmax_mon_2p0K_3[, 61:72],
+                               fmax_mon_2p0K_4[, 61:72], fmax_mon_2p0K_5[, 61:72], fmax_mon_2p0K_6[, 61:72],
+                               fmax_mon_2p0K_7[, 61:72], fmax_mon_2p0K_8[, 61:72], fmax_mon_2p0K_9[, 61:72],
+                               fmax_mon_2p0K_10[, 61:72], fmax_mon_2p0K_11[, 61:72], fmax_mon_2p0K_12[, 61:72],
+                               fmax_mon_2p0K_13[, 61:72])
 
-max_prt_mon_2p0K_koel <- rbind(pmax_mon_2p0K_1[, 25:36], pmax_mon_2p0K_2[, 25:36], pmax_mon_2p0K_3[, 25:36],
-                               pmax_mon_2p0K_4[, 25:36], pmax_mon_2p0K_5[, 25:36], pmax_mon_2p0K_6[, 25:36],
-                               pmax_mon_2p0K_7[, 25:36], pmax_mon_2p0K_8[, 25:36], pmax_mon_2p0K_9[, 25:36],
-                               pmax_mon_2p0K_10[, 25:36], pmax_mon_2p0K_11[, 25:36], pmax_mon_2p0K_12[, 25:36],
-                               pmax_mon_2p0K_13[, 25:36])
-max_prt_mon_2p0K_coch <- rbind(pmax_mon_2p0K_1[, 13:24], pmax_mon_2p0K_2[, 13:24], pmax_mon_2p0K_3[, 13:24],
-                               pmax_mon_2p0K_4[, 13:24], pmax_mon_2p0K_5[, 13:24], pmax_mon_2p0K_6[, 13:24],
-                               pmax_mon_2p0K_7[, 13:24], pmax_mon_2p0K_8[, 13:24], pmax_mon_2p0K_9[, 13:24],
-                               pmax_mon_2p0K_10[, 13:24], pmax_mon_2p0K_11[, 13:24], pmax_mon_2p0K_12[, 13:24],
-                               pmax_mon_2p0K_13[, 13:24])
 max_prt_mon_2p0K_base <- rbind(pmax_mon_2p0K_1[, 1:12], pmax_mon_2p0K_2[, 1:12], pmax_mon_2p0K_3[, 1:12],
                                pmax_mon_2p0K_4[, 1:12], pmax_mon_2p0K_5[, 1:12], pmax_mon_2p0K_6[, 1:12],
                                pmax_mon_2p0K_7[, 1:12], pmax_mon_2p0K_8[, 1:12], pmax_mon_2p0K_9[, 1:12],
                                pmax_mon_2p0K_10[, 1:12], pmax_mon_2p0K_11[, 1:12], pmax_mon_2p0K_12[, 1:12],
                                pmax_mon_2p0K_13[, 1:12])
+max_prt_mon_2p0K_coch <- rbind(pmax_mon_2p0K_1[, 13:24], pmax_mon_2p0K_2[, 13:24], pmax_mon_2p0K_3[, 13:24],
+                               pmax_mon_2p0K_4[, 13:24], pmax_mon_2p0K_5[, 13:24], pmax_mon_2p0K_6[, 13:24],
+                               pmax_mon_2p0K_7[, 13:24], pmax_mon_2p0K_8[, 13:24], pmax_mon_2p0K_9[, 13:24],
+                               pmax_mon_2p0K_10[, 13:24], pmax_mon_2p0K_11[, 13:24], pmax_mon_2p0K_12[, 13:24],
+                               pmax_mon_2p0K_13[, 13:24])
 
-max_prl_mon_2p0K_koel <- rbind(pmax_mon_2p0K_1[, 61:72], pmax_mon_2p0K_2[, 61:72], pmax_mon_2p0K_3[, 61:72],
-                               pmax_mon_2p0K_4[, 61:72], pmax_mon_2p0K_5[, 61:72], pmax_mon_2p0K_6[, 61:72],
-                               pmax_mon_2p0K_7[, 61:72], pmax_mon_2p0K_8[, 61:72], pmax_mon_2p0K_9[, 61:72],
-                               pmax_mon_2p0K_10[, 61:72], pmax_mon_2p0K_11[, 61:72], pmax_mon_2p0K_12[, 61:72],
-                               pmax_mon_2p0K_13[, 61:72])
-max_prl_mon_2p0K_coch <- rbind(pmax_mon_2p0K_1[, 49:60], pmax_mon_2p0K_2[, 49:60], pmax_mon_2p0K_3[, 49:60],
-                               pmax_mon_2p0K_4[, 49:60], pmax_mon_2p0K_5[, 49:60], pmax_mon_2p0K_6[, 49:60],
-                               pmax_mon_2p0K_7[, 49:60], pmax_mon_2p0K_8[, 49:60], pmax_mon_2p0K_9[, 49:60],
-                               pmax_mon_2p0K_10[, 49:60], pmax_mon_2p0K_11[, 49:60], pmax_mon_2p0K_12[, 49:60],
-                               pmax_mon_2p0K_13[, 49:60])
-max_prl_mon_2p0K_base <- rbind(pmax_mon_2p0K_1[, 37:48], pmax_mon_2p0K_2[, 37:48], pmax_mon_2p0K_3[, 37:48],
+max_prl_mon_2p0K_base <- rbind(pmax_mon_2p0K_1[, 25:36], pmax_mon_2p0K_2[, 25:36], pmax_mon_2p0K_3[, 25:36],
+                               pmax_mon_2p0K_4[, 25:36], pmax_mon_2p0K_5[, 25:36], pmax_mon_2p0K_6[, 25:36],
+                               pmax_mon_2p0K_7[, 25:36], pmax_mon_2p0K_8[, 25:36], pmax_mon_2p0K_9[, 25:36],
+                               pmax_mon_2p0K_10[, 25:36], pmax_mon_2p0K_11[, 25:36], pmax_mon_2p0K_12[, 25:36],
+                               pmax_mon_2p0K_13[, 25:36])
+max_prl_mon_2p0K_coch <- rbind(pmax_mon_2p0K_1[, 37:48], pmax_mon_2p0K_2[, 37:48], pmax_mon_2p0K_3[, 37:48],
                                pmax_mon_2p0K_4[, 37:48], pmax_mon_2p0K_5[, 37:48], pmax_mon_2p0K_6[, 37:48],
                                pmax_mon_2p0K_7[, 37:48], pmax_mon_2p0K_8[, 37:48], pmax_mon_2p0K_9[, 37:48],
                                pmax_mon_2p0K_10[, 37:48], pmax_mon_2p0K_11[, 37:48], pmax_mon_2p0K_12[, 37:48],
@@ -4055,49 +3730,38 @@ max_dis_mon_3p0K_base <- rbind(dmax_mon_3p0K_1[, 25:36], dmax_mon_3p0K_2[, 25:36
                                dmax_mon_3p0K_4[, 25:36], dmax_mon_3p0K_5[, 25:36], dmax_mon_3p0K_6[, 25:36],
                                dmax_mon_3p0K_7[, 25:36], dmax_mon_3p0K_8[, 25:36])
 
-max_mel_mon_3p0K_koel <- rbind(fmax_mon_3p0K_1[, 25:36], fmax_mon_3p0K_2[, 25:36], fmax_mon_3p0K_3[, 25:36],
-                               fmax_mon_3p0K_4[, 25:36], fmax_mon_3p0K_5[, 25:36], fmax_mon_3p0K_6[, 25:36],
-                               fmax_mon_3p0K_7[, 25:36], fmax_mon_3p0K_8[, 25:36])
-max_mel_mon_3p0K_coch <- rbind(fmax_mon_3p0K_1[, 13:24], fmax_mon_3p0K_2[, 13:24], fmax_mon_3p0K_3[, 13:24],
-                               fmax_mon_3p0K_4[, 13:24], fmax_mon_3p0K_5[, 13:24], fmax_mon_3p0K_6[, 13:24],
-                               fmax_mon_3p0K_7[, 13:24], fmax_mon_3p0K_8[, 13:24])
 max_mel_mon_3p0K_base <- rbind(fmax_mon_3p0K_1[, 1:12], fmax_mon_3p0K_2[, 1:12], fmax_mon_3p0K_3[, 1:12],
                                fmax_mon_3p0K_4[, 1:12], fmax_mon_3p0K_5[, 1:12], fmax_mon_3p0K_6[, 1:12],
                                fmax_mon_3p0K_7[, 1:12], fmax_mon_3p0K_8[, 1:12])
+max_mel_mon_3p0K_coch <- rbind(fmax_mon_3p0K_1[, 13:24], fmax_mon_3p0K_2[, 13:24], fmax_mon_3p0K_3[, 13:24],
+                               fmax_mon_3p0K_4[, 13:24], fmax_mon_3p0K_5[, 13:24], fmax_mon_3p0K_6[, 13:24],
+                               fmax_mon_3p0K_7[, 13:24], fmax_mon_3p0K_8[, 13:24])
 
-max_aev_mon_3p0K_koel <- rbind(fmax_mon_3p0K_1[, 169:180], fmax_mon_3p0K_2[, 169:180], fmax_mon_3p0K_3[, 169:180],
-                               fmax_mon_3p0K_4[, 169:180], fmax_mon_3p0K_5[, 169:180], fmax_mon_3p0K_6[, 169:180],
-                               fmax_mon_3p0K_7[, 169:180], fmax_mon_3p0K_8[, 169:180])
-max_aev_mon_3p0K_coch <- rbind(fmax_mon_3p0K_1[, 157:168], fmax_mon_3p0K_2[, 157:168], fmax_mon_3p0K_3[, 157:168],
-                               fmax_mon_3p0K_4[, 157:168], fmax_mon_3p0K_5[, 157:168], fmax_mon_3p0K_6[, 157:168],
-                               fmax_mon_3p0K_7[, 157:168], fmax_mon_3p0K_8[, 157:168])
-max_aev_mon_3p0K_base <- rbind(fmax_mon_3p0K_1[, 145:156], fmax_mon_3p0K_2[, 145:156], fmax_mon_3p0K_3[, 145:156],
-                               fmax_mon_3p0K_4[, 145:156], fmax_mon_3p0K_5[, 145:156], fmax_mon_3p0K_6[, 145:156],
-                               fmax_mon_3p0K_7[, 145:156], fmax_mon_3p0K_8[, 145:156])
+max_aev_mon_3p0K_base <- rbind(fmax_mon_3p0K_1[, 49:60], fmax_mon_3p0K_2[, 49:60], fmax_mon_3p0K_3[, 49:60],
+                               fmax_mon_3p0K_4[, 49:60], fmax_mon_3p0K_5[, 49:60], fmax_mon_3p0K_6[, 49:60],
+                               fmax_mon_3p0K_7[, 49:60], fmax_mon_3p0K_8[, 49:60])
+max_aev_mon_3p0K_coch <- rbind(fmax_mon_3p0K_1[, 61:72], fmax_mon_3p0K_2[, 61:72], fmax_mon_3p0K_3[, 61:72],
+                               fmax_mon_3p0K_4[, 61:72], fmax_mon_3p0K_5[, 61:72], fmax_mon_3p0K_6[, 61:72],
+                               fmax_mon_3p0K_7[, 61:72], fmax_mon_3p0K_8[, 61:72])
 
-max_prt_mon_3p0K_koel <- rbind(pmax_mon_3p0K_1[, 25:36], pmax_mon_3p0K_2[, 25:36], pmax_mon_3p0K_3[, 25:36],
-                               pmax_mon_3p0K_4[, 25:36], pmax_mon_3p0K_5[, 25:36], pmax_mon_3p0K_6[, 25:36],
-                               pmax_mon_3p0K_7[, 25:36], pmax_mon_3p0K_8[, 25:36])
-max_prt_mon_3p0K_coch <- rbind(pmax_mon_3p0K_1[, 13:24], pmax_mon_3p0K_2[, 13:24], pmax_mon_3p0K_3[, 13:24],
-                               pmax_mon_3p0K_4[, 13:24], pmax_mon_3p0K_5[, 13:24], pmax_mon_3p0K_6[, 13:24],
-                               pmax_mon_3p0K_7[, 13:24], pmax_mon_3p0K_8[, 13:24])
 max_prt_mon_3p0K_base <- rbind(pmax_mon_3p0K_1[, 1:12], pmax_mon_3p0K_2[, 1:12], pmax_mon_3p0K_3[, 1:12],
                                pmax_mon_3p0K_4[, 1:12], pmax_mon_3p0K_5[, 1:12], pmax_mon_3p0K_6[, 1:12],
                                pmax_mon_3p0K_7[, 1:12], pmax_mon_3p0K_8[, 1:12])
+max_prt_mon_3p0K_coch <- rbind(pmax_mon_3p0K_1[, 13:24], pmax_mon_3p0K_2[, 13:24], pmax_mon_3p0K_3[, 13:24],
+                               pmax_mon_3p0K_4[, 13:24], pmax_mon_3p0K_5[, 13:24], pmax_mon_3p0K_6[, 13:24],
+                               pmax_mon_3p0K_7[, 13:24], pmax_mon_3p0K_8[, 13:24])
 
-max_prl_mon_3p0K_koel <- rbind(pmax_mon_3p0K_1[, 61:72], pmax_mon_3p0K_2[, 61:72], pmax_mon_3p0K_3[, 61:72],
-                               pmax_mon_3p0K_4[, 61:72], pmax_mon_3p0K_5[, 61:72], pmax_mon_3p0K_6[, 61:72],
-                               pmax_mon_3p0K_7[, 61:72], pmax_mon_3p0K_8[, 61:72])
-max_prl_mon_3p0K_coch <- rbind(pmax_mon_3p0K_1[, 49:60], pmax_mon_3p0K_2[, 49:60], pmax_mon_3p0K_3[, 49:60],
-                               pmax_mon_3p0K_4[, 49:60], pmax_mon_3p0K_5[, 49:60], pmax_mon_3p0K_6[, 49:60],
-                               pmax_mon_3p0K_7[, 49:60], pmax_mon_3p0K_8[, 49:60])
-max_prl_mon_3p0K_base <- rbind(pmax_mon_3p0K_1[, 37:48], pmax_mon_3p0K_2[, 37:48], pmax_mon_3p0K_3[, 37:48],
+max_prl_mon_3p0K_base <- rbind(pmax_mon_3p0K_1[, 25:36], pmax_mon_3p0K_2[, 25:36], pmax_mon_3p0K_3[, 25:36],
+                               pmax_mon_3p0K_4[, 25:36], pmax_mon_3p0K_5[, 25:36], pmax_mon_3p0K_6[, 25:36],
+                               pmax_mon_3p0K_7[, 25:36], pmax_mon_3p0K_8[, 25:36])
+max_prl_mon_3p0K_coch <- rbind(pmax_mon_3p0K_1[, 37:48], pmax_mon_3p0K_2[, 37:48], pmax_mon_3p0K_3[, 37:48],
                                pmax_mon_3p0K_4[, 37:48], pmax_mon_3p0K_5[, 37:48], pmax_mon_3p0K_6[, 37:48],
                                pmax_mon_3p0K_7[, 37:48], pmax_mon_3p0K_8[, 37:48])
 
 plot_month_max <- function(max_hist_mon, max_1p5K_mon, max_2p0K_mon, max_3p0K_mon,
                            ylims = c(0, 100), ylab = "", cex_axs = 1.9, cex_lab = 1.6, cex_legend = 1.8,
-                           main = "", cex_main = 1.8, do_legend = F, legend_pos = "topright"){
+                           main = "", cex_main = 1.8, do_legend = F, legend_pos = "topright",
+                           set_horiz_grid = F, hori_grid = c(10, 20)){
   
   col_hist <- "steelblue4"
   col_1p5K <- "grey25"
@@ -4109,7 +3773,13 @@ plot_month_max <- function(max_hist_mon, max_1p5K_mon, max_2p0K_mon, max_3p0K_mo
   
   plot(1:10, 1:10, type = "n", ylim = ylims, xlim = c(1, 60), axes = F,
        xlab = "", ylab = "")
-  grid(nx = 0, ny = 6, col = "grey55", lwd = 0.5)
+  
+  if(set_horiz_grid){
+    abline(h = hori_grid, col = "grey55", lwd = 0.6, lty = "dashed")
+  }else{
+    grid(nx = 0, ny = 6, col = "grey55", lwd = 0.6, lty = "dashed")  
+  }
+  
   boxplot(max_hist_mon, at = seq(1, 60, 5), add = T, col = col_hist,
           outline = F, notch = T, axes = F, whisklty = 0, staplelty = 0)
   boxplot(max_1p5K_mon, at = seq(2, 60, 5), add = T, col = col_1p5K,
@@ -4143,18 +3813,19 @@ layout(matrix(c(1, 2, 3),
 # layout.show(n = 8)
 
 plot_month_max(max_dis_mon_hist_base, max_dis_mon_1p5K_base, 
-               max_dis_mon_2p0K_base, max_dis_mon_3p0K_base, ylims = c(800, 2800),
-               main = "a) Basel", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-               do_legend = F)
+               max_dis_mon_2p0K_base, max_dis_mon_3p0K_base, ylims = c(900, 2650),
+               main = "a) Basel", ylab = expression(paste("Streamflow [m"^"3", "s"^"-1","]")),
+               do_legend = F, set_horiz_grid = T, hori_grid = c(1000, 1500, 2000, 2500))
 
 plot_month_max(max_dis_mon_hist_coch, max_dis_mon_1p5K_coch, 
-               max_dis_mon_2p0K_coch, max_dis_mon_3p0K_coch, ylims = c(80, 1600),
-               main = "b) Cochem", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")),
-               do_legend = T, cex_legend = 2.0)
+               max_dis_mon_2p0K_coch, max_dis_mon_3p0K_coch, ylims = c(180, 1500),
+               main = "b) Cochem", ylab = expression(paste("Streamflow [m"^"3", "s"^"-1","]")),
+               do_legend = T, cex_legend = 2.0, set_horiz_grid = T, hori_grid = c(200, 600, 1000, 1400))
 
 plot_month_max(max_dis_mon_hist_koel, max_dis_mon_1p5K_koel, 
-               max_dis_mon_2p0K_koel, max_dis_mon_3p0K_koel, ylims = c(1300, 6600),
-               main = "c) Cologne", ylab = expression(paste("Discharge [m"^"3", "s"^"-1","]")))
+               max_dis_mon_2p0K_koel, max_dis_mon_3p0K_koel, ylims = c(1500, 6300),
+               main = "c) Cologne", ylab = expression(paste("Streamflow [m"^"3", "s"^"-1","]")),
+               set_horiz_grid = T, hori_grid = c(1000, 2000, 3000, 4000, 5000, 6000))
 
 dev.off()
 
@@ -4177,38 +3848,44 @@ layout(matrix(c(9,  9, 9,
 my_cex_axs = 1.9
 
 plot_month_max(max_mel_mon_hist_base, max_mel_mon_1p5K_base, 
-               max_mel_mon_2p0K_base, max_mel_mon_3p0K_base, ylims = c(0, 45),
+               max_mel_mon_2p0K_base, max_mel_mon_3p0K_base, ylims = c(0, 35),
                main = "(a)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.6, 
-               do_legend = T, cex_legend = 2.0)
+               do_legend = T, cex_legend = 2.0, set_horiz_grid = T, hori_grid = seq(0, 40, 10))
 
 plot_month_max(max_mel_mon_hist_coch, max_mel_mon_1p5K_coch, 
-               max_mel_mon_2p0K_coch, max_mel_mon_3p0K_coch, ylims = c(0, 45),
+               max_mel_mon_2p0K_coch, max_mel_mon_3p0K_coch, ylims = c(0, 35),
                main = "(b)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.6, 
-               do_legend = T, cex_legend = 2.0)
+               do_legend = T, cex_legend = 2.0, set_horiz_grid = T, hori_grid = seq(0, 40, 10))
 
 plot_month_max(max_prl_mon_hist_base, max_prl_mon_1p5K_base, 
-               max_prl_mon_2p0K_base, max_prl_mon_3p0K_base, ylims = c(5, 30),
-               main = "(c)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_prl_mon_2p0K_base, max_prl_mon_3p0K_base, ylims = c(15, 67),
+               main = "(c)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(20, 70, 10))
 
 plot_month_max(max_prl_mon_hist_coch, max_prl_mon_1p5K_coch, 
-               max_prl_mon_2p0K_coch, max_prl_mon_3p0K_coch, ylims = c(5, 18),
-               main = "(d)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_prl_mon_2p0K_coch, max_prl_mon_3p0K_coch, ylims = c(15, 67),
+               main = "(d)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(20, 70, 10))
 
 plot_month_max(max_prt_mon_hist_base, max_prt_mon_1p5K_base, 
-               max_prt_mon_2p0K_base, max_prt_mon_3p0K_base, ylims = c(5, 30),
-               main = "(e)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_prt_mon_2p0K_base, max_prt_mon_3p0K_base, ylims = c(15, 67),
+               main = "(e)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(20, 70, 10))
 
 plot_month_max(max_prt_mon_hist_coch, max_prt_mon_1p5K_coch, 
-               max_prt_mon_2p0K_coch, max_prt_mon_3p0K_coch, ylims = c(5, 18),
-               main = "(f)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_prt_mon_2p0K_coch, max_prt_mon_3p0K_coch, ylims = c(15, 67),
+               main = "(f)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(20, 70, 10))
 
 plot_month_max(max_aev_mon_hist_base, max_aev_mon_1p5K_base, 
-               max_aev_mon_2p0K_base, max_aev_mon_3p0K_base, ylims = c(5, 55),
-               main = "(g)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_aev_mon_2p0K_base, max_aev_mon_3p0K_base, ylims = c(0, 38),
+               main = "(g)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(0, 40, 10))
 
 plot_month_max(max_aev_mon_hist_coch, max_aev_mon_1p5K_coch, 
-               max_aev_mon_2p0K_coch, max_aev_mon_3p0K_coch, ylims = c(5, 55),
-               main = "(h)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5)
+               max_aev_mon_2p0K_coch, max_aev_mon_3p0K_coch, ylims = c(0, 38),
+               main = "(h)", ylab = "", cex_axs = my_cex_axs, cex_lab = 1.5,
+               set_horiz_grid = T, hori_grid = seq(0, 40, 10))
 
 #Gauging station
 cex_header <- 1.7
@@ -4221,15 +3898,12 @@ mtext("Cochem",
       side = 3, line = -3.95, cex = cex_header+0.2, adj = 0.80)
 
 plot(1:100, 1:100, axes = F, type = "n", xlab = "", ylab = "")
-mtext("Snowmelt [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.900, outer = T)
-mtext("Prec. liq. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.625, outer = T)
-mtext("Prec. tot. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.342, outer = T)
-mtext("Act. evap. [mm]",  side = 2, line = -2.5, cex = cex_header, adj = 0.075, outer = T)
+mtext(expression(paste("S"[max10], "  [mm]")),  side = 2, line = -2.5, cex = cex_header, adj = 0.900, outer = T)
+mtext(expression(paste("P"[max5], " "[liq.], "  [mm]")),  side = 2, line = -2.5, cex = cex_header, adj = 0.625, outer = T)
+mtext(expression(paste("P"[max5], " "[tot.], "  [mm]")),  side = 2, line = -2.5, cex = cex_header, adj = 0.342, outer = T)
+mtext(expression(paste("ET"[max10], "  [mm]")),  side = 2, line = -2.5, cex = cex_header, adj = 0.075, outer = T)
 
 dev.off()
-
-
-
 
 
 #event_analy----
@@ -4422,7 +4096,8 @@ dev.off()
 
 #regi_illus----
 
-pdf(paste0(bas_dir,"res_figs/regi_illus.pdf"), width = 8, height = 3.5)
+# pdf(paste0(bas_dir,"res_figs/regi_illus.pdf"), width = 8, height = 3.5)
+pdf(paste0(bas_dir,"res_figs/regi_illus_diss.pdf"), width = 6, height = 3.5)
 
 #Positions ticks and labels for x-axis
 x_axis_lab <- c(15,46,74,105,135,166,196,227,258,288,319,349)
